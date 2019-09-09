@@ -1,0 +1,18 @@
+version: '3.4'
+
+services:
+  gordo-client-iot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    #command: "./entrypoint.sh"
+    environment:
+      - AAD_APPLICATION_SECRET=${AAD_APPLICATION_SECRET}
+      - AAD_TENANT_ID=${AAD_TENANT_ID}
+      - AAD_APPLICATION_ID=${AAD_APPLICATION_ID}
+      - KUSTO_URI=${KUSTO_URI}
+      - KUSTO_INGEST_URI=${KUSTO_INGEST_URI}
+      - KUSTO_DATABASE=${KUSTO_DATABASE}
+      - SERVICE_BUSS_CONN_STR=${SERVICE_BUSS_CONN_STR}
+      - GORDO_PROJECT=${GORDO_PROJECT}
+
