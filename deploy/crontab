@@ -1,1 +1,0 @@
-*/10 * * * * . /root/.profile ; /usr/local/bin/python /usr/src/app/gordo-client-ioc/bin/run_scheduler.py > /tmp/gordo-client-ioc-client-scheduler.log 2>&1
