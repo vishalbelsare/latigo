@@ -18,6 +18,18 @@ def load_yaml(filename, output=False):
         return data
 
 
+def save_yaml(filename, data, output=False):
+
+    with open(filename, 'w') as stream:
+        try:
+            yaml.dump(data, stream, default_flow_style=False)
+        except yaml.YAMLError as exc:
+            logger=logging.getLogger('utils.save_yaml')
+            logger.info(exc)
+        if output:
+            pprint.pprint(data)
+        return data
+
 
 def parse_event_hub_connection_string(connection_string:str):
     regex = r"Endpoint=sb://(?P<endpoint>.*)/;SharedAccessKeyName=(?P<shared_access_key_name>.*);SharedAccessKey=(?P<shared_access_key>.*);EntityPath=(?P<entity_path>.*)"
