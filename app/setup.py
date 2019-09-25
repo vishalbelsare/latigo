@@ -9,17 +9,17 @@ def read(fname):
     return ""
 
 setup(
-    name = "gordo-client-ioc",
+    name = "latigo",
     version = "0.0.1",
     author = "Lennart Rolland",
     author_email = "lroll@equinor.com",
-    description = ("A client to gordo machine learning system used by IOC to maintain models in production"),
+    description = ("A continuous prediction service that uses Gordo to predict data for IOC"),
     license = "AGPL-3.0",
     keywords = "gordo ioc client",
-    url = "https://github.com/equinor/gordo-client-ioc",
+    url = "https://github.com/equinor/latigo",
     packages=find_packages(),
     zip_safe=True,
-    long_description=read('README'),
+    long_description=read('../README.md'),
     # From https://pypi.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         "Development Status :: 3 - Alpha",

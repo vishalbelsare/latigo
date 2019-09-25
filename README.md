@@ -1,4 +1,4 @@
-# gordo-client-ioc
+# latigo
 IOC client for the Gordo Machine Learning system.
 
 ## Program architecture
@@ -72,3 +72,17 @@ Suggested interface:
 
 
 This project is based on the project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle )
+
+
+# Getting up with kubernetes
+
+make sure to disable proxy as acess to kubernetes goes via external network
+
+az login
+az aks install-cli
+az aks get-credentials --overwrite-existing --resource-group gordotest28 --name gordotest28 --admin
+
+
+kubectl config set-context --current --namespace=kubeflow
+kubectl get gordos
+

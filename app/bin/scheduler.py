@@ -1,12 +1,25 @@
-import logging
+#!/usr/bin/env python
+
 import time
+from config import CONFIG, ENVIRONMENT
+import log
+import logging
+import sys
 
-logging.basicConfig(level=CONFIG.DEBUG_LEVEL)
-logger = logging.getLogger(__name__)
-logging.getLogger("uamqp").setLevel(logging.WARNING)  # Way too verbose
+#CONFIG.exit_on_errors()
 
+# Set up logging for this app
+log.setup_logging()
 
-logger.info("Starting Gordo Client for IOC - Scheduler")
+logger = logging.getLogger(__file__)
+
+logger.warning(f"Using config:{CONFIG}")
+
+logger.info("Starting Latigo - Scheduler")
 # Pretend to do something
-time.sleep(5000)
-logger.info("Stopping Gordo Client for IOC - Scheduler")
+while True:
+    logger.info(" + Latigo - Scheduler")
+    time.sleep(5.0)
+
+logger.info("Stopping Latigo - Scheduler")
+
