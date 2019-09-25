@@ -19,7 +19,7 @@ setup(
     url = "https://github.com/equinor/latigo",
     packages=find_packages(),
     zip_safe=True,
-    long_description=read('../README.md'),
+    long_description=read('README.md'),
     # From https://pypi.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         "Development Status :: 3 - Alpha",
