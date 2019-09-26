@@ -1,11 +1,19 @@
 
 class RangeSpecifier:
-    pass
+
+    def __str__(self):
+        return "PredictionData"
+
 
 
 class SensorData:
-    pass
+
+    def __str__(self):
+        return "PredictionData"
+
 
 class PredictionData:
-    pass
+
+    def __str__(self):
+        return "PredictionData"
 

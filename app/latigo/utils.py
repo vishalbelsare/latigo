@@ -1,8 +1,14 @@
 import yaml
+import re
 import pprint
 import logging
 import datetime
+from os import environ
 
+
+def print_env():
+    for k, v in environ.items():
+        print(f"ENVIRONMENT: {k} = {v}")
 
 def load_yaml(filename, output=False):
 
@@ -32,6 +38,8 @@ def save_yaml(filename, data, output=False):
 
 
 def parse_event_hub_connection_string(connection_string:str):
+    if not connection_string:
+        return None
     regex = r"Endpoint=sb://(?P<endpoint>.*)/;SharedAccessKeyName=(?P<shared_access_key_name>.*);SharedAccessKey=(?P<shared_access_key>.*);EntityPath=(?P<entity_path>.*)"
     matches = list(re.finditer(regex, connection_string))
     if len(matches) > 0:

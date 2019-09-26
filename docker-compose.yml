@@ -7,6 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile.scheduler
     environment:
+      - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - GORDO_PROJECT=${GORDO_PROJECT}
 
 
@@ -15,15 +16,15 @@ services:
       context: .
       dockerfile: Dockerfile.executor
     environment:
+      - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - GORDO_PROJECT=${GORDO_PROJECT}
-      - LATIGO_EXECUTOR_EVENT_HUB=${LATIGO_EXECUTOR_EVENT_HUB}
-
 
   latigo-executor-2:
     build:
       context: .
       dockerfile: Dockerfile.executor
     environment:
+      - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - GORDO_PROJECT=${GORDO_PROJECT}
-      - LATIGO_EXECUTOR_EVENT_HUB=${LATIGO_EXECUTOR_EVENT_HUB}
+
 

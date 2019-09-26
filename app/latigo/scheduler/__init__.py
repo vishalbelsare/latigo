@@ -1,19 +1,28 @@
 import logging
+from os import environ
 import datetime
 import time
 import asyncio
-from utils import *
-from events import *
 import traceback
+from latigo.utils import Timer
+from latigo.event_hub import *
+
 
 
 class Scheduler:
 
-    def __init__(self, out_connection_string, out_partition="0", debug=False):
+    def __init__(self):
         self.logger = logging.getLogger(__class__.__name__)
+
+        self.out_connection_string = environ.get('LATIGO_INTERNAL_EVENT_HUB', None)
+        if not self.out_connection_string:
+            raise Exception("No connection string specified for internal event hub. Please set environment variable LATIGO_INTERNAL_EVENT_HUB to valid connection string")
+        self.out_partition="0"
+        self.debug=False
+
         self.configuration_sync_timer=Timer(datetime.timedelta(seconds=20))
         self.continuous_prediction_timer=Timer(datetime.timedelta(seconds=5))
-        self.sender=EventSenderClient(out_connection_string, out_partition, debug)
+        self.sender=EventSenderClient(self.out_connection_string, self.out_partition, self.debug)
         self.task_serial=0
 
     def synchronize_configuration(self):

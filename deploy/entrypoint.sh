@@ -12,8 +12,8 @@ do
     IFS='=' read -ra parts <<< "$line"
     echo "export ${parts[0]}=${parts[1]}" >> "$environment_file"
 done
-echo "Using environment:"
-cat "$environment_file"
+#echo "Using environment:"
+#cat "$environment_file"
 
 #cd deploy && alembic upgrade head
 supervisord -c "$supervisor_config_file"

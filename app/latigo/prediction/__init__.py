@@ -2,8 +2,15 @@ from datetime import datetime
 import typing
 from typing import List, Set, Dict, Tuple, Optional
 
-from sensor_data import *
+from latigo.sensor_data import *
+from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
+from cachetools import cached, TTLCache
+import numpy as np
+import pandas as pd
 
+from gordo_components.client.forwarders import PredictionForwarder
+from gordo_components.client import Client
+from gordo_components.dataset.sensor_tag import SensorTag
 
 class PredictionInfo:
     pass
@@ -48,7 +55,7 @@ class MockPredictionInformationProvider(PredictionInformationProviderInterface):
 
 class PredictionExecutionProviderInterface:
 
-    def execute_prediction (prediction_name:str, data:Data) -> PredictionData:
+    def execute_prediction (prediction_name:str, data:SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
@@ -59,7 +66,7 @@ class PredictionExecutionProviderInterface:
 
 class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
 
-    def execute_prediction (prediction_name:str, data:Data) -> PredictionData:
+    def execute_prediction (prediction_name:str, data:SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
@@ -69,46 +76,37 @@ class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
         return pd
 
 
-from gordo_components.client.forwarders import PredictionForwarder
-
 class TimeSeriesPredictionForwarder(PredictionForwarder):
     """
-   To be used as a 'forwarder' for the gordo prediction client
-   After instantiation, it is a coroutine which accepts prediction dataframes
-   which it will pass onto time series api via event hub
-   """
+    To be used as a 'forwarder' for the gordo prediction client
+    After instantiation, it is a coroutine which accepts prediction dataframes
+    which it will pass onto time series api via event hub
+    """
 
-   def __init__(
-         self,
-         connection_string: str,
-         partition: Optional[str] = "0",
-         debug: bool = False,
-         n_retries=5,
-     ):
-         """
-         Create an instance which, when called, is a coroutine capable of
-         being sent dataframes generated from the '/anomaly/prediction' endpoint
-         Parameters
-         ----------
-         connection_string: str
-             Connection string for destination event hub -
-             format: Endpoint=sb://<endpoint>/;SharedAccessKeyName=<shared_access_key_name>;SharedAccessKey=<shared_access_key>;EntityPath=<entity_path>
-             (copy-pastable from azure eventhub admin panel)
-         partition: str
-             Specifies which partition into which data will be submitted using event hub API
-         debug: bool
-             Put event hub into debugging mode (traces data in log)
-         """
+    def __init__(
+        self,
+        connection_string: str,
+        partition: Optional[str] = "0",
+        debug: bool = False,
+        n_retries=5,
+    ):
+        """
+        Create an instance which, when called, is a coroutine capable of
+        being sent dataframes generated from the '/anomaly/prediction' endpoint
+        Parameters
+        ----------
+        connection_string: str
+        Connection string for destination event hub -
+        format: Endpoint=sb://<endpoint>/;SharedAccessKeyName=<shared_access_key_name>;SharedAccessKey=<shared_access_key>;EntityPath=<entity_path>
+        (copy-pastable from azure eventhub admin panel)
+        partition: str
+        Specifies which partition into which data will be submitted using event hub API
+        debug: bool
+        Put event hub into debugging mode (traces data in log)
+        """
         parts = parse_event_hub_connection_string(connection_string)
 
 
-from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
-
-
-
-from cachetools import cached, TTLCache
-import numpy as np
-import pandas as pd
 
 
 class TimeSeriesDataProvider(GordoBaseDataProvider):
@@ -164,11 +162,11 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
         yield series
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
-    def execute_prediction (prediction_name:str, data:Data) -> PredictionData:
+    def execute_prediction (prediction_name:str, data:SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
-        from gordo_components.client import Client
+
         config=utils.load_yaml('config.yaml')
         pprint.pprint(config)
         client_config=config.get('gordo-client', {})

@@ -1,25 +1,15 @@
 #!/usr/bin/env python
+from latigo.log import *
 
 import time
-from config import CONFIG, ENVIRONMENT
-import log
 import logging
 import sys
+from latigo.scheduler import *
 
-#CONFIG.exit_on_errors()
-
-# Set up logging for this app
-log.setup_logging()
-
-logger = logging.getLogger(__file__)
-
-logger.warning(f"Using config:{CONFIG}")
+logger=setup_logging(__file__)
 
 logger.info("Starting Latigo - Scheduler")
-# Pretend to do something
-while True:
-    logger.info(" + Latigo - Scheduler")
-    time.sleep(5.0)
-
+scheduler = Scheduler()
+scheduler.run()
 logger.info("Stopping Latigo - Scheduler")
 

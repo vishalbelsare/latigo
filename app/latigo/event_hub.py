@@ -5,31 +5,33 @@ import pprint
 from azure.eventhub.client import EventHubClient
 #from azure.eventhub import EventHubSharedKeyCredential
 from azure.eventhub import Sender, EventData, Offset
-
+from latigo.utils import parse_event_hub_connection_string
 
 
 class EventClient:
 
     def __init__(self, connection_string, partition="0", debug=False):
         self.logger = logging.getLogger(__class__.__name__)
-        parts = parse_event_hub_connection_string(connection_string)
-        self.logger.info(f"Event hub client credentials for {self.__class__.__name__}:")
-        # pprint.pprint(parts)
-
-        self.address=f"amqps://{parts.get('endpoint')}/{parts.get('entity_path')}"
-        self.username=parts.get('shared_access_key_name')
-        self.password=parts.get('shared_access_key')
-        self.debug=debug
-        self.partition=partition
         self.client=None
-        if not self.address:
-            raise ValueError("No EventHubs URL supplied.")
-        try:
-            self.logger.info(f"Connecting to eventhub {self.address}")
-            self.client = EventHubClient(self.address, debug=self.debug, username=self.username, password=self.password)
+        #self.logger.info(f"Event hub client credentials for {self.__class__.__name__}:")
+        # pprint.pprint(parts)
+        parts = parse_event_hub_connection_string(connection_string)
+        if parts:
+            self.address=f"amqps://{parts.get('endpoint')}/{parts.get('entity_path')}"
+            self.username=parts.get('shared_access_key_name')
+            self.password=parts.get('shared_access_key')
+            self.debug=debug
+            self.partition=partition
+            if not self.address:
+                raise ValueError("No EventHubs URL supplied.")
+            try:
+                self.logger.info(f"Connecting to eventhub {self.address}")
+                self.client = EventHubClient(self.address, debug=self.debug, username=self.username, password=self.password)
 
-        except KeyboardInterrupt:
-            pass
+            except KeyboardInterrupt:
+                pass
+        else:
+            raise Exception(f"Could not parse event hub connection string: {connection_string}")
 
     def __del__(self):
         if self.client:
@@ -63,7 +65,6 @@ class EventReceiveClient(EventClient):
         self.partition=partition
         self.prefetch=prefetch
         self.offset=Offset(offset)
-
         self.total = 0
         self.last_sn = -1
         vlast_offset = "-1"

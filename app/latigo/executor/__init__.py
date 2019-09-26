@@ -1,21 +1,45 @@
 import logging
 import time
 import traceback
-from events import EventReceiveClient
-from sensor_data import *
-from utils import *
+from os import environ
+from latigo.event_hub import *
+from latigo.sensor_data import *
+from latigo.utils import *
+from latigo.prediction import *
+from latigo.prediction_storage import *
 
 
+
+"""
+event_hub_connection_string = os.environ.get('LATIGO_EXECUTOR_EVENT_HUB', "fdkjgkfdjgkfdgjkfdg")
+storage=MockPredictionStorageProvider()
+
+executor=PredictionExecutor(event_hub_connection_string, storage)
+
+executor.run()
+"""
 class PredictionExecutor:
 
-    def __init__(self, in_connection_string:str, out_storage:PredictionStorageProviderInterface, in_partition:str="0", out_partition:str="0", in_prefetch:int=5000, in_consumer_group:str="$default", in_offset:str="-1", debug:bool=False):
+    def __init__(self, ):
         self.logger = logging.getLogger(__class__.__name__)
-        self.receiver=EventReceiveClient(in_connection_string, in_partition, in_consumer_group, in_prefetch, in_offset, debug)
+
+        self.in_connection_string = environ.get('LATIGO_INTERNAL_EVENT_HUB', None)
+        if not self.in_connection_string:
+            raise Exception("No connection string specified for internal event hub. Please set environment variable LATIGO_INTERNAL_EVENT_HUB to valid connection string")
+        self.in_partition="0"
+        self.in_consumer_group ="$default"
+        self.in_prefetch = 5000
+        self.in_offset:str = "-1"
+        self.out_partition = "0"
+        self.out_storage = DevNullPredictionStorageProvider(True)
+        self.debug = False
+        if not self.out_storage:
+            raise Exception("No prediction store configured, cannot continue...")
+        self.receiver=EventReceiveClient(self.in_connection_string, self.in_partition, self.in_consumer_group, self.in_prefetch, self.in_offset, self.debug)
         #self.consumer=EventConsumerClient(in_connection_string, in_partition, in_consumer_group, in_offset, debug)
-        self.out_storage=out_storage
 
     def run(self):
-        self.logger.info(f"Starting {self.__class__.__name__}")
+        self.logger.info(f"Starting processing in {self.__class__.__name__}")
         done=False
         while not done:
             try:
@@ -26,7 +50,8 @@ class PredictionExecutor:
                     pd=PredictionData
                     pd.data=data
                     self.out_storage.put_predictions(pd)
-                time.sleep(1000)
+                else:
+                    time.sleep(1)
             except KeyboardInterrupt:
                 done=True
             except Exception as e:
@@ -34,10 +59,10 @@ class PredictionExecutor:
                 self.logger.error(f"Error occurred in scheduler: {e}")
                 traceback.print_exc()
                 self.logger.error("")
-        self.logger.info(f"Stopping {self.__class__.__name__}")
+        self.logger.info(f"Stopping processing in {self.__class__.__name__}")
 
     def run_async(self):
-        self.logger.info(f"Starting async execution for {self.__class__.__name__}")
+        self.logger.info(f"Starting async processing in {self.__class__.__name__}")
         done=False
         while not done:
             try:
@@ -51,4 +76,4 @@ class PredictionExecutor:
                 self.consumer.consume_events(handle)
             except KeyboardInterrupt:
                 done=True
-        self.logger.info(f"Stop async {self.__class__.__name__}")
+        self.logger.info(f"Stopping async processing in {self.__class__.__name__}")
