@@ -73,6 +73,76 @@ Suggested interface:
 
 This project is based on the project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle )
 
+# Development
+
+## Prequisites
+
+- Git with authentication set up (https://wiki.equinor.com/wiki/index.php/Software:Git_Tutorial_Getting_Setup)
+- Python 3.x
+- Docker and docker-compose installed (https://wiki.equinor.com/wiki/index.php/WIKIHOW:Set_up_Docker_on_a_CentOS_7_server)
+- Connection string to Azure Event Hub and both read/write permission to it ()
+
+## Steps
+
+### Clone project and enter project folder
+```bash
+
+cd <where you keep your projects>
+
+clone git@github.com:equinor/latigo.git
+
+cd latigo
+```
+### Create local configuration file
+```bash
+# Create local config if it does not exist
+./set_env.py
+
+# See that it is created
+ls -halt | grep local
+```
+
+Ensure that a new file called "local_config.yaml" was created
+
+### Set up event hub
+
+Go to Azure portal and copy the connection string for your eventhub to clipboard. See screenshot for example
+
+![Event Hub Connection string](documentation/screenshots/event_hub_connection_string.png?raw=true "Event Hub Connection string")
+
+### Put event hub connection string into local config
+
+Open "local_config.yaml" in your favorite editor and make sure to paste your event hub connection string for the key "LATIGO_INTERNAL_EVENT_HUB"
+
+### Set up environment from local_config
+
+```bash
+# See that your changes in config are reflected in output
+./set_env.py
+
+# Evaluate output to actually set the environment variables
+eval $(./set_env.py)
+
+# see that environment was actually set
+env | grep LATIGO
+```
+
+Now your environment is set up and docker-compose will use it to connect to correct event hub
+### Start docker compose
+
+```bash
+# Start the services
+docker-compose up
+
+# Check that services look healthy
+docker ps
+```
+
+At this point you should see 3 services running:
+- scheduler
+- executor 1
+- executor 2
+
 
 # Getting up with kubernetes
 
