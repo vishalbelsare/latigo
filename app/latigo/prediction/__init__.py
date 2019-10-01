@@ -162,6 +162,7 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
         yield series
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
+
     def execute_prediction (prediction_name:str, data:SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
