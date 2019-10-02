@@ -5,7 +5,7 @@ environ['LATIGO_INTERNAL_DATABASE']="sqlite://"
 
 from azure.eventhub import Offset
 
-from latigo.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
+from latigo.event_hub.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
 
 class TestOffsetPersistence:
 
