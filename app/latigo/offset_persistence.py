@@ -1,7 +1,5 @@
 from os import environ
 
-from azure.eventhub import Offset
-
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -25,7 +23,7 @@ class OffsetBookmark(Base):
     offset = Column(Integer)
     created_at = Column(DateTime)
 
-    def __init__(name:str, offset:int):
+    def __init__(self, name:str, offset:int):
         self.name=name
         self.offset=offset
 
@@ -47,31 +45,34 @@ def session_scope():
 
 
 class OffsetPersistanceInterface:
-    def set(self, offset: Offset): pass
-    def get(self) -> Offset: pass
+    def set(self, offset:int): pass
+    def get(self) -> int: pass
 
 
 class DBOffsetPersistance(OffsetPersistanceInterface):
     def __init__(self, name:str):
         self.name=name
 
-    def set(self, offset: Offset):
+    def set(self, offset:int):
         with session_scope() as session:
             offset_entity = OffsetBookmark(self.name, offset)
             session.add(offset_entity)
 
-    def get(self) -> Offset:
+    def get(self) -> int:
         with session_scope() as session:
-            return session.query(OffsetBookmark).filter_by(name=self.name).one_or_none()
+             offset_entity = session.query(OffsetBookmark).filter_by(name=self.name).one_or_none()
+             if  offset_entity:
+                return offset_entity.offset
+             return None
 
 
 class MemoryOffsetPersistance(OffsetPersistanceInterface):
     def __init__(self):
         self.offset=None
 
-    def set(self, offset: Offset):
+    def set(self, offset:int):
         self.offset=offset
 
-    def get(self) -> Offset:
+    def get(self) -> str:
         return self.offset
 
