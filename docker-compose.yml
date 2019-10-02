@@ -3,28 +3,52 @@ version: '3.4'
 services:
 
   latigo-scheduler:
+    image: latigo-scheduler
+    restart: always
+    container_name: latigo-scheduler
     build:
       context: .
       dockerfile: Dockerfile.scheduler
+    links:
+        postgres
     environment:
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - GORDO_PROJECT=${GORDO_PROJECT}
 
-
   latigo-executor-1:
+    image: latigo-executor
+    restart: always
+    container_name: latigo-executor-1
     build:
       context: .
       dockerfile: Dockerfile.executor
+    links:
+        postgres
     environment:
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - GORDO_PROJECT=${GORDO_PROJECT}
 
   latigo-executor-2:
+    image: latigo-executor
+    restart: always
+    container_name: latigo-executor-2
     build:
       context: .
       dockerfile: Dockerfile.executor
+    links:
+        postgres
     environment:
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - GORDO_PROJECT=${GORDO_PROJECT}
 
+  postgres:
+    image: postgres
+    restart: always
+    container_name: postgres
+    ports:
+     - 5432:5432
+    environment:
+     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+     - ./volumes/postgres:/var/lib/postgresql/data
 

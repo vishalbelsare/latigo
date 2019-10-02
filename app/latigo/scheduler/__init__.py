@@ -5,6 +5,7 @@ import time
 import pickle
 import asyncio
 import traceback
+from pprint import pformat
 from latigo.utils import Timer
 from latigo.event_hub import *
 from latigo.sensor_data import *
@@ -34,10 +35,16 @@ class Scheduler:
         self.logger.info(f"Performing prediction step")
         for i in range(10):
             task = Task(f"Task {self.task_serial}")
-            self.logger.info(f"Generating '{task}' for {self.__class__.__name__}")
+            self.logger.info(f"SENDING TASK: {task}")
+            #self.logger.info(f"Generating '{task}' for {self.__class__.__name__}")
             task_bytes = pickle.dumps( task )
-            self.sender.send_event(task)
-            self.task_serial += 1
+            self.logger.info(f"SENDING DATA: {pformat(task_bytes)}")
+            try:
+                self.sender.send_event(task_bytes)
+                self.task_serial += 1
+            except Exception as e:
+                self.logger.error("Could not send task")
+                traceback.print_exc()
 
 
     def run(self):

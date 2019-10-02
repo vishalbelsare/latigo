@@ -27,4 +27,3 @@ class PredictionData:
 
     def __str__(self):
         return "PredictionData"
-

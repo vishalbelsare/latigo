@@ -10,6 +10,7 @@ from latigo.sensor_data.sensor_data import *
 from latigo.prediction import *
 from latigo.prediction_storage import *
 import pickle
+from pprint import pformat
 
 
 """
@@ -22,7 +23,7 @@ executor.run()
 """
 class PredictionExecutor:
 
-    def __init__(self, ):
+    def __init__(self):
         self.logger = logging.getLogger(__class__.__name__)
 
         self.in_connection_string = environ.get('LATIGO_INTERNAL_EVENT_HUB', None)
@@ -53,9 +54,11 @@ class PredictionExecutor:
         task=None
         try:
             task_bytes=self.receiver.recieve_event()
+            self.logger.info(f"RECEIVED DATA: {pformat(task_bytes)}")
             task=pickle.loads( task_bytes )
+            self.logger.info(f"RECEIVED TASK: {task}")
         except Exception as e:
-            self.logger.error("Could not fetc task")
+            self.logger.error("Could not fetch task")
             traceback.print_exc()
         return task
 
@@ -135,7 +138,7 @@ class PredictionExecutor:
                 def handle(data):
                     if data:
                         self.logger(f"Processing '{data}' for {self.__class__.__name__}")
-                        data=f"Event '{data}'"
+                        data=f"Async Event '{data}'"
                         pd=PredictionData
                         pd.data=data
                         self.out_storage.put_predictions(pd)

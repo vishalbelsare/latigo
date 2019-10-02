@@ -133,15 +133,39 @@ Now your environment is set up and docker-compose will use it to connect to corr
 ```bash
 # Start the services
 docker-compose up
-
-# Check that services look healthy
-docker ps
 ```
 
 At this point you should see 3 services running:
 - scheduler
 - executor 1
 - executor 2
+
+### Rebuilding services
+
+During development you might want to rebuild only one service. To accomplish this you can do the following:
+
+- Open a new terminal window / tab
+- Navigate to project folder
+- Restart named service with the --build switch
+
+```bash
+# Rebuild and restart one service of already running docker compose setup:
+docker-compose up --build latigo-scheduler
+
+```
+
+You can also "detach" one service and view it's log independently of the other services like this:
+
+```bash
+# Rebuild and restart one service in DETACHED state
+docker-compose up --detach --build latigo-scheduler
+
+# follow log of that service only
+docker-compose logs --follow latigo-scheduler
+
+# Please note that stopping the last will NOT stop the service, simply "unhook" the log output.
+```
+
 
 
 # Getting up with kubernetes

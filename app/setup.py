@@ -1,11 +1,14 @@
+#!/usr/bin/env python
+
 import os
 from setuptools import setup, find_packages
 
 def read(fname):
     fn=os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
     print(f"Using README content from {fn}")
-    with open(fn) as f:
-        return f.read()
+    if os.path.exists(fn):
+        with open(fn) as f:
+            return f.read()
     return ""
 
 setup(
@@ -15,7 +18,7 @@ setup(
     author_email = "lroll@equinor.com",
     description = ("A continuous prediction service that uses Gordo to predict data for IOC"),
     license = "AGPL-3.0",
-    keywords = "gordo ioc client",
+    keywords = "gordo ioc continuous prediction",
     url = "https://github.com/equinor/latigo",
     packages=find_packages(),
     zip_safe=True,
