@@ -1,10 +1,9 @@
 from datetime import datetime
 import typing
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Optional
 
 from latigo.sensor_data import *
 from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
-from cachetools import cached, TTLCache
 import numpy as np
 import pandas as pd
 
@@ -12,67 +11,71 @@ from gordo_components.client.forwarders import PredictionForwarder
 from gordo_components.client import Client
 from gordo_components.dataset.sensor_tag import SensorTag
 
+
 class PredictionInfo:
     pass
 
 
 class PredictionInformationProviderInterface:
 
-    def get_prediction_info(prediction_name:str):
+    def get_prediction_info(prediction_name: str):
         """
         return any information about a named prediction
         """
         pass
 
-    def get_predictions(filter:dict):
+    def get_predictions(filter: dict):
         """
         return a list of predictions matching the given filter.
         """
         pass
 
-class MockPredictionInformationProvider(PredictionInformationProviderInterface):
 
-    def get_prediction_info(prediction_name:str) -> PredictionInfo:
+class MockPredictionInformationProvider(
+        PredictionInformationProviderInterface):
+
+    def get_prediction_info(prediction_name: str) -> PredictionInfo:
         """
         return any information about a named prediction
         """
-        pi=PredictionInfo()
-        pi.name=prediction_name
+        pi = PredictionInfo()
+        pi.name = prediction_name
         return pi
 
-    def get_predictions(filter:dict) -> List[PredictionInfo]:
+    def get_predictions(filter: dict) -> List[PredictionInfo]:
         """
         return a list of predictions matching the given filter.
         """
-        list=[]
+        list = []
         for i in range(3):
-            pi=PredictionInfo()
-            pi.name=f"pred_{i}"
+            pi = PredictionInfo()
+            pi.name = f"pred_{i}"
             list.append(pi)
         return list
 
 
-
 class PredictionExecutionProviderInterface:
 
-    def execute_prediction (prediction_name:str, data:SensorData) -> PredictionData:
+    def execute_prediction(
+            prediction_name: str,
+            data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
         pass
 
 
-
-
 class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
 
-    def execute_prediction (prediction_name:str, data:SensorData) -> PredictionData:
+    def execute_prediction(
+            prediction_name: str,
+            data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
-        pd=PredictionData
-        pd.name=prediction_name
-        pd.data=data
+        pd = PredictionData
+        pd.name = prediction_name
+        pd.data = data
         return pd
 
 
@@ -107,8 +110,6 @@ class TimeSeriesPredictionForwarder(PredictionForwarder):
         parts = parse_event_hub_connection_string(connection_string)
 
 
-
-
 class TimeSeriesDataProvider(GordoBaseDataProvider):
     """
     Get a GordoBaseDataset which returns unstructed values for X and y. Each instance
@@ -128,12 +129,12 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.connection_string=connection_string
-        self.partition=partition
-        self.prefetch=prefetch
-        self.consumer_group=consumer_group
-        self.offset=offset
-        self.debug=debug
+        self.connection_string = connection_string
+        self.partition = partition
+        self.prefetch = prefetch
+        self.consumer_group = consumer_group
+        self.offset = offset
+        self.debug = debug
 
     def can_handle_tag(self, tag: SensorTag):
         return True
@@ -149,7 +150,13 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
             raise NotImplementedError(
                 "Dry run for TimeSeriesDataProvider is not implemented"
             )
-        self.receiver=EventReceiveClient(self.connection_string, self.partition, self.consumer_group, self.prefetch, self.offset, self.debug)
+        self.receiver = EventReceiveClient(
+            self.connection_string,
+            self.partition,
+            self.consumer_group,
+            self.prefetch,
+            self.offset,
+            self.debug)
         for tag in tag_list:
             nr = random.randint(self.min_size, self.max_size)
 
@@ -161,25 +168,29 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
             )
         yield series
 
+
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
 
-    def execute_prediction (prediction_name:str, data:SensorData) -> PredictionData:
+    def execute_prediction(
+            prediction_name: str,
+            data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
 
-        config=utils.load_yaml('config.yaml')
+        config = utils.load_yaml('config.yaml')
         pprint.pprint(config)
-        client_config=config.get('gordo-client', {})
-        timeseries_input_config=config.get('timeseries-api-input', {})
-        timeseries_output_config=config.get('timeseries-api-output', {})
+        client_config = config.get('gordo-client', {})
+        timeseries_input_config = config.get('timeseries-api-input', {})
+        timeseries_output_config = config.get('timeseries-api-output', {})
         # Augment config with some parameters
-        client_config['data_provider']= TimeSeriesDataProvider(**timeseries_input_config)
-        client_config['prediction_forwarder']= TimeSeriesPredictionForwarder(**timeseries_output_config)
-        client=Client(**client_config)
+        client_config['data_provider'] = TimeSeriesDataProvider(
+            **timeseries_input_config)
+        client_config['prediction_forwarder'] = TimeSeriesPredictionForwarder(
+            **timeseries_output_config)
+        client = Client(**client_config)
         result = client.predict(data.from_time, data.to_time)
-        pd=PredictionData
-        pd.name=prediction_name
-        pd.data=data
+        pd = PredictionData
+        pd.name = prediction_name
+        pd.data = data
         return pd
-

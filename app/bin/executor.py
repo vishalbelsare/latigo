@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-from latigo.log import *
 
-import time
-import logging
-import sys
-import os
-from latigo.executor import *
+from latigo.log import setup_logging
+from latigo.executor import PredictionExecutor
 
-logger=setup_logging(__file__)
+logger = setup_logging(__file__)
 
 logger.info("Starting Latigo - Executor")
 executor = PredictionExecutor()

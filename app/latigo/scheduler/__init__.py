@@ -1,15 +1,14 @@
 import logging
 from os import environ
-from datetime import datetime, timedelta
+from datetime import timedelta
 import time
 import pickle
-import asyncio
 import traceback
 from pprint import pformat
 from latigo.utils import Timer
-from latigo.event_hub import *
-from latigo.sensor_data import *
-
+from latigo.sensor_data import Task, TimeRange, SensorData, PredictionData
+from latigo.sensor_data.sensor_data import MockSensorDataProvider
+from latigo.event_hub.send import EventSenderClient
 
 
 class Scheduler:
@@ -17,16 +16,16 @@ class Scheduler:
     def __init__(self):
         self.logger = logging.getLogger(__class__.__name__)
 
-        self.out_connection_string = environ.get('LATIGO_INTERNAL_EVENT_HUB', None)
+        self.out_connection_string = environ.get(
+            'LATIGO_INTERNAL_EVENT_HUB', None)
         if not self.out_connection_string:
-            raise Exception("No connection string specified for internal event hub. Please set environment variable LATIGO_INTERNAL_EVENT_HUB to valid connection string")
-        self.out_partition="0"
-        self.debug=False
-
-        self.configuration_sync_timer=Timer(timedelta(seconds=20))
-        self.continuous_prediction_timer=Timer(timedelta(seconds=5))
-        self.sender=EventSenderClient(self.out_connection_string, self.out_partition, self.debug)
-        self.task_serial=0
+            raise Exception(
+                "No connection string specified for internal event hub. Please set environment variable LATIGO_INTERNAL_EVENT_HUB to valid connection string")
+        self.debug = False
+        self.configuration_sync_timer = Timer(timedelta(seconds=20))
+        self.continuous_prediction_timer = Timer(timedelta(seconds=5))
+        self.sender = EventSenderClient(self.out_connection_string, self.debug)
+        self.task_serial = 0
 
     def synchronize_configuration(self):
         self.logger.info(f"Synchronizing configuration")
@@ -35,10 +34,10 @@ class Scheduler:
         self.logger.info(f"Performing prediction step")
         for i in range(10):
             task = Task(f"Task {self.task_serial}")
-            self.logger.info(f"SENDING TASK: {task}")
+            #self.logger.info(f"SENDING TASK: {task}")
             #self.logger.info(f"Generating '{task}' for {self.__class__.__name__}")
-            task_bytes = pickle.dumps( task )
-            self.logger.info(f"SENDING DATA: {pformat(task_bytes)}")
+            task_bytes = pickle.dumps(task)
+            #self.logger.info(f"SENDING DATA: {pformat(task_bytes)}")
             try:
                 self.sender.send_event(task_bytes)
                 self.task_serial += 1
@@ -46,12 +45,13 @@ class Scheduler:
                 self.logger.error("Could not send task")
                 traceback.print_exc()
 
-
     def run(self):
         self.logger.info(f"Starting {self.__class__.__name__}")
-        self.logger.info(f"Configuration sync: {self.configuration_sync_timer}")
-        self.logger.info(f"Prediction step: {self.continuous_prediction_timer}")
-        done=False
+        self.logger.info(
+            f"Configuration sync: {self.configuration_sync_timer}")
+        self.logger.info(
+            f"Prediction step: {self.continuous_prediction_timer}")
+        done = False
         while not done:
             try:
                 if self.configuration_sync_timer.is_triggered():
@@ -70,7 +70,7 @@ class Scheduler:
 
             except KeyboardInterrupt:
                 self.logger.info("Keyboard abort triggered, shutting down")
-                done=True
+                done = True
             except Exception as e:
                 self.logger.error("-----------------------------------")
                 self.logger.error(f"Error occurred in scheduler: {e}")

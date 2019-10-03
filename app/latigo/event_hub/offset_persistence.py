@@ -4,16 +4,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import Column, String, Integer, Boolean, Date, DateTime, Table, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, String, Integer, DateTime
 from contextlib import contextmanager
 
 connection_string = environ.get('LATIGO_INTERNAL_DATABASE', None)
 print(f"CONNECTION STRING IS: {connection_string}")
-if connection_string:
-    engine = create_engine(connection_string, echo=True)
-    Session = sessionmaker(bind=engine)
-    Base = declarative_base()
+
+engine = create_engine(connection_string, echo=True)
+Session = sessionmaker(bind=engine)
+Base = declarative_base()
 
 
 class OffsetBookmark(Base):
@@ -23,9 +22,10 @@ class OffsetBookmark(Base):
     offset = Column(Integer)
     created_at = Column(DateTime)
 
-    def __init__(self, name:str, offset:int):
-        self.name=name
-        self.offset=offset
+    def __init__(self, name: str, offset: int):
+        self.name = name
+        self.offset = offset
+
 
 Base.metadata.create_all(engine)
 
@@ -37,7 +37,7 @@ def session_scope():
     try:
         yield session
         session.commit()
-    except:
+    except BaseException:
         session.rollback()
         raise
     finally:
@@ -45,34 +45,34 @@ def session_scope():
 
 
 class OffsetPersistanceInterface:
-    def set(self, offset:int): pass
+    def set(self, offset: int): pass
     def get(self) -> int: pass
 
 
 class DBOffsetPersistance(OffsetPersistanceInterface):
-    def __init__(self, name:str):
-        self.name=name
+    def __init__(self, name: str):
+        self.name = name
 
-    def set(self, offset:int):
+    def set(self, offset: int):
         with session_scope() as session:
             offset_entity = OffsetBookmark(self.name, offset)
             session.add(offset_entity)
 
     def get(self) -> int:
         with session_scope() as session:
-             offset_entity = session.query(OffsetBookmark).filter_by(name=self.name).one_or_none()
-             if  offset_entity:
+            offset_entity = session.query(OffsetBookmark).filter_by(
+                name=self.name).one_or_none()
+            if offset_entity:
                 return offset_entity.offset
-             return None
+        return None
 
 
 class MemoryOffsetPersistance(OffsetPersistanceInterface):
     def __init__(self):
-        self.offset=None
+        self.offset = None
 
-    def set(self, offset:int):
-        self.offset=offset
+    def set(self, offset: int):
+        self.offset = offset
 
     def get(self) -> str:
         return self.offset
-

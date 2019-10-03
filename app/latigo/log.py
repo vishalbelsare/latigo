@@ -1,10 +1,8 @@
 import logging
-import sys
-import os
 import inspect
-import warnings
 
 once = False
+
 
 def setup_logging(filename, log_level=logging.INFO):
     global once
@@ -43,12 +41,7 @@ def setup_logging(filename, log_level=logging.INFO):
         logger = logging.getLogger('')
         logger.setLevel(log_level)
 
-    log_filename=inspect.stack()[1][1]
+    log_filename = inspect.stack()[1][1]
     logger = logging.getLogger(log_filename)
     logger.info(f"Log started for {log_filename}")
     return logger
-
-
-
-
-

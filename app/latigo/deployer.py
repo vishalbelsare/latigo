@@ -17,7 +17,8 @@ class Deployer(object):
         variables or not defined
     """
 
-    def __init__(self, subscription_id, resource_group, pub_ssh_key_path='~/.ssh/id_rsa.pub'):
+    def __init__(self, subscription_id, resource_group,
+                 pub_ssh_key_path='~/.ssh/id_rsa.pub'):
         self.subscription_id = subscription_id
         self.resource_group = resource_group
         pub_ssh_key_path = os.path.expanduser(pub_ssh_key_path)
@@ -31,14 +32,23 @@ class Deployer(object):
             secret=os.environ['AZURE_CLIENT_SECRET'],
             tenant=os.environ['AZURE_TENANT_ID']
         )
-        self.client = ResourceManagementClient(self.credentials, self.subscription_id)
+        self.client = ResourceManagementClient(
+            self.credentials, self.subscription_id)
 
-    def deploy(self, parameters_raw={}, template_path= os.path.join(os.path.dirname(__file__), 'templates', 'template.json'), region='northeurope', deployment_name='unnamed-deployment'):
+    def deploy(
+            self,
+            parameters_raw={},
+            template_path=os.path.join(
+                os.path.dirname(__file__),
+                'templates',
+                'template.json'),
+            region='northeurope',
+            deployment_name='unnamed-deployment'):
         """Deploy the template to a resource group."""
         self.client.resource_groups.create_or_update(
             self.resource_group,
             {
-                'location':region
+                'location': region
             }
         )
 
