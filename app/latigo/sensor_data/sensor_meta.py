@@ -1,6 +1,7 @@
 from typing import List
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 
 @dataclass
@@ -33,15 +34,15 @@ class SensorInformationProviderInterface:
     Where can we get information about available sensors and their naming conventions?
     """
 
-    def get_all_sensor() -> List[SensorInformation]:
+    def get_all_sensor(self) -> List[SensorInformation]:
         '''Enumerate all available sensors'''
         pass
 
-    def get_sensor_by_name(sensor_name: str) -> SensorInformation:
+    def get_sensor_by_name(self, sensor_name: str) -> Optional[SensorInformation]:
         '''Return information about one sensor ideintified by name'''
         pass
 
-    def sensor_exists(sensor_name: str):
+    def sensor_exists(self, sensor_name: str):
         '''check if a sensor exists'''
         pass
 
@@ -52,6 +53,7 @@ class SensorDataProviderInterface:
     """
 
     def get_native_range_specifier(
+            self,
             range_from: datetime,
             range_to: datetime,
             parameters: str):
@@ -63,6 +65,7 @@ class SensorDataProviderInterface:
         pass
 
     def get_data_for_range(
+            self,
             sensor_name: str,
             range_from: datetime,
             range_to: datetime) -> SensorData:
@@ -82,20 +85,20 @@ class TestSensorInformationProvider(SensorInformationProviderInterface):
         SensorInformation('SENSOR_C'),
     ]
 
-    def get_all_sensor() -> List[SensorInformation]:
+    def get_all_sensor(self) -> List[SensorInformation]:
         '''Enumerate all available sensors'''
-        return sensor_information
+        return self.sensor_information
 
-    def get_sensor_by_name(sensor_name: str) -> SensorInformation:
+    def get_sensor_by_name(self, sensor_name: str) -> Optional[SensorInformation]:
         '''Return information about one sensor ideintified by name'''
-        for sensor in sensor_information:
+        for sensor in self.sensor_information:
             if sensor_name == sensor.sensor_name:
                 return sensor
         return None
 
-    def sensor_exists(sensor_name: str):
+    def sensor_exists(self, sensor_name: str):
         '''check if a sensor exists'''
-        for sensor in sensor_information:
+        for sensor in self.sensor_information:
             if sensor_name == sensor.sensor_name:
                 return True
         return False

@@ -1,64 +1,65 @@
 from datetime import datetime
+import random
 import typing
-from typing import List, Optional
-
-from latigo.sensor_data import *
-from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
 import numpy as np
 import pandas as pd
+from pprint import pprint
+from dataclasses import dataclass
+
+from latigo.sensor_data import SensorData, PredictionData
+from latigo.utils import parse_event_hub_connection_string, load_yaml
+from latigo.event_hub.receive import EventReceiveClient
+
+from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
 
 from gordo_components.client.forwarders import PredictionForwarder
 from gordo_components.client import Client
 from gordo_components.dataset.sensor_tag import SensorTag
 
 
+@dataclass
 class PredictionInfo:
-    pass
+    name: str
 
 
 class PredictionInformationProviderInterface:
 
-    def get_prediction_info(prediction_name: str):
+    def get_prediction_info(self, prediction_name: str) -> PredictionInfo:
         """
         return any information about a named prediction
         """
         pass
 
-    def get_predictions(filter: dict):
+    def get_predictions(self, filter: dict):
         """
         return a list of predictions matching the given filter.
         """
         pass
 
 
-class MockPredictionInformationProvider(
-        PredictionInformationProviderInterface):
+class MockPredictionInformationProvider(PredictionInformationProviderInterface):
 
-    def get_prediction_info(prediction_name: str) -> PredictionInfo:
+    def get_prediction_info(self, prediction_name: str) -> PredictionInfo:
         """
         return any information about a named prediction
         """
-        pi = PredictionInfo()
-        pi.name = prediction_name
+        pi = PredictionInfo(name=prediction_name)
         return pi
 
-    def get_predictions(filter: dict) -> List[PredictionInfo]:
+    def get_predictions(self, filter: dict) -> typing.List[PredictionInfo]:
         """
         return a list of predictions matching the given filter.
         """
         list = []
         for i in range(3):
-            pi = PredictionInfo()
-            pi.name = f"pred_{i}"
+            pi = PredictionInfo(f"pred_{i}")
             list.append(pi)
         return list
 
 
 class PredictionExecutionProviderInterface:
 
-    def execute_prediction(
-            prediction_name: str,
-            data: SensorData) -> PredictionData:
+    def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
@@ -67,15 +68,11 @@ class PredictionExecutionProviderInterface:
 
 class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
 
-    def execute_prediction(
-            prediction_name: str,
-            data: SensorData) -> PredictionData:
+    def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
-        pd = PredictionData
-        pd.name = prediction_name
-        pd.data = data
+        pd = PredictionData(name=prediction_name, time_range=data.time_range, result=[])
         return pd
 
 
@@ -89,7 +86,7 @@ class TimeSeriesPredictionForwarder(PredictionForwarder):
     def __init__(
         self,
         connection_string: str,
-        partition: Optional[str] = "0",
+        partition: typing.Optional[str] = "0",
         debug: bool = False,
         n_retries=5,
     ):
@@ -107,7 +104,7 @@ class TimeSeriesPredictionForwarder(PredictionForwarder):
         debug: bool
         Put event hub into debugging mode (traces data in log)
         """
-        parts = parse_event_hub_connection_string(connection_string)
+        self.parts = parse_event_hub_connection_string(connection_string)
 
 
 class TimeSeriesDataProvider(GordoBaseDataProvider):
@@ -117,23 +114,10 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
     """
 
     @capture_args
-    def __init__(
-        self,
-        connection_string: str,
-        partition: str,
-        prefetch: int,
-        consumer_group: str,
-        offset: str,
-        debug: bool,
-        n_retries: int,
-        **kwargs
-    ):
+    def __init__(self, connection_string: str, debug: bool, n_retries: int, **kwargs
+                 ):
         super().__init__(**kwargs)
         self.connection_string = connection_string
-        self.partition = partition
-        self.prefetch = prefetch
-        self.consumer_group = consumer_group
-        self.offset = offset
         self.debug = debug
 
     def can_handle_tag(self, tag: SensorTag):
@@ -150,47 +134,31 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
             raise NotImplementedError(
                 "Dry run for TimeSeriesDataProvider is not implemented"
             )
-        self.receiver = EventReceiveClient(
-            self.connection_string,
-            self.partition,
-            self.consumer_group,
-            self.prefetch,
-            self.offset,
-            self.debug)
+        self.receiver = EventReceiveClient(self.connection_string, self.debug)
         for tag in tag_list:
             nr = random.randint(self.min_size, self.max_size)
 
             random_index = self._random_dates(from_ts, to_ts, n=nr)
-            series = pd.Series(
-                index=random_index,
-                name=tag.name,
-                data=np.random.random(size=len(random_index)),
-            )
+            series = pd.Series(index=random_index, name=tag.name, data=np.random.random(size=len(random_index)))
         yield series
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
 
-    def execute_prediction(
-            prediction_name: str,
-            data: SensorData) -> PredictionData:
+    def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
 
-        config = utils.load_yaml('config.yaml')
-        pprint.pprint(config)
+        config = load_yaml('config.yaml')
+        pprint(config)
         client_config = config.get('gordo-client', {})
         timeseries_input_config = config.get('timeseries-api-input', {})
         timeseries_output_config = config.get('timeseries-api-output', {})
         # Augment config with some parameters
-        client_config['data_provider'] = TimeSeriesDataProvider(
-            **timeseries_input_config)
-        client_config['prediction_forwarder'] = TimeSeriesPredictionForwarder(
-            **timeseries_output_config)
+        client_config['data_provider'] = TimeSeriesDataProvider(**timeseries_input_config)
+        client_config['prediction_forwarder'] = TimeSeriesPredictionForwarder(**timeseries_output_config)
         client = Client(**client_config)
-        result = client.predict(data.from_time, data.to_time)
-        pd = PredictionData
-        pd.name = prediction_name
-        pd.data = data
+        result = client.predict(data.time_range.from_time, data.time_range.to_time)
+        pd = PredictionData(name=prediction_name, time_range=data.time_range, result=result)
         return pd

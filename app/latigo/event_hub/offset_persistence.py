@@ -1,4 +1,5 @@
 from os import environ
+from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -6,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from sqlalchemy import Column, String, Integer, DateTime
 from contextlib import contextmanager
+
 
 connection_string = environ.get('LATIGO_INTERNAL_DATABASE', None)
 print(f"CONNECTION STRING IS: {connection_string}")
@@ -45,8 +47,11 @@ def session_scope():
 
 
 class OffsetPersistanceInterface:
-    def set(self, offset: int): pass
-    def get(self) -> int: pass
+    def set(self, offset: int):
+        pass
+
+    def get(self) -> Optional[int]:
+        pass
 
 
 class DBOffsetPersistance(OffsetPersistanceInterface):
@@ -58,7 +63,7 @@ class DBOffsetPersistance(OffsetPersistanceInterface):
             offset_entity = OffsetBookmark(self.name, offset)
             session.add(offset_entity)
 
-    def get(self) -> int:
+    def get(self) -> Optional[int]:
         with session_scope() as session:
             offset_entity = session.query(OffsetBookmark).filter_by(
                 name=self.name).one_or_none()
@@ -74,5 +79,5 @@ class MemoryOffsetPersistance(OffsetPersistanceInterface):
     def set(self, offset: int):
         self.offset = offset
 
-    def get(self) -> str:
+    def get(self) -> Optional[int]:
         return self.offset

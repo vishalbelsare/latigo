@@ -6,16 +6,24 @@ from setuptools import setup, find_packages
 
 def read(fname):
     fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
-    print(f"Using README content from {fn}")
+    print(f"Reading from {fn}")
     if os.path.exists(fn):
         with open(fn) as f:
             return f.read()
     return ""
 
 
+def read_requirements(fname: str):
+    fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
+    print(f"Reading requirements from {fn}")
+    with open(fn) as f:
+        return [r.strip() for r in f.readlines()]
+    return []
+
+
 setup(
     name="latigo",
-    version="0.0.1",
+    version="0.0.2",
     author="Lennart Rolland",
     author_email="lroll@equinor.com",
     description=(
@@ -26,6 +34,9 @@ setup(
     packages=find_packages(),
     zip_safe=True,
     long_description=read('README.md'),
+    install_requires=read_requirements("requirements.in"),  # Allow flexible deps for install
+    tests_require=read_requirements("test_requirements.txt"),
+    python_requires='>=3.7.4',
     # From https://pypi.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         "Development Status :: 3 - Alpha",

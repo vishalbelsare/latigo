@@ -1,4 +1,4 @@
-from latigo.sensor_data import *
+from latigo.sensor_data import SensorData, TimeRange
 
 
 class SensorDataProviderInterface:
@@ -16,7 +16,6 @@ class MockSensorDataProvider(SensorDataProviderInterface):
         """
         return the actual data as per the range specified
         """
-        data = SensorData()
-        data.time_range = time_range
+        data = SensorData(time_range)
 
         return data

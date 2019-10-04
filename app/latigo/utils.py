@@ -1,14 +1,13 @@
-import yaml
 import re
 import pprint
 import logging
-import datetime
-from os import environ
+from datetime import datetime, timedelta
+import asyncio
+from typing import Optional
+import yaml
 
 
-def print_env():
-    for k, v in environ.items():
-        print(f"ENVIRONMENT: {k} = {v}")
+logger = logging.getLogger('latigo.utils')
 
 
 def load_yaml(filename, output=False):
@@ -19,7 +18,6 @@ def load_yaml(filename, output=False):
         try:
             data = yaml.safe_load(stream)
         except yaml.YAMLError as e:
-            logger = logging.getLogger('utils.load_yaml')
             logger.error(e)
             failure = e
             data = {}
@@ -34,7 +32,6 @@ def save_yaml(filename, data, output=False):
         try:
             yaml.dump(data, stream, default_flow_style=False)
         except yaml.YAMLError as exc:
-            logger = logging.getLogger('utils.save_yaml')
             logger.info(exc)
         if output:
             pprint.pprint(data)
@@ -53,21 +50,23 @@ def parse_event_hub_connection_string(connection_string: str):
 
 class Timer:
 
-    def __init__(self, trigger_interval: datetime.timedelta):
-        self.logger = logging.getLogger(__class__.__name__)
+    def __init__(self, trigger_interval: timedelta):
         self.trigger_interval = trigger_interval
-        self.start_time = None
+        self.start_time: Optional[datetime] = None
 
-    def start(self, start_time: datetime.datetime = None):
-        self.start_time = start_time if start_time else datetime.datetime.now()
+    def start(self, start_time: Optional[datetime] = None):
+        if start_time:
+            self.start_time = start_time
+        else:
+            self.start_time = datetime.now()
 
     def stop(self):
         self.start_time = None
 
-    def interval(self) -> datetime.timedelta:
+    def interval(self) -> Optional[timedelta]:
         if not self.start_time:
             return None
-        return datetime.datetime.now() - self.start_time
+        return datetime.now() - self.start_time
 
     def is_triggered(self) -> bool:
         iv = self.interval()

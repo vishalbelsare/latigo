@@ -1,20 +1,18 @@
-import logging
+from latigo.log import setup_logging
 from os import environ
 from datetime import timedelta
 import time
 import pickle
 import traceback
-from pprint import pformat
 from latigo.utils import Timer
-from latigo.sensor_data import Task, TimeRange, SensorData, PredictionData
-from latigo.sensor_data.sensor_data import MockSensorDataProvider
+from latigo.sensor_data import Task
 from latigo.event_hub.send import EventSenderClient
 
 
 class Scheduler:
 
     def __init__(self):
-        self.logger = logging.getLogger(__class__.__name__)
+        self.logger = setup_logging(__class__.__name__)
 
         self.out_connection_string = environ.get(
             'LATIGO_INTERNAL_EVENT_HUB', None)
@@ -42,7 +40,7 @@ class Scheduler:
                 self.sender.send_event(task_bytes)
                 self.task_serial += 1
             except Exception as e:
-                self.logger.error("Could not send task")
+                self.logger.error(f"Could not send task: {e}")
                 traceback.print_exc()
 
     def run(self):

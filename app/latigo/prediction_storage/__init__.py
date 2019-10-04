@@ -1,6 +1,7 @@
+from latigo.sensor_data import PredictionData
 import logging
 
-from latigo.sensor_data import *
+logger = logging.getLogger(__name__)
 
 
 class PredictionStorageProviderInterface:
@@ -23,7 +24,6 @@ class MockPredictionStorageProvider(PredictionStorageProviderInterface):
 class DevNullPredictionStorageProvider(PredictionStorageProviderInterface):
 
     def __init__(self, do_log: bool = False):
-        self.logger = logging.getLogger(__class__.__name__)
         self.do_log = do_log
 
     def put_predictions(self, predictions: PredictionData):
@@ -31,5 +31,5 @@ class DevNullPredictionStorageProvider(PredictionStorageProviderInterface):
         Don't store the predictions on purpose
         """
         if self.do_log:
-            self.logger.info(f'Deleting predictions: {predictions}')
+            logger.info(f'Deleting predictions: {predictions}')
         pass

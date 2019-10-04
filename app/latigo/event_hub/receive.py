@@ -1,7 +1,7 @@
 import time
 import asyncio
 
-from latigo.event_huv import EventClient
+from latigo.event_hub import EventClient
 
 
 class EventReceiveClient(EventClient):

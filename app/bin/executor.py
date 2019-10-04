@@ -3,7 +3,7 @@
 from latigo.log import setup_logging
 from latigo.executor import PredictionExecutor
 
-logger = setup_logging(__file__)
+logger = setup_logging('latigo.app.executor')
 
 logger.info("Starting Latigo - Executor")
 executor = PredictionExecutor()

@@ -17,8 +17,7 @@ class Deployer(object):
         variables or not defined
     """
 
-    def __init__(self, subscription_id, resource_group,
-                 pub_ssh_key_path='~/.ssh/id_rsa.pub'):
+    def __init__(self, subscription_id, resource_group, pub_ssh_key_path='~/.ssh/id_rsa.pub'):
         self.subscription_id = subscription_id
         self.resource_group = resource_group
         pub_ssh_key_path = os.path.expanduser(pub_ssh_key_path)

@@ -16,10 +16,15 @@ def setup_logging(filename, log_level=logging.INFO):
         datefmt = '%Y-%m-%d %H:%M:%S'
 
         # Suppress overly verbose logs from libraries that aren't helpful
-        logging.getLogger('requests').setLevel(logging.WARNING)
-        logging.getLogger('urllib3').setLevel(logging.WARNING)
-        logging.getLogger('aiohttp.access').setLevel(logging.WARNING)
-        logging.getLogger('uamqp').setLevel(logging.WARNING)
+        for key in [
+            'requests',
+            'tensorboard',
+            'urllib3',
+            'aiohttp.access',
+            'uamqp',
+            'sqlalchemy',
+                'sqlalchemy.engine.base']:
+            logging.getLogger(key).setLevel(logging.WARNING)
 
         try:
             from colorlog import ColoredFormatter
