@@ -1,7 +1,9 @@
 all: up
 
 pepify:
-	autopep8 -r -i -j 0 --max-line-length 999 -a -a -a ./
+	black -l 999 -t py37 ./
+
+#	autopep8 -r -i -j 0 --max-line-length 999 -a -a -a ./
 
 test-all:
 	cd tests && make

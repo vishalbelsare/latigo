@@ -9,7 +9,7 @@ from sqlalchemy import Column, String, Integer, DateTime
 from contextlib import contextmanager
 
 
-connection_string = environ.get('LATIGO_INTERNAL_DATABASE', None)
+connection_string = environ.get("LATIGO_INTERNAL_DATABASE", None)
 print(f"CONNECTION STRING IS: {connection_string}")
 
 engine = create_engine(connection_string, echo=True)
@@ -18,7 +18,7 @@ Base = declarative_base()
 
 
 class OffsetBookmark(Base):
-    __tablename__ = 'offset_bookmarks'
+    __tablename__ = "offset_bookmarks"
     id = Column(Integer, primary_key=True)
     name = Column(String(64))
     offset = Column(Integer)
@@ -65,8 +65,7 @@ class DBOffsetPersistance(OffsetPersistanceInterface):
 
     def get(self) -> Optional[int]:
         with session_scope() as session:
-            offset_entity = session.query(OffsetBookmark).filter_by(
-                name=self.name).one_or_none()
+            offset_entity = session.query(OffsetBookmark).filter_by(name=self.name).one_or_none()
             if offset_entity:
                 return offset_entity.offset
         return None

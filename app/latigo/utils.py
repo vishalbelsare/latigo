@@ -7,12 +7,12 @@ from typing import Optional
 import yaml
 
 
-logger = logging.getLogger('latigo.utils')
+logger = logging.getLogger("latigo.utils")
 
 
 def load_yaml(filename, output=False):
 
-    with open(filename, 'r') as stream:
+    with open(filename, "r") as stream:
         data = {}
         failure = None
         try:
@@ -28,7 +28,7 @@ def load_yaml(filename, output=False):
 
 def save_yaml(filename, data, output=False):
 
-    with open(filename, 'w') as stream:
+    with open(filename, "w") as stream:
         try:
             yaml.dump(data, stream, default_flow_style=False)
         except yaml.YAMLError as exc:
@@ -49,7 +49,6 @@ def parse_event_hub_connection_string(connection_string: str):
 
 
 class Timer:
-
     def __init__(self, trigger_interval: timedelta):
         self.trigger_interval = trigger_interval
         self.start_time: Optional[datetime] = None

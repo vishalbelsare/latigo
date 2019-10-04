@@ -4,7 +4,7 @@ flake:
 	flake8 --ignore=E731,W503,W504,E501,E265,C0301,W1202,W1203 --max-complexity 10 --exclude build,junk --exit-zero ../
 
 pylint:
-	pylint --exit-zero --rcfile pylintrc ../app
+	pylint --exit-zero --rcfile pylintrc --output-format=colorized ../app
 
 mypy:
 	mypy --ignore-missing-imports ../app  || true

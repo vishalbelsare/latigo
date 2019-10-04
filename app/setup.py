@@ -26,27 +26,16 @@ setup(
     version="0.0.2",
     author="Lennart Rolland",
     author_email="lroll@equinor.com",
-    description=(
-        "A continuous prediction service that uses Gordo to predict data for IOC"),
+    description=("A continuous prediction service that uses Gordo to predict data for IOC"),
     license="AGPL-3.0",
     keywords="gordo ioc continuous prediction",
     url="https://github.com/equinor/latigo",
     packages=find_packages(),
     zip_safe=True,
-    long_description=read('README.md'),
+    long_description=read("README.md"),
     install_requires=read_requirements("requirements.in"),  # Allow flexible deps for install
     tests_require=read_requirements("test_requirements.txt"),
-    python_requires='>=3.7.4',
+    python_requires=">=3.7.4",
     # From https://pypi.org/pypi?%3Aaction=list_classifiers
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Intended Audience :: Developers",
-        "Intended Audience :: Other Audience",
-        "Topic :: Utilities",
-        "License :: OSI Approved :: GNU Affero General Public License v3",
-        "Natural Language :: English",
-        "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.7",
-        "Topic :: Other/Nonlisted Topic",
-    ],
+    classifiers=["Development Status :: 3 - Alpha", "Intended Audience :: Developers", "Intended Audience :: Other Audience", "Topic :: Utilities", "License :: OSI Approved :: GNU Affero General Public License v3", "Natural Language :: English", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3.7", "Topic :: Other/Nonlisted Topic"],
 )

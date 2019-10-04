@@ -23,7 +23,6 @@ class PredictionInfo:
 
 
 class PredictionInformationProviderInterface:
-
     def get_prediction_info(self, prediction_name: str) -> PredictionInfo:
         """
         return any information about a named prediction
@@ -38,7 +37,6 @@ class PredictionInformationProviderInterface:
 
 
 class MockPredictionInformationProvider(PredictionInformationProviderInterface):
-
     def get_prediction_info(self, prediction_name: str) -> PredictionInfo:
         """
         return any information about a named prediction
@@ -58,7 +56,6 @@ class MockPredictionInformationProvider(PredictionInformationProviderInterface):
 
 
 class PredictionExecutionProviderInterface:
-
     def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
@@ -67,7 +64,6 @@ class PredictionExecutionProviderInterface:
 
 
 class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
-
     def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
@@ -83,13 +79,7 @@ class TimeSeriesPredictionForwarder(PredictionForwarder):
     which it will pass onto time series api via event hub
     """
 
-    def __init__(
-        self,
-        connection_string: str,
-        partition: typing.Optional[str] = "0",
-        debug: bool = False,
-        n_retries=5,
-    ):
+    def __init__(self, connection_string: str, partition: typing.Optional[str] = "0", debug: bool = False, n_retries=5):
         """
         Create an instance which, when called, is a coroutine capable of
         being sent dataframes generated from the '/anomaly/prediction' endpoint
@@ -114,8 +104,7 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
     """
 
     @capture_args
-    def __init__(self, connection_string: str, debug: bool, n_retries: int, **kwargs
-                 ):
+    def __init__(self, connection_string: str, debug: bool, n_retries: int, **kwargs):
         super().__init__(**kwargs)
         self.connection_string = connection_string
         self.debug = debug
@@ -123,17 +112,9 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
     def can_handle_tag(self, tag: SensorTag):
         return True
 
-    def load_series(
-        self,
-        from_ts: datetime,
-        to_ts: datetime,
-        tag_list: typing.List[SensorTag],
-        dry_run: typing.Optional[bool] = False,
-    ) -> typing.Iterable[pd.Series]:
+    def load_series(self, from_ts: datetime, to_ts: datetime, tag_list: typing.List[SensorTag], dry_run: typing.Optional[bool] = False) -> typing.Iterable[pd.Series]:
         if dry_run:
-            raise NotImplementedError(
-                "Dry run for TimeSeriesDataProvider is not implemented"
-            )
+            raise NotImplementedError("Dry run for TimeSeriesDataProvider is not implemented")
         self.receiver = EventReceiveClient(self.connection_string, self.debug)
         for tag in tag_list:
             nr = random.randint(self.min_size, self.max_size)
@@ -144,20 +125,19 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
-
     def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
         """
         Train and/or run data through a given model
         """
 
-        config = load_yaml('config.yaml')
+        config = load_yaml("config.yaml")
         pprint(config)
-        client_config = config.get('gordo-client', {})
-        timeseries_input_config = config.get('timeseries-api-input', {})
-        timeseries_output_config = config.get('timeseries-api-output', {})
+        client_config = config.get("gordo-client", {})
+        timeseries_input_config = config.get("timeseries-api-input", {})
+        timeseries_output_config = config.get("timeseries-api-output", {})
         # Augment config with some parameters
-        client_config['data_provider'] = TimeSeriesDataProvider(**timeseries_input_config)
-        client_config['prediction_forwarder'] = TimeSeriesPredictionForwarder(**timeseries_output_config)
+        client_config["data_provider"] = TimeSeriesDataProvider(**timeseries_input_config)
+        client_config["prediction_forwarder"] = TimeSeriesPredictionForwarder(**timeseries_output_config)
         client = Client(**client_config)
         result = client.predict(data.time_range.from_time, data.time_range.to_time)
         pd = PredictionData(name=prediction_name, time_range=data.time_range, result=result)

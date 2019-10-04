@@ -5,7 +5,6 @@ from latigo.event_hub import EventClient
 
 
 class EventReceiveClient(EventClient):
-
     def __init__(self, connection_string, debug=False):
         super().__init__(connection_string, debug)
         self.receiver = self.add_receiver()
@@ -34,13 +33,11 @@ class EventConsumerClient(EventClient):
                 last_offset = event_data.offset.selector()
 
                 last_sn = event_data.sequence_number
-                self.logger.info(
-                    "Received: {}, {}".format(last_offset, last_sn))
+                self.logger.info("Received: {}, {}".format(last_offset, last_sn))
                 if callback:
                     callback(event_data)
                 self.offset_persistence.set(last_offset)
                 total += 1
             end_time = time.time()
             run_time = end_time - start_time
-            self.logger.info(
-                "Received {} messages in {} seconds".format(total, run_time))
+            self.logger.info("Received {} messages in {} seconds".format(total, run_time))
