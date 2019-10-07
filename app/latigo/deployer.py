@@ -29,7 +29,7 @@ class Deployer(object):
         self.credentials = ServicePrincipalCredentials(client_id=os.environ["AZURE_CLIENT_ID"], secret=os.environ["AZURE_CLIENT_SECRET"], tenant=os.environ["AZURE_TENANT_ID"])
         self.client = ResourceManagementClient(self.credentials, self.subscription_id)
 
-    def deploy(self, parameters_raw={}, template_path=os.path.join(os.path.dirname(__file__), "templates", "template.json"), region="northeurope", deployment_name="unnamed-deployment"):
+    def deploy(self, parameters_raw=None, template_path=os.path.join(os.path.dirname(__file__), "templates", "template.json"), region="northeurope", deployment_name="unnamed-deployment"):
         """Deploy the template to a resource group."""
         self.client.resource_groups.create_or_update(self.resource_group, {"location": region})
 
@@ -38,6 +38,8 @@ class Deployer(object):
             template = json.load(template_file_fd)
 
         # Put parameters dictionary into corret format
+        if not parameters_raw:
+            parameters_raw = {}
         parameters = {k: {"value": v} for k, v in parameters_raw.items()}
 
         deployment_properties = {"mode": DeploymentMode.incremental, "template": template, "parameters": parameters}

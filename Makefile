@@ -1,16 +1,21 @@
+ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+APP_DIR="${ROOT_DIR}/app"
+TESTS_DIR="${ROOT_DIR}/tests"
+CODE_QUALITY_DIR="${ROOT_DIR}/code_quality"
+
+.PHONY: all code-quality tests set-env postgres-permission setup up rebuild-req
+
 all: up
 
-pepify:
-	black -l 999 -t py37 ./
+code-quality:
+	cd "${CODE_QUALITY_DIR}" && make
 
-#	autopep8 -r -i -j 0 --max-line-length 999 -a -a -a ./
-
-test-all:
-	cd tests && make
+tests:
+	cd "${TESTS_DIR}" && make
 
 set-env:
-	./set_env.py
-	eval $(./set_env.py)
+	"${ROOT_DIR}/set_env.py"
+	eval $(""${ROOT_DIR}/set_env.py")
 	env | grep -i latigo
 
 postgres-permission:
@@ -22,7 +27,7 @@ setup:
 	pip uninstall -y latigo
 	pip install app/
 
-up: set-env postgres-permission pepify setup test-all
+up: set-env postgres-permission setup code-quality tests
 	docker-compose up --build
 
 

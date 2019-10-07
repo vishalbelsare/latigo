@@ -27,13 +27,11 @@ class PredictionInformationProviderInterface:
         """
         return any information about a named prediction
         """
-        pass
 
-    def get_predictions(self, filter: dict):
+    def get_predictions(self, selector: dict):
         """
-        return a list of predictions matching the given filter.
+        return a list of predictions matching the given selector.
         """
-        pass
 
 
 class MockPredictionInformationProvider(PredictionInformationProviderInterface):
@@ -44,15 +42,15 @@ class MockPredictionInformationProvider(PredictionInformationProviderInterface):
         pi = PredictionInfo(name=prediction_name)
         return pi
 
-    def get_predictions(self, filter: dict) -> typing.List[PredictionInfo]:
+    def get_predictions(self, selector: dict) -> typing.List[PredictionInfo]:
         """
-        return a list of predictions matching the given filter.
+        return a list of predictions matching the given selector.
         """
-        list = []
+        predictions_list = []
         for i in range(3):
             pi = PredictionInfo(f"pred_{i}")
-            list.append(pi)
-        return list
+            predictions_list.append(pi)
+        return predictions_list
 
 
 class PredictionExecutionProviderInterface:
@@ -60,7 +58,6 @@ class PredictionExecutionProviderInterface:
         """
         Train and/or run data through a given model
         """
-        pass
 
 
 class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
@@ -68,8 +65,8 @@ class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
         """
         Train and/or run data through a given model
         """
-        pd = PredictionData(name=prediction_name, time_range=data.time_range, result=[])
-        return pd
+        data = PredictionData(name=prediction_name, time_range=data.time_range, result=[])
+        return data
 
 
 class TimeSeriesPredictionForwarder(PredictionForwarder):
@@ -108,6 +105,20 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
         super().__init__(**kwargs)
         self.connection_string = connection_string
         self.debug = debug
+        self.min_size = 0.0
+        self.max_size = 1.0
+        self.receiver = None
+
+    # Thanks stackoverflow
+    # https://stackoverflow.com/questions/50559078/generating-random-dates-within-a-given-range-in-pandas
+    @staticmethod
+    def _random_dates(start, end, n: int = 10):
+        start = pd.to_datetime(start)
+        end = pd.to_datetime(end)
+        start_u = start.value // 10 ** 9
+        end_u = end.value // 10 ** 9
+
+        return sorted(pd.to_datetime(int(np.random.randint(int(start_u), int(end_u), n)), unit="s", utc=True))
 
     def can_handle_tag(self, tag: SensorTag):
         return True
@@ -117,7 +128,7 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
             raise NotImplementedError("Dry run for TimeSeriesDataProvider is not implemented")
         self.receiver = EventReceiveClient(self.connection_string, self.debug)
         for tag in tag_list:
-            nr = random.randint(self.min_size, self.max_size)
+            nr = int(random.randint(int(self.min_size), int(self.max_size)))
 
             random_index = self._random_dates(from_ts, to_ts, n=nr)
             series = pd.Series(index=random_index, name=tag.name, data=np.random.random(size=len(random_index)))
@@ -125,11 +136,8 @@ class TimeSeriesDataProvider(GordoBaseDataProvider):
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
-    def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
-        """
-        Train and/or run data through a given model
-        """
-
+    
+    def __init__(self):
         config = load_yaml("config.yaml")
         pprint(config)
         client_config = config.get("gordo-client", {})
@@ -139,6 +147,11 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         client_config["data_provider"] = TimeSeriesDataProvider(**timeseries_input_config)
         client_config["prediction_forwarder"] = TimeSeriesPredictionForwarder(**timeseries_output_config)
         client = Client(**client_config)
+
+    def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
+        """
+        Train and/or run data through a given model
+        """
         result = client.predict(data.time_range.from_time, data.time_range.to_time)
         pd = PredictionData(name=prediction_name, time_range=data.time_range, result=result)
         return pd

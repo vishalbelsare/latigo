@@ -1,24 +1,25 @@
 # pylint: disable=C0413,C0411,C0412
-from latigo.log import setup_logging
+from latigo.log import setup_logging  # noqa: E402
 
 logger = setup_logging(__name__)
 
 # pylint: disable=C0413,C0411,C0412
-from datetime import datetime
-import time
-import traceback
-from os import environ
-import pickle
-import typing
-from latigo.sensor_data import Task, TimeRange, SensorData, PredictionData
-from latigo.sensor_data.sensor_data import MockSensorDataProvider
-from latigo.prediction import GordoPredictionExecutionProvider
-from latigo.prediction_storage import DevNullPredictionStorageProvider
-from latigo.event_hub.receive import EventReceiveClient, EventConsumerClient
+from datetime import datetime  # noqa: E402
+import time  # noqa: E402
+import traceback  # noqa: E402
+from os import environ  # noqa: E402
+import pickle  # noqa: E402
+import typing  # noqa: E402
+from latigo.sensor_data import Task, TimeRange, SensorData, PredictionData  # noqa: E402
+from latigo.sensor_data.sensor_data import MockSensorDataProvider  # noqa: E402
+from latigo.prediction import GordoPredictionExecutionProvider  # noqa: E402
+from latigo.prediction_storage import DevNullPredictionStorageProvider  # noqa: E402
+from latigo.event_hub.receive import EventReceiveClient, EventConsumerClient  # noqa: E402
 
 
 class PredictionExecutor:
-    def __init__(self, do_async=False):
+    def __init__(self, name="prediction_executor", do_async=False):
+        self.name = name
         self.in_connection_string = environ.get("LATIGO_INTERNAL_EVENT_HUB", None)
         print(f"PRED EXEC CON STR: {self.in_connection_string}")
         if not self.in_connection_string:
@@ -35,10 +36,24 @@ class PredictionExecutor:
             raise Exception("No predictor configured, cannot continue...")
         self.receiver = None
         self.consumer = None
+        self.idle_time = datetime.now()
+        self.idle_number = 0
         if do_async:
-            self.consumer = EventConsumerClient(self.in_connection_string, self.debug)
+            self.consumer = EventConsumerClient(self.name, self.in_connection_string, self.debug)
         else:
-            self.receiver = EventReceiveClient(self.in_connection_string, self.debug)
+            self.receiver = EventReceiveClient(self.name, self.in_connection_string, self.debug)
+
+    def _deserialize_task(self, task_bytes) -> typing.Optional[Task]:
+        """
+        Deserialize a task from bytes
+        """
+        task = None
+        try:
+            task = pickle.loads(task_bytes)
+        except pickle.UnpicklingError as e:
+            logger.error(f"Could not unpickle task of size {len(task_bytes)}bytes: {e}")
+            traceback.print_exc()
+        return task
 
     def _fetch_task(self) -> typing.Optional[Task]:
         """
@@ -46,10 +61,8 @@ class PredictionExecutor:
         """
         task = None
         try:
-            task_bytes = self.receiver.recieve_event_with_backoff()
-            # logger.info(f"RECEIVED DATA: {pformat(task_bytes)}")
-            task = pickle.loads(task_bytes)
-            # logger.info(f"RECEIVED TASK: {task}")
+            task_bytes = self.receiver.receive_event_with_backoff()
+            task = self._deserialize_task(task_bytes)
         except Exception as e:
             logger.error(f"Could not fetch task: {e}")
             traceback.print_exc()
@@ -76,7 +89,7 @@ class PredictionExecutor:
         try:
             prediction_data = self.predictor.execute_prediction("some_name", sensor_data)
         except Exception as e:
-            logger.error(f"Could not fetch sensor data for task {task}: {e}")
+            logger.error(f"Could not execute prediction for task {task}: {e}")
             traceback.print_exc()
         return prediction_data
 
@@ -90,29 +103,32 @@ class PredictionExecutor:
             logger.error(f"Could not store prediction data for task {task}: {e}")
             traceback.print_exc()
 
+    def idle_count(self, has_task):
+        if self.idle_number > 0:
+            logger.info(f"Idle for {self.idle_number} cycles ({self.idle_time-datetime.now()})")
+            self.idle_number = 0
+            self.idle_time = datetime.now()
+        else:
+            self.idle_number += 1
+
     def run(self):
         if self.receiver:
             logger.info(f"Starting processing in {self.__class__.__name__}")
             done = False
             iteration_number = 0
-            idle_time = datetime.now()
-            idle_number = 0
             error_number = 0
             while not done:
                 iteration_number += 1
                 try:
                     task = self._fetch_task()
                     if task:
-                        if idle_number > 0:
-                            idle_number = 0
-                            logger.info(f"Idle for {idle_number} cycles ({idle_time-datetime.now()})")
                         logger.info(f"Processing '{task}' for {self.__class__.__name__}")
                         sensor_data = self._fetch_sensor_data(task)
                         prediction_data = self._execute_prediction(task, sensor_data)
                         self._store_prediction_data(task, prediction_data)
-                        idle_time = datetime.now()
+                        self.idle_count(True)
                     else:
-                        idle_number += 1
+                        self.idle_count(False)
                         time.sleep(1)
                 except Exception as e:
                     error_number += 1

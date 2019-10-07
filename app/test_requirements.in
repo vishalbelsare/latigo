@@ -1,7 +1,7 @@
 flake8~=3.7
 mypy~=0.7
 sqlalchemy-stubs
-pylint~=2.3
+pylint==2.4.2
 pytest~=4.6
 pytest-cov~=2.7
 pytest-mock~=1.10

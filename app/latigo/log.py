@@ -5,10 +5,10 @@ once = False
 
 
 def setup_logging(filename, log_level=logging.INFO):
+    """Set up the logging."""
     global once
     if not once:
         once = True
-        """Set up the logging."""
         logging.basicConfig(level=log_level)
         fmt = "%(asctime)s %(levelname)s (%(threadName)s) " "[%(name)s] %(message)s"
         colorfmt = "%(log_color)s{}%(reset)s".format(fmt)

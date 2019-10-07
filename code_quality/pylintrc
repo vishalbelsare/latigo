@@ -67,7 +67,7 @@ disable=R0201,W0613,I0021,I0020,C0111,W1618,W1619,R0902,R0903,W0231,W0611,R0913,
 # Set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html. You can also give a reporter class, eg
 # mypackage.mymodule.MyReporterClass.
-output-format=text
+output-format=parseable
 
 # Put messages in a separate file for each module / package specified on the
 # command line instead of printing them on stdout. Reports (if any) will be
