@@ -11,33 +11,38 @@ logger = logging.getLogger(__name__)
 
 
 class EventClient:
-    def __init__(self, name, connection_string, debug=False):
-        self.name = name
-        self.debug = debug
-        self.offset_persistence = DBOffsetPersistance(name)
-        self.partition = "0"
-        self.consumer_group = "$default"
-        self.prefetch = 5000
+    def __init__(self, config: dict):
+        if not config:
+            raise Exception("No config specified")
+        self.config = config
+        self.name = self.config.get("name", "unnamed")
+        self.connection_string = self.config.get("connection-string", None)
+        self.do_trace = self.config.get("do-trace", False)
+        self.partition = self.config.get("partition", "0")
+        self.consumer_group = self.config.get("consumer-group", "$default")
+        self.prefetch = self.config.get("prefetch", 5000)
+        self.offset_persistence = DBOffsetPersistance(config)
         self.last_offset = Offset(0)
         self.load_offset()
         self.total = 0
         self.last_sn = -1
         self.client = None
-        parts = parse_event_hub_connection_string(connection_string)
+        if not self.connection_string:
+            raise Exception("No connection string specified")
+        parts = parse_event_hub_connection_string(self.connection_string)
         if parts:
             self.address = f"amqps://{parts.get('endpoint')}/{parts.get('entity_path')}"
             self.username = parts.get("shared_access_key_name")
             self.password = parts.get("shared_access_key")
-            self.debug = debug
             if not self.address:
                 raise ValueError("No EventHubs URL supplied.")
             try:
                 logger.info(f"Connecting to eventhub {self.address}")
-                self.client = EventHubClient(self.address, debug=self.debug, username=self.username, password=self.password)
+                self.client = EventHubClient(self.address, debug=self.do_trace, username=self.username, password=self.password)
             except KeyboardInterrupt:
                 pass
         else:
-            raise Exception(f"Could not parse event hub connection string: {connection_string}")
+            raise Exception(f"Could not parse event hub connection string: {self.connection_string}")
 
     def load_offset(self):
         offset = self.offset_persistence.get()

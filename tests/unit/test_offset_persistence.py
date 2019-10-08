@@ -1,9 +1,4 @@
 from os import environ
-
-# NOTE: This must be started befoer the imports
-# Set up memory database (no file)
-environ["LATIGO_INTERNAL_DATABASE"] = "sqlite://"
-
 import logging
 from latigo.event_hub.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
 from azure.eventhub import Offset
@@ -19,7 +14,12 @@ class TestOffsetPersistence:
         logger.info(ofs.__dict__)
         
     def test_get_set(self):
-        for op in [MemoryOffsetPersistance(), DBOffsetPersistance("tester")]:
+        db_conf={
+            "db":{
+                "connection_string":"sqlite://"
+            }
+        }
+        for op in [MemoryOffsetPersistance(), DBOffsetPersistance(db_conf, "tester")]:
             # Test explicit default
             assert "bob" == op.get("bob")
             # Test implicit default

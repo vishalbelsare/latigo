@@ -1,30 +1,42 @@
-# pylint: disable=C0413,C0411,C0412
-from latigo.log import setup_logging  # noqa: E402
+import traceback
+import pickle
+import time
+import logging
+import pandas as pd
+from datetime import timedelta
+from os import environ
+import typing
+from latigo.event_hub.send import EventSenderClient
+from latigo.sensor_data import Task
+from latigo.utils import Timer
 
-logger = setup_logging(__name__)
-
-# pylint: disable=C0413,C0411,C0412
-import traceback  # noqa: E402
-import pickle  # noqa: E402
-import time  # noqa: E402
-from datetime import timedelta  # noqa: E402
-from os import environ  # noqa: E402
-import typing  # noqa: E402
-from latigo.event_hub.send import EventSenderClient  # noqa: E402
-from latigo.sensor_data import Task  # noqa: E402
-from latigo.utils import Timer  # noqa: E402
+logger = logging.getLogger(__name__)
 
 
 class Scheduler:
-    def __init__(self, name="scheduler"):
-        self.name = name
-        self.out_connection_string = environ.get("LATIGO_INTERNAL_EVENT_HUB", None)
-        if not self.out_connection_string:
-            raise Exception("No connection string specified for internal event hub. Please set environment variable LATIGO_INTERNAL_EVENT_HUB to valid connection string")
-        self.debug = False
-        self.configuration_sync_timer = Timer(timedelta(seconds=20))
-        self.continuous_prediction_timer = Timer(timedelta(seconds=5))
-        self.sender = EventSenderClient(self.name, self.out_connection_string, self.debug)
+    def _prepare_task_queue(self):
+        task_config = self.config.get("task_queue", None)
+        if not task_config:
+            raise Exception("No task config specified")
+        self.sender = EventSenderClient(task_config)
+
+    def _prepare_scheduler(self):
+        scheduler_config = self.config.get("scheduler", None)
+        if not scheduler_config:
+            raise Exception("No scheduler config specified")
+        self.name = scheduler_config.get("name", "unnamed_scheduler")
+        self.configuration_sync_interval = pd.to_timedelta(scheduler_config.get("configuration_sync_interval", "1m"))
+        self.continuous_prediction_interval = pd.to_timedelta(scheduler_config.get("continuous_prediction_interval", "30m"))
+        selfdback_fill_max_interval = pd.to_timedelta(scheduler_config.get("back_fill_max_interval", "1d"))
+        self.configuration_sync_timer = Timer(scheduler_configuration_sync_interval)
+        self.continuous_prediction_timer = Timer(self.continuous_prediction_interval)
+
+    def __init__(self, config: dict):
+        if not config:
+            raise Exception("No config specified")
+        self.config = config
+        self._prepare_scheduler()
+        self._prepare_task_queue()
         self.task_serial = 0
 
     def _serialize_task(self, task: Task) -> typing.Optional[bytes]:

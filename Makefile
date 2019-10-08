@@ -1,8 +1,9 @@
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-APP_DIR="${ROOT_DIR}/app"
-TESTS_DIR="${ROOT_DIR}/tests"
-CODE_QUALITY_DIR="${ROOT_DIR}/code_quality"
-
+APP_DIR:="${ROOT_DIR}/app"
+TESTS_DIR:="${ROOT_DIR}/tests"
+CODE_QUALITY_DIR:="${ROOT_DIR}/code_quality"
+SHELL := /bin/bash
+COMPUTED_ENV="${ROOT_DIR}/set_env.py"
 .PHONY: all code-quality tests set-env postgres-permission setup up rebuild-req
 
 all: up
@@ -13,13 +14,11 @@ code-quality:
 tests:
 	cd "${TESTS_DIR}" && make
 
-set-env:
-	"${ROOT_DIR}/set_env.py"
-	eval $(""${ROOT_DIR}/set_env.py")
+show-env:
 	env | grep -i latigo
 
 postgres-permission:
-	sudo chown -R lroll:lroll volumes/postgres
+	sudo mkdir "${ROOT_DIR}/volumes/postgres" -p && sudo chown -R lroll:lroll "${ROOT_DIR}/volumes/postgres"
 
 # Rebuild latest latigo and install it to site-packages before starting tests
 setup:
@@ -27,8 +26,11 @@ setup:
 	pip uninstall -y latigo
 	pip install app/
 
-up: set-env postgres-permission setup code-quality tests
-	docker-compose up --build
+build: postgres-permission setup code-quality tests show-env
+	docker-compose build
+
+up: build
+	docker-compose up
 
 
 rebuild-req:

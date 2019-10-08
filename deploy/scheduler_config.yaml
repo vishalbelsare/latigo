@@ -1,0 +1,13 @@
+db:
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+
+task_queue:
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    name: "scheduler_task_queue"
+    do_trace: True
+
+scheduler:
+    configuration_sync_interval: "20s"
+    continuous_prediction_interval: "5s"
+    back_fill_max_interval: "1d"
+    do_async: false

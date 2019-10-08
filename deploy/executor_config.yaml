@@ -1,0 +1,38 @@
+db:
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+
+task_queue:
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    name: "executor_task_queue"
+    do_trace: True
+
+sensor_data:
+    type: "timeseries-api"
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    partition: "0"
+    do_trace: False
+    n_retries: 5
+
+prediction_data:
+    type: "timeseries-api"
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    partition: "0"
+    do_trace: False
+    n_retries: 5
+
+predictor:
+    type: "gordo"
+    project: "1130-gordo-tilstandomatic"
+    target: null
+    host: "localhost"
+    port: 8888
+    scheme: "http"
+    gordo_version: "v0"
+    metadata: null
+    data_provider: null
+    prediction_forwarder: null
+    batch_size: 1000
+    parallelism: 10
+    forward_resampled_sensors : false
+    ignore_unhealthy_targets: true
+    n_retries: 5

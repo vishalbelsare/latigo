@@ -17,7 +17,7 @@ def load_yaml(filename, output=False):
         failure = None
         try:
             data = yaml.safe_load(stream)
-        except yaml.YAMLError as e:
+        except Exception as e:
             logger.error(e)
             failure = e
             data = {}
