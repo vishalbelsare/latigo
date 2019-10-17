@@ -107,13 +107,14 @@ Suggested interface:
 - execute_model (model_name:string, from:timestamp, to:timestamp) – Train and/or run data through a given model
 
 
-### Deployment
+### Dependencies
 
-- The application is deployable as a docker container.
-- The program is implemented in Python 3.7.
-- Alchemy is used for accessing databases.
-- Database versioning/migration is managed through alembic.
-- The python instance is managed by supervisord.
+- The application is deployable as *docker* containers with *docker-compose*.
+- The *scheduler* and *executor* programs are implemented in *Python 3.7*.
+- *PostgreSQL* is the database used
+- *Alchemy* is used as the ORM.
+- Database versioning/migration is managed through *alembic*.
+- The python instance is managed by *supervisord*.
 
 
 # Development
