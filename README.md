@@ -155,7 +155,7 @@ IMPORTANT: You must open this file and fill in the correct values. Some of the s
 Go to Azure portal and copy the connection string for your eventhub to clipboard. See screenshot for example
 
 
-[Event Hub Connection string](documentation/screenshots/event_hub_connection_string.png?raw=true "Event Hub Connection string")
+![Event Hub Connection string](documentation/screenshots/event_hub_connection_string.png?raw=true "Event Hub Connection string")
 
 ### Put event hub connection string into local config
 
