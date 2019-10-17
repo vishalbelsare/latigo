@@ -7,14 +7,14 @@ task_queue:
     do_trace: True
 
 sensor_data:
-    type: "timeseries-api"
+    type: "timeseries_api"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     partition: "0"
     do_trace: False
     n_retries: 5
 
 prediction_data:
-    type: "timeseries-api"
+    type: "timeseries_api"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     partition: "0"
     do_trace: False
@@ -36,3 +36,12 @@ predictor:
     forward_resampled_sensors : false
     ignore_unhealthy_targets: true
     n_retries: 5
+    data_provider:
+        connection_string: str
+        debug: true
+        n_retries: 5
+    prediction_forwarder:
+        connection_string: str
+        partition: "0"
+        debug: false
+        n_retries: 5

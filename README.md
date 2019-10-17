@@ -1,11 +1,51 @@
-# latigo
-IOC client for the Gordo Machine Learning system.
+# Latigo - Continuous Prediction Service
 
-## Program architecture
+## About
 
-The application operates through the use of the following interfaces:
+Latigo is a service that follows a schedule to feed Gordo with prediction tasks and data and stores the result.
 
-### SensorInformationProvider
+This project was based on the original prototype project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle ) and has since evolved to support other needs and technical dependencies.
+
+## Architecture
+
+### Nodes
+Latigo is a distributed application with two nodes:
+
+- Scheduler
+- Executor
+
+While Latigo is made to be portable and reusable for other clients, we are coarsly following the needs of IOC right now since that is where it will be used first. IOC has the following requirement:
+
+- Produce a prediction for the last 30 minutes for every ML model in gordo (there are roughly 9000 models)
+- Backfill predictions up to a certain amount of time for every ML model in gordo so that historical prediction can be reviewed (one-time operation at startup)
+
+The scheduler will produce one "task description" for each prediction to be made. The task description will contain the following:
+- Timespan for prediction
+- The sensor_data tags to predict for
+- The gordo config for the prediction ("machine" to use (combination of model and parameters))
+
+The scheduler will produce these tasks according to the schedule and feed them into an event hub.
+
+The executors will then pick tasks from the event_hub and "execute" them one by one.There may be more one executor operating concurrently.
+
+For each tasks the executors will do as follows:
+- Read one tasks description
+- Find and download the data required for the prediction
+- Send the data to gordo and produce a prediction
+- Download the prediction result from gordo
+- Find and upload the prediction result to the data sink that is supposed to store the result.
+
+
+### Interfaces
+
+Latigo opperates through the use of the following interfaces:
+
+- SensorInformationProvider
+- SensorDataProvider
+- ModelInformationProvider
+- ModelExecutionProvider
+
+#### SensorInformationProvider
 
 Where can we get information about available sensors and their naming conventions?
 
@@ -19,7 +59,7 @@ Suggested interface:
 - get_sensor_list() – enumerate all available sensors
 - sensor_exists(sensor_name:string) – check if a sensor exists
 
-### SensorDataProvider
+#### SensorDataProvider
 
 Where can we get access to data from a sensor given its name?
 
@@ -33,7 +73,7 @@ Suggested interface:
 - get_native_range_specifier(from:timestamp, to:timestamp, parameters:string) – return a specification of the given time span in native representation. For example for influx this would be an influx query or complete query url (parameter can be used to select)
 - get_data_for_range(from:timestamp, to:timestamp)
 
-### ModelInformationProvider
+#### ModelInformationProvider
 
 Where can we get information about available models?
 
@@ -46,7 +86,7 @@ Suggested interface:
 - get_model_list() – enumerate all available models
 - model_exists(model_name:string) – check if a model exists
 
-### ModelExecutionProvider
+#### ModelExecutionProvider
 
 Where can we train and execute models?
 
@@ -62,7 +102,7 @@ Suggested interface:
 - execute_model (model_name:string, from:timestamp, to:timestamp) – Train and/or run data through a given model
 
 
-## Deployment Architecture
+### Deployment
 
 - The application is deployable as a docker container.
 - The program is implemented in Python 3.7.
@@ -71,8 +111,6 @@ Suggested interface:
 - The python instance is managed by supervisord.
 
 
-This project is based on the project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle )
-
 # Development
 
 ## Prequisites
@@ -80,7 +118,7 @@ This project is based on the project "ioc-gordo-oracle" ( https://github.com/equ
 - Git with authentication set up (https://wiki.equinor.com/wiki/index.php/Software:Git_Tutorial_Getting_Setup)
 - Python 3.x
 - Docker and docker-compose installed (https://wiki.equinor.com/wiki/index.php/WIKIHOW:Set_up_Docker_on_a_CentOS_7_server)
-- Connection string to Azure Event Hub and both read/write permission to it ()
+- Connection string to Azure Event Hub and both read/write permission to it (documentation on how to obtrain this follows)
 
 ## Steps
 
@@ -128,7 +166,10 @@ env | grep LATIGO
 ```
 
 Now your environment is set up and docker-compose will use it to connect to correct event hub
+
 ### Start docker compose
+
+You can use docker-compoes directly or you can use the Makefile. The makefile is just a convenience wrapper and will be explained after the docker-compose basics have been covered.
 
 ```bash
 # Start the services
@@ -166,11 +207,69 @@ docker-compose logs --follow latigo-scheduler
 # Please note that stopping the last will NOT stop the service, simply "unhook" the log output.
 ```
 
+### Makefile
+
+The Makefile is there mainsly as a convenience. It is recommended to see what id does for you simply by opening it in a text editor.
+
+This section highlights some features.
+
+
+```bash
+
+
+# Run code quality tools
+make code-quality
+
+# Run all tests
+make tests
+
+# Show the variables related to latigo in the current environment
+make show-env
+
+# Set up permissions of the postgres docker image's volume (necessary nuisance)
+make postgres-permission
+
+# Rebuild pinned versions in requirements.txt and test_requirements.txt from requirements.in and test_requirements.in respectively
+make rebuild-req
+
+# Build latigo pip package
+make setup
+
+# Build docker images
+make build
+
+# Build incrementally, test and run all from scratch (this is default action when you don't specify a target to the make command)
+make up
+
+# Shutdown docker images
+make down
+
+# Rebuild and restart influx image separately, attaching to log
+make influxdb
+
+# Rebuild and restart grafana image separately, attaching to log
+make influxdb
+
+# Rebuild and restart postgres image separately, attaching to log
+make influxdb
+
+# Rebuild and restart adminer image separately, attaching to log
+make influxdb
+
+# Rebuild and restart scheduler image separately, attaching to log
+make influxdb
+
+# Rebuild and restart executor-1 image separately, attaching to log
+make influxdb
+
+# Rebuild and restart executor-2 image separately, attaching to log
+make influxdb
+```
 
 
 # Getting up with kubernetes
 
-make sure to disable proxy as acess to kubernetes goes via external network
+make sure to disable proxy as access to kubernetes goes via external network
 
 az login
 az aks install-cli
@@ -179,4 +278,16 @@ az aks get-credentials --overwrite-existing --resource-group gordotest28 --name 
 
 kubectl config set-context --current --namespace=kubeflow
 kubectl get gordos
+
+## Requirement pinning
+
+We use requirements.in and requirements.txt files to keep track of dependencies. requirements.in is the version ranges we want. We use make file to convert this into requirements.txt which are the exactly pinned requirements.
+
+```bash
+# Rebuild requirements.txt from requirements.in
+make rebuild-req
+```
+
+NOTE: Both requirements.in and requirements.txt are kept in git
+
 

@@ -1,21 +1,20 @@
-# pylint: disable=C0413,C0411,C0412
-from latigo.log import setup_logging  # noqa: E402
+from datetime import datetime
+import time
+import traceback
+from os import environ
+import pickle
+import typing
+import logging
+import pprint
+from latigo.sensor_data import Task, TimeRange, SensorData, PredictionData
+from latigo.sensor_data.sensor_data import MockSensorDataProvider
+from latigo.prediction.gordo import GordoPredictionExecutionProvider
+from latigo.prediction import MockPredictionExecutionProvider, DevNullPredictionExecutionProvider
+from latigo.prediction_storage import DevNullPredictionStorageProvider
+from latigo.event_hub.receive import EventReceiveClient, EventConsumerClient
 
-logger = setup_logging(__name__)
 
-# pylint: disable=C0413,C0411,C0412
-from datetime import datetime  # noqa: E402
-import time  # noqa: E402
-import traceback  # noqa: E402
-from os import environ  # noqa: E402
-import pickle  # noqa: E402
-import typing  # noqa: E402
-from latigo.sensor_data import Task, TimeRange, SensorData, PredictionData  # noqa: E402
-from latigo.sensor_data.sensor_data import MockSensorDataProvider  # noqa: E402
-from latigo.prediction.gordo import GordoPredictionExecutionProvider  # noqa: E402
-from latigo.prediction import MockPredictionExecutionProvider, DevNullPredictionExecutionProvider  # noqa: E402
-from latigo.prediction_storage import DevNullPredictionStorageProvider  # noqa: E402
-from latigo.event_hub.receive import EventReceiveClient, EventConsumerClient  # noqa: E402
+logger = logging.getLogger(__name__)
 
 
 class PredictionExecutor:

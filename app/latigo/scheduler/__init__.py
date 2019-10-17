@@ -15,20 +15,20 @@ logger = logging.getLogger(__name__)
 
 class Scheduler:
     def _prepare_task_queue(self):
-        task_config = self.config.get("task_queue", None)
-        if not task_config:
+        self.task_config = self.config.get("task_queue", None)
+        if not self.task_config:
             raise Exception("No task config specified")
-        self.sender = EventSenderClient(task_config)
+        self.sender = EventSenderClient(self.task_config)
 
     def _prepare_scheduler(self):
-        scheduler_config = self.config.get("scheduler", None)
-        if not scheduler_config:
+        self.scheduler_config = self.config.get("scheduler", None)
+        if not self.scheduler_config:
             raise Exception("No scheduler config specified")
-        self.name = scheduler_config.get("name", "unnamed_scheduler")
-        self.configuration_sync_interval = pd.to_timedelta(scheduler_config.get("configuration_sync_interval", "1m"))
-        self.continuous_prediction_interval = pd.to_timedelta(scheduler_config.get("continuous_prediction_interval", "30m"))
-        selfdback_fill_max_interval = pd.to_timedelta(scheduler_config.get("back_fill_max_interval", "1d"))
-        self.configuration_sync_timer = Timer(scheduler_configuration_sync_interval)
+        self.name = self.scheduler_config.get("name", "unnamed_scheduler")
+        self.configuration_sync_interval = pd.to_timedelta(self.scheduler_config.get("configuration_sync_interval", "1m"))
+        self.continuous_prediction_interval = pd.to_timedelta(self.scheduler_config.get("continuous_prediction_interval", "30m"))
+        selfdback_fill_max_interval = pd.to_timedelta(self.scheduler_config.get("back_fill_max_interval", "1d"))
+        self.configuration_sync_timer = Timer(self.configuration_sync_interval)
         self.continuous_prediction_timer = Timer(self.continuous_prediction_interval)
 
     def __init__(self, config: dict):

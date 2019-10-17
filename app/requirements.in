@@ -3,7 +3,7 @@ alembic~=1.0
 azure
 azure-eventhub~=1.3
 colorlog~=4.0
-gordo-components~=0.30
+gordo-components~=0.34
 msrestazure~=0.6
 numpy~=1.15
 pandas~=0.24
@@ -11,3 +11,4 @@ psycopg2~=2.8
 pyyaml>=4.2b1
 requests~=2.20
 SQLAlchemy~=1.3
+typing-extensions~=3.7.4

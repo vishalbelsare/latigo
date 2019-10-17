@@ -5,8 +5,8 @@ from latigo.event_hub import EventClient
 
 
 class EventReceiveClient(EventClient):
-    def __init__(self, name, connection_string, debug=False):
-        super().__init__(name, connection_string, debug)
+    def __init__(self, config: dict):
+        super().__init__(config)
         self.receiver = self.add_receiver()
         self.run()
 
@@ -18,8 +18,8 @@ class EventReceiveClient(EventClient):
 
 
 class EventConsumerClient(EventClient):
-    def __init__(self, connection_string, debug=False):
-        super().__init__(connection_string, debug)
+    def __init__(self, config: dict):
+        super().__init__(config)
         self.consumer = self.add_consumer()
         loop = asyncio.get_event_loop()
         timeout = 100

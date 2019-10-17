@@ -5,28 +5,41 @@ from azure.eventhub import EventData, Offset
 
 from latigo.utils import parse_event_hub_connection_string
 
-from latigo.event_hub.offset_persistence import DBOffsetPersistance
+from latigo.event_hub.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
 
 logger = logging.getLogger(__name__)
 
 
 class EventClient:
+    def _prepare_offset_peristance(self):
+        self.offset_persistance_config = self.config.get("offset_persistence", None)
+        if not self.offset_persistance_config:
+            logger.info(self.config)
+            raise Exception("No offset_persistance_config specified")
+        offset_persistance_type = self.offset_persistance_config.get("type", None)
+        offset_persistance_name = self.offset_persistance_config.get("name", "unnamed")
+        self.offset_persistence = None
+        if "db" == offset_persistance_type:
+            self.offset_persistence = DBOffsetPersistance(self.offset_persistance_config)
+        elif "memory" == offset_persistance_type:
+            self.offset_persistence = MemoryOffsetPersistance()
+
     def __init__(self, config: dict):
+        self.client = None
         if not config:
             raise Exception("No config specified")
         self.config = config
         self.name = self.config.get("name", "unnamed")
-        self.connection_string = self.config.get("connection-string", None)
-        self.do_trace = self.config.get("do-trace", False)
+        self.connection_string = self.config.get("connection_string", None)
+        self.do_trace = self.config.get("do_trace", False)
         self.partition = self.config.get("partition", "0")
-        self.consumer_group = self.config.get("consumer-group", "$default")
+        self.consumer_group = self.config.get("consumer_group", "$default")
         self.prefetch = self.config.get("prefetch", 5000)
-        self.offset_persistence = DBOffsetPersistance(config)
+        self._prepare_offset_peristance()
         self.last_offset = Offset(0)
         self.load_offset()
         self.total = 0
         self.last_sn = -1
-        self.client = None
         if not self.connection_string:
             raise Exception("No connection string specified")
         parts = parse_event_hub_connection_string(self.connection_string)
@@ -44,6 +57,13 @@ class EventClient:
         else:
             raise Exception(f"Could not parse event hub connection string: {self.connection_string}")
 
+    def __del__(self):
+        if self.client:
+            try:
+                self.client.stop()
+            except BaseException:
+                raise
+
     def load_offset(self):
         offset = self.offset_persistence.get()
         # Make sure we have valid offset
@@ -59,13 +79,6 @@ class EventClient:
             offset = Offset("0")
         self.offset_persistence.set(offset.__dict__.get("value", "0"))
         logger.info(f"Stored offset for {self.name} was {offset}")
-
-    def __del__(self):
-        if self.client:
-            try:
-                self.client.stop()
-            except BaseException:
-                raise
 
     def add_sender(self):
         try:

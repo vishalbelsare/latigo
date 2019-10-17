@@ -15,14 +15,26 @@ failure = None
 if not path.exists(filename):
     # Create a starting point for local config so that user can get quickly up
     # and running
-    local_config["LATIGO_MESSAGE"] = f"YOUR LOCAL ENV CAN NOW BE EDITED IN {filename}. RE-RUN THIS SCRIPT TO LOAD ANY CHANGES"
-    local_config["LATIGO_INTERNAL_EVENT_HUB"] = "GET YOUR EVENT_HUB CONNECTION STRING FROM AZURE PORTAL"
-    local_config["LATIGO_INTERNAL_DATABASE"] = "THE CONNECTION STRING TO DATABASE"
-    local_config["LATIGO_EXECUTOR_CONFIG_FILE"] = "THE LOCATION OF PREDICTION EXECUTOR CONFIG FILE IN YAML FORMAT"
-    local_config["LATIGO_SCHEDULER_CONFIG_FILE"] = "THE LOCATION OF PREDICTION SCHEDULER CONFIG FILE IN YAML FORMAT"
-    local_config["LATIGO_SENSOR_DATA_CONNECITON"] = "THE CONNECTION STRING FOR THE SENSOR DATA"
-    local_config["LATIGO_PREDICTION_STORAGE_CONNECITON"] = "THE CONNECTION STRING FOR THE PREDICTION STORAGE"
-    local_config["POSTGRES_PASSWORD"] = "Set a secure password for your local postgreSQL instance here"
+    # fmt: off
+    local_config={
+        "LATIGO_MESSAGE": f"YOUR LOCAL ENV CAN NOW BE EDITED IN {filename}. RE-RUN THIS SCRIPT TO LOAD ANY CHANGES",
+        "LATIGO_INTERNAL_EVENT_HUB": "GET YOUR EVENT_HUB CONNECTION STRING FROM AZURE PORTAL",
+        "LATIGO_INTERNAL_DATABASE": "THE CONNECTION STRING TO DATABASE",
+        "LATIGO_EXECUTOR_CONFIG_FILE": "THE LOCATION OF PREDICTION EXECUTOR CONFIG FILE IN YAML FORMAT",
+        "LATIGO_SCHEDULER_CONFIG_FILE": "THE LOCATION OF PREDICTION SCHEDULER CONFIG FILE IN YAML FORMAT",
+        "LATIGO_SENSOR_DATA_CONNECITON": "THE CONNECTION STRING FOR THE SENSOR DATA",
+        "LATIGO_PREDICTION_STORAGE_CONNECITON": "THE CONNECTION STRING FOR THE PREDICTION STORAGE",
+        "POSTGRES_PASSWORD": "Set a secure password for your local postgreSQL instance here",
+        "INFLUXDB_DB": "The name of the influx database",
+        "INFLUXDB_ADMIN_ENABLED": "If admin should be enabled for influx (true or false)",
+        "INFLUXDB_ADMIN_USER": "The name of the admin user for influx database",
+        "INFLUXDB_ADMIN_PASSWORD": "The psasword for the admin user in influx database",
+        "INFLUXDB_USER": "The name of the non-admin user in influx database",
+        "INFLUXDB_USER_PASSWORD": "The password for the non-admin user in influx database",
+        "GF_SECURITY_ADMIN_PASSWORD": "The admin password for grafana (username is 'admin')",
+    }
+    # fmt: on
+    
     save_yaml(filename, local_config)
 else:
     local_config, failure = load_yaml(filename)

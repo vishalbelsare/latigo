@@ -5,6 +5,9 @@ task_queue:
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     name: "scheduler_task_queue"
     do_trace: True
+    offset_persistence:
+        type: "memory"
+        name: "arnold"
 
 scheduler:
     configuration_sync_interval: "20s"

@@ -6,14 +6,14 @@ from os import environ
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.executor")
-from latigo.utils import load_yaml
+from latigo.utils import load_yaml, merge
 from latigo.executor import PredictionExecutor
 
 config_filename = environ.get("LATIGO_EXECUTOR_CONFIG_FILE", "executor_config.yaml")
 logger.info(f"Starting Latigo - Executor with configuration from {config_filename}")
 
-config, failure = load_yaml(config_filename)
-if not config:
+config_base, failure = load_yaml(config_filename)
+if not config_base:
     logger.error(f"Could not load configuration for executor from {config_filename}: {failure}")
     sys.exit(1)
 
@@ -38,8 +38,12 @@ config_secrets = {
 }
 # fmt: on
 
-config = {**config, **config_secrets}
+
+config = {}
+merge(config_base, config)
+merge(config_secrets, config)
 logger.info("Preparing Latigo - Executor")
+
 executor = PredictionExecutor(config)
 logger.info("Running Latigo - Executor")
 executor.run()

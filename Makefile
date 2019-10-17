@@ -20,7 +20,16 @@ show-env:
 postgres-permission:
 	sudo mkdir "${ROOT_DIR}/volumes/postgres" -p && sudo chown -R lroll:lroll "${ROOT_DIR}/volumes/postgres"
 
-# Rebuild latest latigo and install it to site-packages before starting tests
+rebuild-req:
+	pip install --upgrade pip
+	pip uninstall gordo-components -y
+	pip install --upgrade pip-tools
+	cd app && cat requirements.in | sort -u > r.in
+	cd app && pip-compile --output-file=requirements.txt r.in
+	cd app && cat requirements.in, test_requirements.in | sort -u > r.in
+	cd app && pip-compile --output-file=test_requirements.txt r.in
+
+# Rebuild latest latigo and install it to site-packages
 setup:
 	rm -rf app/build
 	pip uninstall -y latigo
@@ -30,13 +39,41 @@ build: postgres-permission setup code-quality tests show-env
 	docker-compose build
 
 up: build
+	# NOTE: The volumes folder must not be inside the context of any docker or the docker builds will fail!
+	sudo mkdir -p ../volumes/latigo/influxdb/data
+	sudo mkdir -p ../volumes/latigo/grafana/data
+	sudo chown 472:472 ../volumes/latigo/grafana/data
 	docker-compose up
+	docker ps -a
 
+down:
+	docker-compose down
+	docker ps -a
 
-rebuild-req:
-	pip uninstall gordo-components -y
-	pip install --upgrade pip-tools
-	cd app && cat requirements.in | sort -u > r.in
-	cd app && pip-compile --output-file=requirements.txt r.in
-	cd app && cat requirements.in, test_requirements.in | sort -u > r.in
-	cd app && pip-compile --output-file=test_requirements.txt r.in
+influxdb:
+	docker-compose up --build -d influxdb
+	docker-compose logs -f influxdb
+
+grafana:
+	docker-compose up --build -d grafana
+	docker-compose logs -f grafana
+
+postgres:
+	docker-compose up --build -d postgres
+	docker-compose logs -f postgres
+
+adminer:
+	docker-compose up --build -d adminer
+	docker-compose logs -f adminer
+
+scheduler:
+	docker-compose up --build -d latigo-scheduler
+	docker-compose logs -f latigo-scheduler
+
+executor-1:
+	docker-compose up --build -d latigo-executor-1
+	docker-compose logs -f latigo-executor-1
+
+executor-2:
+	docker-compose up --build -d latigo-executor-2
+	docker-compose logs -f latigo-executor-2

@@ -1,5 +1,7 @@
 import typing
 import random
+import logging
+import pprint
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -14,90 +16,78 @@ from latigo.sensor_data import SensorData, PredictionData
 from latigo.utils import parse_event_hub_connection_string
 from latigo.event_hub.receive import EventReceiveClient
 
+logger = logging.getLogger(__name__)
 
-class TimeSeriesPredictionForwarder(PredictionForwarder):
+
+class LatigoDataProvider(GordoBaseDataProvider):
     """
-    To be used as a 'forwarder' for the gordo prediction client
-    After instantiation, it is a coroutine which accepts prediction dataframes
-    which it will pass onto time series api via event hub
+    A GordoBaseDataset that wraps Latigo spesific data providers
     """
-
-    def __init__(self, connection_string: str, partition: typing.Optional[str] = "0", debug: bool = False, n_retries=5):
-        """
-        Create an instance which, when called, is a coroutine capable of
-        being sent dataframes generated from the '/anomaly/prediction' endpoint
-        Parameters
-        ----------
-        connection_string: str
-        Connection string for destination event hub -
-        format: Endpoint=sb://<endpoint>/;SharedAccessKeyName=<shared_access_key_name>;SharedAccessKey=<shared_access_key>;EntityPath=<entity_path>
-        (copy-pastable from azure eventhub admin panel)
-        partition: str
-        Specifies which partition into which data will be submitted using event hub API
-        debug: bool
-        Put event hub into debugging mode (traces data in log)
-        """
-        self.parts = parse_event_hub_connection_string(connection_string)
-
-
-class TimeSeriesDataProvider(GordoBaseDataProvider):
-    """
-    Get a GordoBaseDataset which returns unstructed values for X and y. Each instance
-    uses the same seed, so should be a function (same input -> same output)
-    """
-
     @capture_args
-    def __init__(self, connection_string: str, debug: bool, n_retries: int, **kwargs):
-        super().__init__(**kwargs)
-        self.connection_string = connection_string
-        self.debug = debug
-        self.min_size = 0.0
-        self.max_size = 1.0
-        self.receiver = None
-
-    # Thanks stackoverflow
-    # https://stackoverflow.com/questions/50559078/generating-random-dates-within-a-given-range-in-pandas
-    @staticmethod
-    def _random_dates(start, end, n: int = 10):
-        start = pd.to_datetime(start)
-        end = pd.to_datetime(end)
-        start_u = start.value // 10 ** 9
-        end_u = end.value // 10 ** 9
-
-        return sorted(pd.to_datetime(int(np.random.randint(int(start_u), int(end_u), n)), unit="s", utc=True))
-
-    def can_handle_tag(self, tag: SensorTag):
-        return True
+    def __init__(self, data_provider_config):
+        super().__init__()
+        self.data_provider_config=data_provider_config
+        if not self.data_provider_config:
+            raise Exception("No data_provider_config specified")
+        data_provider_type = self.data_provider_config.get("type", None)
+        self.data_provider=None
+        if "random" == data_provider_type:
+            self.data_provider = RandomDataProvider(**data_provider_config)
+        elif "influx" == data_provider_type:
+            self.data_provider = InfluxDataProvider(**data_provider_config)
+        elif "datalake" == data_provider_type:
+            self.data_provider = DataLakeProvider(**data_provider_config)
 
     def load_series(self, from_ts: datetime, to_ts: datetime, tag_list: typing.List[SensorTag], dry_run: typing.Optional[bool] = False) -> typing.Iterable[pd.Series]:
-        if dry_run:
-            raise NotImplementedError("Dry run for TimeSeriesDataProvider is not implemented")
-        self.receiver = EventReceiveClient(self.connection_string, self.debug)
-        for tag in tag_list:
-            nr = int(random.randint(int(self.min_size), int(self.max_size)))
+        if self.data_forwarder:
+            yield from self.data_forwarder.load_series(from_ts, to_ts, tag_list, dry_run)
 
-            random_index = self._random_dates(from_ts, to_ts, n=nr)
-            series = pd.Series(index=random_index, name=tag.name, data=np.random.random(size=len(random_index)))
-        yield series
+    def can_handle_tag(self, tag: SensorTag) -> bool:
+        if self.data_forwarder:
+            return self.data_forwarder.can_handle_tag(tag)
+        return False
+
+
+class LatigoPredictionForwarder(PredictionForwarder):
+    """
+    A Gordo PredictionForwarder that wraps Latigo spesific prediction forwarders
+    """
+
+    def __init__(self, prediction_forwarder_config):
+        super().__init__()
+        self.prediction_forwarder_config=prediction_forwarder_config
+        if not self.prediction_forwarder_config:
+            raise Exception("No prediction_forwarder_config specified")
+        prediction_forwarder_type = self.prediction_forwarder_config.get("type", None)
+        self.prediction_forwarder=None
+        if "random" == prediction_forwarder_type:
+            self.prediction_forwarder = RandomDataProvider(**prediction_forwarder_config)
+        elif "influx" == prediction_forwarder_type:
+            self.prediction_forwarder = InfluxDataProvider(**prediction_forwarder_config)
+        elif "datalake" == prediction_forwarder_type:
+            self.prediction_forwarder = DataLakeProvider(**prediction_forwarder_config)
+
+        self.parts = parse_event_hub_connection_string(connection_string)
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
     def __init__(self, config):
-        self.predictor_config = self.config.get("predictor", None)
-        if not self.predictor_config:
+        self.config = config
+        if not self.config:
             raise Exception("No predictor_config specified")
         # TODO: How to model gordo spesific input and output vs our clean interface?
-        timeseries_input_config = config.get("timeseries-api-input", {})
-        timeseries_output_config = config.get("timeseries-api-output", {})
-        # Augment config with some parameters
-        config["data_provider"] = TimeSeriesDataProvider(**timeseries_input_config)
-        config["prediction_forwarder"] = TimeSeriesPredictionForwarder(**timeseries_output_config)
+        self.data_provider_config = config.get("data_provider", {})
+        if not self.data_provider_config:
+            raise Exception("No data_provider_config specified")
+        self.prediction_forwarder_config = config.get("prediction_forwarder", {})
+        if not self.prediction_forwarder_config:
+            raise Exception("No prediction_forwarder_config specified")
+        # Augment config with the latigo data provider and prediction forwarders
+        self.config["data_provider"] = LatigoDataProvider(data_provider_config)
+        self.config["prediction_forwarder"] = LatigoPredictionForwarder(prediction_forwarder_config)
         self.client = Client(**config)
 
     def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
-        """
-        Train and/or run data through a given model
-        """
         result = self.client.predict(data.time_range.from_time, data.time_range.to_time)
         pd = PredictionData(name=prediction_name, time_range=data.time_range, result=result)
         return pd
