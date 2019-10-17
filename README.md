@@ -19,12 +19,17 @@ While Latigo is made to be portable and reusable for other clients, we are coars
 - Produce a prediction for the last 30 minutes for every ML model in gordo (there are roughly 9000 models)
 - Backfill predictions up to a certain amount of time for every ML model in gordo so that historical prediction can be reviewed (one-time operation at startup)
 
+
+#### Scheduler
+
 The scheduler will produce one "task description" for each prediction to be made. The task description will contain the following:
 - Timespan for prediction
 - The sensor_data tags to predict for
 - The gordo config for the prediction ("machine" to use (combination of model and parameters))
 
 The scheduler will produce these tasks according to the schedule and feed them into an event hub.
+
+#### Executor
 
 The executors will then pick tasks from the event_hub and "execute" them one by one.There may be more one executor operating concurrently.
 
@@ -140,19 +145,24 @@ cd latigo
 ls -halt | grep local
 ```
 
-Ensure that a new file called "local_config.yaml" was created
+Ensure that a new file called "local_config.yaml" was created.
+
+IMPORTANT: You must open this file and fill in the correct values. Some of the settings you need will be explained in the next sections, but you must ensure all are set up OK.
 
 ### Set up event hub
 
 Go to Azure portal and copy the connection string for your eventhub to clipboard. See screenshot for example
 
-![Event Hub Connection string](documentation/screenshots/event_hub_connection_string.png?raw=true "Event Hub Connection string")
+
+[Event Hub Connection string](documentation/screenshots/event_hub_connection_string.png?raw=true "Event Hub Connection string")
 
 ### Put event hub connection string into local config
 
 Open "local_config.yaml" in your favorite editor and make sure to paste your event hub connection string for the key "LATIGO_INTERNAL_EVENT_HUB"
 
 ### Set up environment from local_config
+
+Once your local_config is set up correctly, you can use the following steps to produce an environment from that file.
 
 ```bash
 # See that your changes in config are reflected in output
@@ -165,11 +175,11 @@ eval $(./set_env.py)
 env | grep LATIGO
 ```
 
-Now your environment is set up and docker-compose will use it to connect to correct event hub
+Now your environment is set up and docker-compose will pass this environment on to the nodes to let them function correctly
 
 ### Start docker compose
 
-You can use docker-compoes directly or you can use the Makefile. The makefile is just a convenience wrapper and will be explained after the docker-compose basics have been covered.
+You can use docker-compose directly or you can use the Makefile. Please keep in mind that the Makefile is a convenience wrapper and will be explained after the docker-compose basics have been covered.
 
 ```bash
 # Start the services
@@ -209,9 +219,9 @@ docker-compose logs --follow latigo-scheduler
 
 ### Makefile
 
-The Makefile is there mainsly as a convenience. It is recommended to see what id does for you simply by opening it in a text editor.
+NOTE: The Makefile is there mainly as a convenience. It is recommended to see what id does for you simply by opening it in a text editor.
 
-This section highlights some features.
+This section highlights some of it's convenience features.
 
 
 ```bash
@@ -248,36 +258,51 @@ make down
 make influxdb
 
 # Rebuild and restart grafana image separately, attaching to log
-make influxdb
+make grafana
 
 # Rebuild and restart postgres image separately, attaching to log
-make influxdb
+make postgres
 
 # Rebuild and restart adminer image separately, attaching to log
-make influxdb
+make adminer
 
 # Rebuild and restart scheduler image separately, attaching to log
-make influxdb
+make scheduler
 
 # Rebuild and restart executor-1 image separately, attaching to log
-make influxdb
+make executor-1
 
 # Rebuild and restart executor-2 image separately, attaching to log
-make influxdb
+make executor-2
 ```
 
 
-# Getting up with kubernetes
+## Getting up with kubernetes
 
-make sure to disable proxy as access to kubernetes goes via external network
+You will need access to Gordo cluster for Latigo to produce predicitons and there are some things you need to know about Gordo up front.
+
+- Gordo is in active development
+- At the time of writing (2019-10-17) there currently exists no Gordo in "production", however many candidate clusters are running. You will have to communicate with Gordo team to find out which of their test/dev clusters are the best to be using while testing. Some are more stable than others.
+- The way you connect to a gordo cluster is by using a port forwarding. This is NOT how the connection will be done once Gordo and Latigo are in production. At that point we will be using api gateway and a so called "bearer token" for authentication.
+
+Before you can have portforwarding set up successfully, you need to disable proxy settings (gordo is available via external network). For more information about proxy setup in Equinor please see [this link](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
+
+
+```bash
+
+unsetproxy
 
 az login
 az aks install-cli
+
+# Here gordotest28 is used as a placeholder for the actual cluster name that you will get from Gordo team
 az aks get-credentials --overwrite-existing --resource-group gordotest28 --name gordotest28 --admin
 
 
 kubectl config set-context --current --namespace=kubeflow
 kubectl get gordos
+
+```
 
 ## Requirement pinning
 
