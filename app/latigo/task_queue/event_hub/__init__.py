@@ -26,7 +26,7 @@ class EventClient:
         elif "memory" == offset_persistance_type:
             self.offset_persistence = MemoryOffsetPersistance()
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict=None):
         self.client = None
         if not config:
             raise Exception("No config specified")

@@ -21,7 +21,7 @@ model_info:
     project: ['1130-gordo-tilstandomatic']
     target: null
     host: "localhost"
-    port: "8888"
+    port: 8888
     scheme: "http"
     gordo_version: "v0"
     metadata: null
