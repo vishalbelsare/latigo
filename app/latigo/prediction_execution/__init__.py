@@ -9,42 +9,6 @@ from dataclasses import dataclass
 from latigo.sensor_data import SensorData, PredictionData
 
 
-@dataclass
-class PredictionInfo:
-    name: str
-
-
-class PredictionInformationProviderInterface:
-    def get_prediction_info(self, prediction_name: str) -> PredictionInfo:
-        """
-        return any information about a named prediction
-        """
-
-    def get_predictions(self, selector: dict):
-        """
-        return a list of predictions matching the given selector.
-        """
-
-
-class MockPredictionInformationProvider(PredictionInformationProviderInterface):
-    def get_prediction_info(self, prediction_name: str) -> PredictionInfo:
-        """
-        return any information about a named prediction
-        """
-        pi = PredictionInfo(name=prediction_name)
-        return pi
-
-    def get_predictions(self, selector: dict) -> typing.List[PredictionInfo]:
-        """
-        return a list of predictions matching the given selector.
-        """
-        predictions_list = []
-        for i in range(3):
-            pi = PredictionInfo(f"pred_{i}")
-            predictions_list.append(pi)
-        return predictions_list
-
-
 class PredictionExecutionProviderInterface:
     def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:
         """

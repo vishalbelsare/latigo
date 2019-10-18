@@ -2,7 +2,11 @@
 
 ## About
 
-Latigo is a service that follows a schedule to feed Gordo with prediction tasks and data and stores the result.
+Latigo is a service that is responsible for continuously running machine learning algorithms on a set of input sensor data to predict the next datapoint in sensor data. This is useful to do predictive maintenance of equipment.
+
+Latigo follows a schedule to produce its predictions on a set interval.
+Latigo fetches data bout which data sources and ML models to use from Gordo and also uses Gordo to generate the predictions.
+Laigo fetches the source sensor data from the timeseries API and also persists the resulting predictions back to the timeseries API.
 
 This project was based on the original prototype project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle ) and has since evolved to support other needs and technical dependencies.
 

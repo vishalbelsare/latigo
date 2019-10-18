@@ -1,17 +1,38 @@
 import traceback
 import time
 import logging
+import pprint
+import typing
 import pandas as pd
 from datetime import datetime, timedelta
 from os import environ
 from latigo.task_queue import Task, DevNullTaskQueue
 from latigo.task_queue.event_hub import EventHubTaskQueueDestionation
 from latigo.utils import Timer
+from latigo.gordo import GordoModelInfoProvider
 
 logger = logging.getLogger(__name__)
 
 
 class Scheduler:
+
+    # Inflate model info connection from config
+    def _prepare_model_info(self):
+        self.model_info_config = self.config.get("model_info", None)
+        if not self.model_info_config:
+            raise Exception("No model info config specified")
+        model_info_type = self.model_info_config.get("type", None)
+        self.model_info = None
+        self.model_filter = {}
+        if "gordo" == model_info_type:
+            self.model_info = GordoModelInfoProvider(self.model_info_config)
+            self.model_filter["project"] = self.model_info_config.get("project", [])
+        else:
+            self.model_info = DevNullModelInfo(self.model_info_config)
+        self.idle_time = datetime.now()
+        self.idle_number = 0
+        if not self.model_info:
+            raise Exception("No model info configured")
 
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
@@ -45,17 +66,22 @@ class Scheduler:
         if not config:
             raise Exception("No config specified")
         self.config = config
-        self._prepare_scheduler()
         self._prepare_task_queue()
+        self._prepare_model_info()
+        self._prepare_scheduler()
         self.task_serial = 0
+        self.models: typing.List[typing.Dict] = []
 
     def synchronize_configuration(self):
         logger.info(f"Synchronizing configuration")
+        self.models = self.model_info.get_models(self.model_filter)
+        logger.info("-GOT MODELS-")
+        logger.info(pprint.pformat(self.models))
 
     def perform_prediction_step(self):
         logger.info(f"Performing prediction step")
-        for _ in range(10):
-            task = Task(f"Task {self.task_serial} from {self.name}")
+        for model in self.models:
+            task = Task(f"Task {self.task_serial} from {self.name} for {model}")
             try:
                 self.task_queue.put_task(task)
                 self.task_serial += 1

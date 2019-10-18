@@ -26,10 +26,10 @@ prediction_data:
 
 predictor:
     type: "gordo"
-    project: "1130-gordo-tilstandomatic"
+    project: ['1130-gordo-tilstandomatic']
     target: null
     host: "localhost"
-    port: 8888
+    port: "8888"
     scheme: "http"
     gordo_version: "v0"
     metadata: null
@@ -41,13 +41,8 @@ predictor:
     ignore_unhealthy_targets: true
     n_retries: 5
     data_provider:
-        type: 
-        connection_string: str
         debug: true
         n_retries: 5
     prediction_forwarder:
-        type:
-        connection_string: str
-        partition: "0"
         debug: false
         n_retries: 5

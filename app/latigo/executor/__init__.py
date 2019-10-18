@@ -7,8 +7,8 @@ import logging
 import pprint
 from latigo.sensor_data import TimeRange, SensorData, PredictionData
 from latigo.sensor_data.sensor_data import MockSensorDataProvider
-from latigo.prediction.gordo import GordoPredictionExecutionProvider
-from latigo.prediction import MockPredictionExecutionProvider, DevNullPredictionExecutionProvider
+from latigo.gordo import GordoPredictionExecutionProvider
+from latigo.prediction_execution import MockPredictionExecutionProvider, DevNullPredictionExecutionProvider
 from latigo.prediction_storage import DevNullPredictionStorageProvider
 from latigo.task_queue import Task, DevNullTaskQueue
 from latigo.task_queue.event_hub import EventHubTaskQueueDestionation
