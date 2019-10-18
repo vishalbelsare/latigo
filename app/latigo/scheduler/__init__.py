@@ -1,25 +1,35 @@
 import traceback
-import pickle
 import time
 import logging
 import pandas as pd
-from datetime import timedelta
+from datetime import datetime, timedelta
 from os import environ
-import typing
-from latigo.event_hub.send import EventSenderClient
-from latigo.sensor_data import Task
+from latigo.task_queue import Task, DevNullTaskQueue
+from latigo.task_queue.event_hub import EventHubTaskQueueDestionation
 from latigo.utils import Timer
 
 logger = logging.getLogger(__name__)
 
 
 class Scheduler:
-    def _prepare_task_queue(self):
-        self.task_config = self.config.get("task_queue", None)
-        if not self.task_config:
-            raise Exception("No task config specified")
-        self.sender = EventSenderClient(self.task_config)
 
+    # Inflate task queue connection from config
+    def _prepare_task_queue(self):
+        self.task_queue_config = self.config.get("task_queue", None)
+        if not self.task_queue_config:
+            raise Exception("No task queue config specified")
+        task_queue_type = self.task_queue_config.get("type", None)
+        self.task_queue = None
+        if "event_hub" == task_queue_type:
+            self.task_queue = EventHubTaskQueueDestionation(self.task_queue_config)
+        else:
+            self.task_queue = DevNullTaskQueue(self.task_queue_config)
+        self.idle_time = datetime.now()
+        self.idle_number = 0
+        if not self.task_queue:
+            raise Exception("No task queue configured")
+
+    # Inflate scheduler from config
     def _prepare_scheduler(self):
         self.scheduler_config = self.config.get("scheduler", None)
         if not self.scheduler_config:
@@ -39,18 +49,6 @@ class Scheduler:
         self._prepare_task_queue()
         self.task_serial = 0
 
-    def _serialize_task(self, task: Task) -> typing.Optional[bytes]:
-        """
-        Serialize a task to bytes
-        """
-        task_bytes = None
-        try:
-            task_bytes = pickle.dumps(task)
-        except pickle.PicklingError as e:
-            logger.error(f"Could not pickle task: {e}")
-            traceback.print_exc()
-        return task_bytes
-
     def synchronize_configuration(self):
         logger.info(f"Synchronizing configuration")
 
@@ -58,17 +56,12 @@ class Scheduler:
         logger.info(f"Performing prediction step")
         for _ in range(10):
             task = Task(f"Task {self.task_serial} from {self.name}")
-            # logger.info(f"SENDING TASK: {task}")
-            # logger.info(f"Generating '{task}' for {self.__class__.__name__}")
-            task_bytes = self._serialize_task(task)
-            # logger.info(f"SENDING DATA: {pformat(task_bytes)}")
-            if task_bytes:
-                try:
-                    self.sender.send_event(task_bytes)
-                    self.task_serial += 1
-                except Exception as e:
-                    logger.error(f"Could not send task: {e}")
-                    traceback.print_exc()
+            try:
+                self.task_queue.put_task(task)
+                self.task_serial += 1
+            except Exception as e:
+                logger.error(f"Could not send task: {e}")
+                traceback.print_exc()
 
     def run(self):
         logger.info(f"Starting {self.__class__.__name__}")

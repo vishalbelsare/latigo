@@ -7,14 +7,13 @@ import pandas as pd
 from datetime import datetime
 from .. import PredictionExecutionProviderInterface
 
+from latigo.sensor_data import SensorData, PredictionData
+
 from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
 from gordo_components.client.forwarders import PredictionForwarder
 from gordo_components.client import Client
 from gordo_components.dataset.sensor_tag import SensorTag
 
-from latigo.sensor_data import SensorData, PredictionData
-from latigo.utils import parse_event_hub_connection_string
-from latigo.event_hub.receive import EventReceiveClient
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +22,15 @@ class LatigoDataProvider(GordoBaseDataProvider):
     """
     A GordoBaseDataset that wraps Latigo spesific data providers
     """
+
     @capture_args
     def __init__(self, data_provider_config):
         super().__init__()
-        self.data_provider_config=data_provider_config
+        self.data_provider_config = data_provider_config
         if not self.data_provider_config:
             raise Exception("No data_provider_config specified")
         data_provider_type = self.data_provider_config.get("type", None)
-        self.data_provider=None
+        self.data_provider = None
         if "random" == data_provider_type:
             self.data_provider = RandomDataProvider(**data_provider_config)
         elif "influx" == data_provider_type:
@@ -55,19 +55,17 @@ class LatigoPredictionForwarder(PredictionForwarder):
 
     def __init__(self, prediction_forwarder_config):
         super().__init__()
-        self.prediction_forwarder_config=prediction_forwarder_config
+        self.prediction_forwarder_config = prediction_forwarder_config
         if not self.prediction_forwarder_config:
             raise Exception("No prediction_forwarder_config specified")
         prediction_forwarder_type = self.prediction_forwarder_config.get("type", None)
-        self.prediction_forwarder=None
+        self.prediction_forwarder = None
         if "random" == prediction_forwarder_type:
             self.prediction_forwarder = RandomDataProvider(**prediction_forwarder_config)
         elif "influx" == prediction_forwarder_type:
             self.prediction_forwarder = InfluxDataProvider(**prediction_forwarder_config)
         elif "datalake" == prediction_forwarder_type:
             self.prediction_forwarder = DataLakeProvider(**prediction_forwarder_config)
-
-        self.parts = parse_event_hub_connection_string(connection_string)
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
@@ -83,8 +81,8 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         if not self.prediction_forwarder_config:
             raise Exception("No prediction_forwarder_config specified")
         # Augment config with the latigo data provider and prediction forwarders
-        self.config["data_provider"] = LatigoDataProvider(data_provider_config)
-        self.config["prediction_forwarder"] = LatigoPredictionForwarder(prediction_forwarder_config)
+        self.config["data_provider"] = LatigoDataProvider(self.data_provider_config)
+        self.config["prediction_forwarder"] = LatigoPredictionForwarder(self.prediction_forwarder_config)
         self.client = Client(**config)
 
     def execute_prediction(self, prediction_name: str, data: SensorData) -> PredictionData:

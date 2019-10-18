@@ -1,6 +1,6 @@
 from os import environ
 import logging
-from latigo.event_hub.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
+from latigo.task_queue.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
 from azure.eventhub import Offset
 
 logger=logging.getLogger(__name__)

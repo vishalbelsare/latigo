@@ -187,10 +187,16 @@ You can use docker-compose directly or you can use the Makefile. Please keep in 
 docker-compose up
 ```
 
-At this point you should see 3 services running:
-- scheduler
-- executor 1
-- executor 2
+At this point you should see the services running:
+
+- influxdb
+- adminer
+- postgres
+- grafana
+- latigo-executor-2
+- latigo-scheduler
+- latigo-executor-1
+
 
 ### Rebuilding services
 

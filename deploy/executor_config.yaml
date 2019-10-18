@@ -2,10 +2,14 @@ db:
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
 
 task_queue:
+    type: "event_hub"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     name: "executor_task_queue"
     do_trace: True
-
+    offset_persistence:
+        type: "memory"
+        name: "arnold"
+    
 sensor_data:
     type: "timeseries_api"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
@@ -37,10 +41,12 @@ predictor:
     ignore_unhealthy_targets: true
     n_retries: 5
     data_provider:
+        type: 
         connection_string: str
         debug: true
         n_retries: 5
     prediction_forwarder:
+        type:
         connection_string: str
         partition: "0"
         debug: false

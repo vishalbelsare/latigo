@@ -2,22 +2,40 @@ from datetime import datetime
 import time
 import traceback
 from os import environ
-import pickle
 import typing
 import logging
 import pprint
-from latigo.sensor_data import Task, TimeRange, SensorData, PredictionData
+from latigo.sensor_data import TimeRange, SensorData, PredictionData
 from latigo.sensor_data.sensor_data import MockSensorDataProvider
 from latigo.prediction.gordo import GordoPredictionExecutionProvider
 from latigo.prediction import MockPredictionExecutionProvider, DevNullPredictionExecutionProvider
 from latigo.prediction_storage import DevNullPredictionStorageProvider
-from latigo.event_hub.receive import EventReceiveClient, EventConsumerClient
+from latigo.task_queue import Task, DevNullTaskQueue
+from latigo.task_queue.event_hub import EventHubTaskQueueDestionation
 
 
 logger = logging.getLogger(__name__)
 
 
 class PredictionExecutor:
+
+    # Inflate task queue connection from config
+    def _prepare_task_queue(self):
+        self.task_queue_config = self.config.get("task_queue", None)
+        if not self.task_queue_config:
+            raise Exception("No task queue config specified")
+        task_queue_type = self.task_queue_config.get("type", None)
+        self.task_queue = None
+        if "event_hub" == task_queue_type:
+            self.task_queue = EventHubTaskQueueDestionation(self.task_queue_config)
+        else:
+            self.task_queue = DevNullTaskQueue(self.task_queue_config)
+        self.idle_time = datetime.now()
+        self.idle_number = 0
+        if not self.task_queue:
+            raise Exception("No task queue configured")
+
+    # Inflate sensor data provider from config
     def _prepare_predictor(self):
         self.predictor_config = self.config.get("predictor", None)
         if not self.predictor_config:
@@ -26,69 +44,62 @@ class PredictionExecutor:
         self.name = self.predictor_config.get("name", "executor")
         self.predictor = None
         if "gordo" == predictor_type:
-            self.predictor = GordoPredictionExecutionProvider(self.predictor_config)
+            self.predictor = GordoPredictionExecutionProvider(self.sensor_data, self.prediction_storage, self.predictor_config)
         elif "mock" == predictor_type:
-            self.predictor = MockPredictionExecutionProvider()
-        elif "null" == predictor_type:
-            self.predictor = DevNullPredictionExecutionProvider()
+            self.predictor = MockPredictionExecutionProvider(self.sensor_data, self.prediction_storage, self.predictor_config)
+        else:
+            self.predictor = DevNullPredictionExecutionProvider(self.sensor_data, self.prediction_storage, self.predictor_config)
+        if not self.predictor:
+            raise Exception("No predictor configured, cannot continue...")
 
+    # Inflate prediction storage provider from config
     def _prepare_sensor_data(self):
-        pass
+        self.sensor_data_config = self.config.get("sensor_data", None)
+        if not self.sensor_data_config:
+            raise Exception("No sensor_data_config specified")
+        sensor_data_type = self.sensor_data_config.get("type", None)
+        self.sensor_data = None
+        if "influx" == sensor_data_type:
+            self.predictor = InfluxSensorDataProvider(self.sensor_data_config)
+        else:
+            self.predictor = DevNullSensorDataProvider(self.sensor_data_config)
+        if not self.sensor_data:
+            raise Exception("No sensor data configured, cannot continue...")
+
+    # Inflate prediction provider from config
+    def _prepare_prediction_storage(self):
+        self.prediction_storage_config = self.config.get("prediction_storage", None)
+        if not self.prediction_storage_config:
+            raise Exception("No prediction_storage_config specified")
+        prediction_storage_type = self.prediction_storage_config.get("type", None)
+        self.prediction_storage = None
+        if "influx" == prediction_storage_type:
+            self.predictor = InfluxPredictionStorageProvider(self.prediction_storage_config)
+        else:
+            self.predictor = DevNullPredictionStorageProvider(self.prediction_storage_config)
+        if not self.prediction_storage:
+            raise Exception("No prediction storage configured, cannot continue...")
 
     def __init__(self, config: dict):
         if not config:
             raise Exception("No config specified")
         self.config = config
-        self.do_async = self.config.get("do_async", False)
+        # Make sure we have task queue
+        self._prepare_task_queue()
+        # Make sure we have input sensor data
+        self._prepare_sensor_data()
+        # Make sure we have output prediction storage
+        self._prepare_prediction_storage()
+        # Create the predictor
         self._prepare_predictor()
-        if not self.predictor:
-            raise Exception("No predictor configured, cannot continue...")
-        self.in_connection_string = environ.get("LATIGO_INTERNAL_EVENT_HUB", None)
-        print(f"PRED EXEC CON STR: {self.in_connection_string}")
-        if not self.in_connection_string:
-            raise Exception("No connection string specified for internal event hub. Please set environment variable LATIGO_INTERNAL_EVENT_HUB to valid connection string")
-        self.sensor_data_provider = MockSensorDataProvider()
-        connection_string = environ.get("LATIGO_INTERNAL_DATABASE", None)
-
-        self.out_storage = DevNullPredictionStorageProvider(True)
-        self.debug = False
-        if not self.sensor_data_provider:
-            raise Exception("No sensor data provider configured, cannot continue...")
-        if not self.out_storage:
-            raise Exception("No prediction store configured, cannot continue...")
-        self.receiver = None
-        self.consumer = None
-        self.idle_time = datetime.now()
-        self.idle_number = 0
-        if self.do_async:
-            self.consumer = EventConsumerClient(self.name, self.in_connection_string, self.debug)
-        else:
-            self.receiver = EventReceiveClient(self.name, self.in_connection_string, self.debug)
-        if not self.receiver or not self.consumer:
-            raise Exception("No task receiver or consumer configured")
-
-    def _deserialize_task(self, task_bytes) -> typing.Optional[Task]:
-        """
-        Deserialize a task from bytes
-        """
-        task = None
-        try:
-            task = pickle.loads(task_bytes)
-        except pickle.UnpicklingError as e:
-            logger.error(f"Could not unpickle task of size {len(task_bytes)}bytes: {e}")
-            traceback.print_exc()
-        return task
 
     def _fetch_task(self) -> typing.Optional[Task]:
         """
         The task describes what the executor is supposed to do. This internal helper fetches one task from event hub
         """
-        if not self.receiver:
-            raise Exception("No task receiver configured")
         task = None
         try:
-            task_bytes = self.receiver.receive_event_with_backoff()
-            task = self._deserialize_task(task_bytes)
+            task = self.task_queue.get_task()
         except Exception as e:
             logger.error(f"Could not fetch task: {e}")
             traceback.print_exc()
@@ -101,7 +112,7 @@ class PredictionExecutor:
         sensor_data = None
         try:
             time_range = TimeRange(task.from_time, task.to_time)
-            self.sensor_data_provider.get_data_for_range(time_range)
+            self.sensor_data.get_data_for_range(time_range)
         except Exception as e:
             logger.error(f"Could not fetch sensor data for task {task}: {e}")
             traceback.print_exc()
@@ -124,7 +135,7 @@ class PredictionExecutor:
         Prediction data represents the result of performing predictions on sensor data. This internal helper stores one bulk of prediction data to the store
         """
         try:
-            self.out_storage.put_predictions(prediction_data)
+            self.prediction_storage.put_predictions(prediction_data)
         except Exception as e:
             logger.error(f"Could not store prediction data for task {task}: {e}")
             traceback.print_exc()

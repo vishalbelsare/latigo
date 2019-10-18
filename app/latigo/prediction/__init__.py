@@ -7,8 +7,6 @@ from pprint import pprint
 from dataclasses import dataclass
 
 from latigo.sensor_data import SensorData, PredictionData
-from latigo.utils import parse_event_hub_connection_string
-from latigo.event_hub.receive import EventReceiveClient
 
 
 @dataclass

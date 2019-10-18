@@ -1,11 +1,13 @@
 import logging
+import time
+import asyncio
 
 from azure.eventhub.client import EventHubClient
 from azure.eventhub import EventData, Offset
 
 from latigo.utils import parse_event_hub_connection_string
-
-from latigo.event_hub.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
+from latigo.task_queue import Task, TaskQueueSourceInterface, TaskQueueDestinationInterface
+from latigo.task_queue.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
 
 logger = logging.getLogger(__name__)
 
@@ -129,3 +131,29 @@ class EventClient:
                 return next(event_data.body)
         except BaseException:
             raise
+
+
+class EventHubTaskQueueDestionation(EventClient, TaskQueueDestinationInterface):
+    def __init__(self, config: dict):
+        super().__init__(config)
+        self.sender = self.add_sender()
+        self.run()
+
+    def put_task(self, task: Task):
+        self.send_event(task)
+
+
+class EventHubTaskQueueSource(EventClient, TaskQueueSourceInterface):
+    def __init__(self, config: dict):
+        super().__init__(config)
+        self.receiver = self.add_receiver()
+        self.run()
+
+    def receive_event_with_backoff(self, timeout=100, backoff=1000):
+        event_data = self.receive_event(timeout)
+        if not event_data:
+            time.sleep(backoff)
+        return event_data
+
+    def get_task(self) -> Task:
+        return self.receive_event_with_backoff()

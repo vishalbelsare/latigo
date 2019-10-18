@@ -5,13 +5,6 @@ import typing
 
 
 @dataclass
-class Task:
-    name: str
-    from_time: datetime = datetime.now() - +timedelta(0, 20)
-    to_time: datetime = datetime.now()
-
-
-@dataclass
 class TimeRange:
 
     from_time: datetime
