@@ -329,29 +329,27 @@ az account set --subscription "019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
 
 # Make sure the correct one is set
 az account show
-
-# NOTE: We used "Data Science POC - Non production" in this example which is the correct one to use at the time of writing (2019-10-21.
 ```
+*NOTE: We used "Data Science POC - Non production" in this example which is the correct one to use at the time of writing (2019-10-21).*
 
 ### Install azure AKS tools
 ```bash
 # If you don't have aks tools such as kubectl and other commands, install it like this:
 az aks install-cli
-
-# NOTE: You only need to do this once
 ```
+*NOTE: You only need to do this once*
+
+
 ### Select cluster
 ```bash
 # Now we can tell aks to focus on one particular cluster
 az aks get-credentials --overwrite-existing --resource-group gordotest28 --name gordotest28 --admin
-
-# NOTE: Here we used "gordotest28" as a placeholder for the actual cluster name that you will get from Gordo team (it may change dayly/weekly what cluster that is usable)
 ```
+*NOTE: Here we used "gordotest28" as a placeholder for the actual cluster name that you will get from Gordo team (it may change dayly/weekly what cluster that is usable)*
 
 ### Select context
+Now that we have selected which cluster to work with we can start sending commands to it with kubectl
 ```bash
-# Now that we have selected which cluster to work with we can start sending commands to it with kubectl
-
 # Set the kubernetes context with namespace
 kubectl config set-context --current --namespace=kubeflow
 ```
@@ -366,17 +364,16 @@ kubectl get gordos
 ```bash
 # Now we set up port forwarding so that our project can talk to the cluster
 kubectl port-forward svc/ambassador -n ambassador 8080:80
-
-# NOTE: Here 8080 is the port you want to use locally. Feel free to use whatever port is convenient for you
-
-# To verify that the connection works, you could open the URL for a Gordo project in the browser:
-xdg-open http://localhost:8080/gordo/v0/ioc-1130/
-
-# NOTE: Please make sure to use correct port and project name. We used 8080 and ioc-1130 in the example.
 ```
+*NOTE: Here 8080 is the port you want to use locally. Feel free to use whatever port is convenient for you.*
+
+*To verify that the connection works, you could open the URL for a Gordo project in the browser:*
+```bash
+xdg-open http://localhost:8080/gordo/v0/ioc-1130/
+```
+*NOTE: Please make sure to use correct port and project name. We used 8080 and ioc-1130 in the example.*
 
 Now you should see a browser full of metadata in json signaling that you are now ready to connect to cluster from code!
-
 
 ## Requirement pinning
 
