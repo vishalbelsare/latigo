@@ -2,13 +2,16 @@
 
 ## About
 
-Latigo is a service that is responsible for continuously running machine learning algorithms on a set of input sensor data to predict the next datapoint in sensor data. This is useful to do predictive maintenance of equipment.
+Latigo is a service that is responsible for continuously running machine learning algorithms on a set of input sensor data to predict the next datapoint in sensor data. This is useful to do predictive maintenance for production equipment.
 
-Latigo follows a schedule to produce its predictions on a set interval.
-Latigo fetches data bout which data sources and ML models to use from Gordo and also uses Gordo to generate the predictions.
-Laigo fetches the source sensor data from the timeseries API and also persists the resulting predictions back to the timeseries API.
+The basic operation followsa the following steps:
+- Follow a predefined schedule to determine when prediction should occur.
+- Fetches meta data about which data sources and ML models to use from Gordo.
+- Fetches the source sensor data from the timeseries API.
+- Uses Gordo to generate the predictions.
+- Persists the resulting predictions back to the timeseries API.
 
-This project was based on the original prototype project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle ) and has since evolved to support other needs and technical dependencies.
+This project has been based on the original prototype project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle ) and has since evolved to support other needs and technical dependencies.
 
 ## Architecture
 
@@ -20,8 +23,8 @@ Latigo is a distributed application with two nodes:
 
 While Latigo is made to be portable and reusable for other clients, we are coarsly following the needs of IOC right now since that is where it will be used first. IOC has the following requirement:
 
-- Produce a prediction for the last 30 minutes for every ML model in gordo (there are roughly 9000 models)
-- Backfill predictions up to a certain amount of time for every ML model in gordo so that historical prediction can be reviewed (one-time operation at startup)
+- Produce a prediction for the last 30 minutes for every ML model in Gordo (there are roughly 9000 models)
+- Backfill predictions up to a certain amount of time for every ML model in Gordo so that historical prediction can be reviewed (one-time operation at startup)
 
 
 #### Scheduler
@@ -29,7 +32,7 @@ While Latigo is made to be portable and reusable for other clients, we are coars
 The scheduler will produce one "task description" for each prediction to be made. The task description will contain the following:
 - Timespan for prediction
 - The sensor_data tags to predict for
-- The gordo config for the prediction ("machine" to use (combination of model and parameters))
+- The Gordo config for the prediction (which "Gordo machine" to use)
 
 The scheduler will produce these tasks according to the schedule and feed them into an event hub.
 
@@ -40,8 +43,8 @@ The executors will then pick tasks from the event_hub and "execute" them one by 
 For each tasks the executors will do as follows:
 - Read one tasks description
 - Find and download the data required for the prediction
-- Send the data to gordo and produce a prediction
-- Download the prediction result from gordo
+- Send the data to Gordo and produce a prediction
+- Download the prediction result from Gordo
 - Find and upload the prediction result to the data sink that is supposed to store the result.
 
 
@@ -180,6 +183,7 @@ eval $(./set_env.py)
 env | grep LATIGO
 ```
 
+
 Now your environment is set up and docker-compose will pass this environment on to the nodes to let them function correctly
 
 ### Start docker compose
@@ -294,26 +298,60 @@ You will need access to Gordo cluster for Latigo to produce predicitons and ther
 
 - Gordo is in active development
 - At the time of writing (2019-10-17) there currently exists no Gordo in "production", however many candidate clusters are running. You will have to communicate with Gordo team to find out which of their test/dev clusters are the best to be using while testing. Some are more stable than others.
-- The way you connect to a gordo cluster is by using a port forwarding. This is NOT how the connection will be done once Gordo and Latigo are in production. At that point we will be using api gateway and a so called "bearer token" for authentication.
+- The way you connect to a Gordo cluster is by using a port forwarding. This is NOT how the connection will be done once Gordo and Latigo are in production. At that point we will be using api gateway and a so called "bearer token" for authentication.
 
-Before you can have portforwarding set up successfully, you need to disable proxy settings (gordo is available via external network). For more information about proxy setup in Equinor please see [this link](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
+Before you can have portforwarding set up successfully, you need to disable proxy settings (Gordo is available via external network). For more information about proxy setup in Equinor please see [this link](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
 
 
 ```bash
-
+# Disable proxy (see above)
 unsetproxy
 
+# Log in to azure
 az login
+
+# NOTE: At this point you should see a list of subscriptions that you have access to in the terminal. Make sure you see the subscription(s) you expect to be working with!
+
+# If you need to see the list of subscriptions again you can use the command:
+az account list
+
+# Now select active subscription.
+az account set --subscription "019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
+
+# Make sure the correct one is set
+az account show
+
+# NOTE: We used "Data Science POC - Non production" in this example which is the correct one to use at the time of writing (2019-10-21.
+
+# If you don't have aks tools such as kubectl and other commands, install it like this:
 az aks install-cli
 
-# Here gordotest28 is used as a placeholder for the actual cluster name that you will get from Gordo team
+# Now we can tell aks to focus on one particular cluster
 az aks get-credentials --overwrite-existing --resource-group gordotest28 --name gordotest28 --admin
 
+# NOTE: Here we used "gordotest28" as a placeholder for the actual cluster name that you will get from Gordo team (it may change dayly/weekly what cluster that is usable)
 
+# Now that we have selected which cluster to work with we can start sending commands to it with kubectl
+
+# Set the kubernetes context with namespace
 kubectl config set-context --current --namespace=kubeflow
+
+# Now we can list all the "Gordo projects" running in this cluster
 kubectl get gordos
 
+# Now we set up port forwarding so that our project can talk to the cluster
+kubectl port-forward svc/ambassador -n ambassador 8080:80
+
+# NOTE: Here 8080 is the port you want to use locally. Feel free to use whatever port is convenient for you
+
+# To verify that the connection works, you could open the URL for a Gordo project in the browser:
+xdg-open http://localhost:8080/gordo/v0/ioc-1130/
+
+# NOTE: Please make sure to use correct port and project name. We used 8080 and ioc-1130 in the example.
+
+# Now you should see a browser full of metadata in json signaling that you are now ready to connect to cluster from code!
 ```
+
 
 ## Requirement pinning
 
@@ -325,5 +363,3 @@ make rebuild-req
 ```
 
 NOTE: Both requirements.in and requirements.txt are kept in git
-
-
