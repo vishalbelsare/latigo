@@ -292,27 +292,36 @@ make executor-2
 ```
 
 
-## Getting up with kubernetes
+## Connecting to Gordo
 
-You will need access to Gordo cluster for Latigo to produce predicitons and there are some things you need to know about Gordo up front.
+### About Gordo
+Gordo is the actual prediction engine that Latigo will lean on to get work done. Gordo is a kubernetes cluster, and you will need access to this cluster for Latigo to be usefull.
+
+There are some things you need to know about Gordo up front:
 
 - Gordo is in active development
 - At the time of writing (2019-10-17) there currently exists no Gordo in "production", however many candidate clusters are running. You will have to communicate with Gordo team to find out which of their test/dev clusters are the best to be using while testing. Some are more stable than others.
-- The way you connect to a Gordo cluster is by using a port forwarding. This is NOT how the connection will be done once Gordo and Latigo are in production. At that point we will be using api gateway and a so called "bearer token" for authentication.
+- The way you connect to a Gordo cluster in development is by using a port forwarding. This is not how the connection will be done once Gordo and Latigo are in production. At that point we will be using api gateway and a so called "bearer token" for authentication.
 
+### Disable proxy
 Before you can have portforwarding set up successfully, you need to disable proxy settings (Gordo is available via external network). For more information about proxy setup in Equinor please see [this link](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
 
+```bash
+# Disable proxy
+unsetproxy
+```
+
+### Log in to azure
 
 ```bash
-# Disable proxy (see above)
-unsetproxy
-
-# Log in to azure
 az login
 
 # NOTE: At this point you should see a list of subscriptions that you have access to in the terminal. Make sure you see the subscription(s) you expect to be working with!
+```
 
-# If you need to see the list of subscriptions again you can use the command:
+### Select active subscription
+```bash
+# To see the list of available subscriptions you can use the command:
 az account list
 
 # Now select active subscription.
@@ -322,23 +331,39 @@ az account set --subscription "019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
 az account show
 
 # NOTE: We used "Data Science POC - Non production" in this example which is the correct one to use at the time of writing (2019-10-21.
+```
 
+### Install azure AKS tools
+```bash
 # If you don't have aks tools such as kubectl and other commands, install it like this:
 az aks install-cli
 
+# NOTE: You only need to do this once
+```
+### Select cluster
+```bash
 # Now we can tell aks to focus on one particular cluster
 az aks get-credentials --overwrite-existing --resource-group gordotest28 --name gordotest28 --admin
 
 # NOTE: Here we used "gordotest28" as a placeholder for the actual cluster name that you will get from Gordo team (it may change dayly/weekly what cluster that is usable)
+```
 
+### Select context
+```bash
 # Now that we have selected which cluster to work with we can start sending commands to it with kubectl
 
 # Set the kubernetes context with namespace
 kubectl config set-context --current --namespace=kubeflow
+```
 
+### List Gordo projects
+```bash
 # Now we can list all the "Gordo projects" running in this cluster
 kubectl get gordos
+```
 
+### Set up port forwarding to Gordo cluster
+```bash
 # Now we set up port forwarding so that our project can talk to the cluster
 kubectl port-forward svc/ambassador -n ambassador 8080:80
 
@@ -348,9 +373,9 @@ kubectl port-forward svc/ambassador -n ambassador 8080:80
 xdg-open http://localhost:8080/gordo/v0/ioc-1130/
 
 # NOTE: Please make sure to use correct port and project name. We used 8080 and ioc-1130 in the example.
-
-# Now you should see a browser full of metadata in json signaling that you are now ready to connect to cluster from code!
 ```
+
+Now you should see a browser full of metadata in json signaling that you are now ready to connect to cluster from code!
 
 
 ## Requirement pinning
