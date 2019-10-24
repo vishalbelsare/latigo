@@ -71,15 +71,15 @@ adminer:
 	docker-compose up --build -d adminer
 	docker-compose logs -f adminer
 
-scheduler:
+scheduler: build
 	docker-compose up --build -d latigo-scheduler
 	docker-compose logs -f latigo-scheduler
 
-executor-1:
+executor-1: build
 	docker-compose up --build -d latigo-executor-1
 	docker-compose logs -f latigo-executor-1
 
-executor-2:
+executor-2: build
 	docker-compose up --build -d latigo-executor-2
 	docker-compose logs -f latigo-executor-2
 

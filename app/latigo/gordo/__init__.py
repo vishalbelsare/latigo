@@ -11,7 +11,7 @@ from latigo.prediction_execution import PredictionExecutionProviderInterface
 
 from latigo.sensor_data import SensorData, PredictionData
 from latigo.model_info import ModelInfoProviderInterface
-import latigo.gordo.auth
+from latigo.gordo.auth import create_auth_session
 from latigo.gordo.client import Client
 
 # from gordo_components.client import Client
@@ -19,23 +19,8 @@ from gordo_components.data_provider.base import GordoBaseDataProvider, capture_a
 from gordo_components.client.forwarders import PredictionForwarder
 from gordo_components.dataset.sensor_tag import SensorTag
 
-from requests_oauthlib import OAuth2Session
-from oauthlib.oauth2 import BackendApplicationClient
-
-
-## AADTokenCredentials for multi-factor authentication
-from msrestazure.azure_active_directory import AADTokenCredentials
-
-## Required for Azure Data Lake Analytics job management
-from azure.mgmt.datalake.analytics.job import DataLakeAnalyticsJobManagementClient
-from azure.mgmt.datalake.analytics.job.models import JobInformation, JobState, USqlJobProperties
-
-## Other required imports
-import adal, uuid, time
-
 
 logger = logging.getLogger(__name__)
-
 
 gordo_client_instances_by_hash: dict = {}
 gordo_client_instances_by_project: dict = {}
@@ -112,41 +97,6 @@ def clean_gordo_client_args(raw: dict):
     return args
 
 
-def fetch_access_token(auth_config: dict):
-    client_id = auth_config.get("client_id")
-    client_secret = auth_config.get("client_secret")
-    authority_host_url = auth_config.get("authority_host_url")
-    tenant = auth_config.get("tenant")
-    authority_host_uri = "https://login.microsoftonline.com"
-    authority_uri = f"{authority_host_url}/{tenant}"
-    resource_uri = "https://management.core.windows.net/"
-    context = adal.AuthenticationContext(authority_uri, api_version=None)
-    mgmt_token = context.acquire_token_with_client_credentials(resource_uri, client_id, client_secret) or {}
-    logger.info("fetch_access_token:")
-    oathlib_token = {"access_token": mgmt_token.get("accessToken", ""), "refresh_token": mgmt_token.get("refreshToken", ""), "token_type": mgmt_token.get("tokenType", "Bearer"), "expires_in": mgmt_token.get("expiresIn", 0)}
-    logger.info(pprint.pformat(mgmt_token))
-    return oathlib_token
-
-
-def token_saver(token):
-    logger.info("TOKEN SAVER SAVING:")
-    logger.info(pprint.pformat(token))
-    # TODO: Find out if we really need this
-
-
-def create_auth_session(auth_config: dict):
-    client_id = auth_config.get("client_id")
-    client_secret = auth_config.get("client_secret")
-    authority_host_url = auth_config.get("authority_host_url")
-    tenant = auth_config.get("tenant")
-    token_url = f"{authority_host_url}/{tenant}"
-    extra = {"client_id": client_id, "client_secret": client_secret}
-    refresh_url = "https://login.microsoftonline.com"
-    token = fetch_access_token(auth_config)
-    session = OAuth2Session(auth_config.get("client_id"), token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
-    return session
-
-
 def get_auth_session(auth_config: dict):
     global gordo_client_auth_session
     if not gordo_client_auth_session:
@@ -214,7 +164,6 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         self.auth_config = self.config.get("auth")
         if not self.auth_config:
             raise Exception("No auth_config specified")
-        # self.bearer_token = auth.get_bearer_token(self.auth_config)
 
     def __init__(self, config):
         self.config = config
