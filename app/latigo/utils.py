@@ -3,7 +3,7 @@ import pprint
 import logging
 from datetime import datetime, timedelta
 import asyncio
-from typing import Optional
+import typing
 import yaml
 
 
@@ -66,12 +66,40 @@ def parse_event_hub_connection_string(connection_string: str):
         return match.groupdict()
 
 
+def parse_gordo_connection_string(connection_string: str):
+    logger.info(f"PARSING GORDO CONNECTION STRING; {connection_string}")
+    from urllib.parse import urlparse
+
+    if not connection_string:
+        return None
+    # Rely on url_parse instead of regex for robustness while parsing url
+    parts = urlparse(connection_string)
+    regex = r"/gordo/(?P<gordo_version>v[0-9]*)/"
+    matches = list(re.finditer(regex, parts.path))
+    if len(matches) > 0:
+        match = matches[0]
+        data: typing.Dict[str, typing.Any] = match.groupdict()
+        scheme = parts.scheme
+        data["scheme"] = scheme
+        data["host"] = parts.hostname
+        # Since port is optional, we provide defaults based on scheme
+        if parts.port:
+            data["port"] = int(parts.port)
+        else:
+            data["port"] = 443 if scheme == "https" else 80
+        logger.info(f"PARSED GORDO CONNECTION STRING: {connection_string}, INTO:")
+        logger.info(f"{data}")
+        logger.info(pprint.pformat(data))
+
+        return data
+
+
 class Timer:
     def __init__(self, trigger_interval: timedelta):
         self.trigger_interval = trigger_interval
-        self.start_time: Optional[datetime] = None
+        self.start_time: typing.Optional[datetime] = None
 
-    def start(self, start_time: Optional[datetime] = None):
+    def start(self, start_time: typing.Optional[datetime] = None):
         if start_time:
             self.start_time = start_time
         else:
@@ -80,7 +108,7 @@ class Timer:
     def stop(self):
         self.start_time = None
 
-    def interval(self) -> Optional[timedelta]:
+    def interval(self) -> typing.Optional[timedelta]:
         if not self.start_time:
             return None
         return datetime.now() - self.start_time

@@ -35,7 +35,7 @@ setup(
     long_description=read("README.md"),
     install_requires=read_requirements("requirements.in"),  # Allow flexible deps for install
     tests_require=read_requirements("test_requirements.txt"),
-    python_requires=">=3.7.4",
+    python_requires="~=3.7.4",
     # From https://pypi.org/pypi?%3Aaction=list_classifiers
     classifiers=["Development Status :: 3 - Alpha", "Intended Audience :: Developers", "Intended Audience :: Other Audience", "Topic :: Utilities", "License :: OSI Approved :: GNU Affero General Public License v3", "Natural Language :: English", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3.7", "Topic :: Other/Nonlisted Topic"],
 )

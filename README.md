@@ -234,63 +234,11 @@ docker-compose logs --follow latigo-scheduler
 
 ### Makefile
 
-NOTE: The Makefile is there mainly as a convenience. It is recommended to see what id does for you simply by opening it in a text editor.
-
-This section highlights some of it's convenience features.
-
+There is a makefile in the project that is meant as a convenience to save time, and also as a reference for commands. To see the commands, simply open it in a text editor. The Makefile is selfdocumenting, to see what it contains, simply invoke it without a target like so:
 
 ```bash
-
-
-# Run code quality tools
-make code-quality
-
-# Run all tests
-make tests
-
-# Show the variables related to latigo in the current environment
-make show-env
-
-# Set up permissions of the postgres docker image's volume (necessary nuisance)
-make postgres-permission
-
-# Rebuild pinned versions in requirements.txt and test_requirements.txt from requirements.in and test_requirements.in respectively
-make rebuild-req
-
-# Build latigo pip package
-make setup
-
-# Build docker images
-make build
-
-# Build incrementally, test and run all from scratch (this is default action when you don't specify a target to the make command)
-make up
-
-# Shutdown docker images
-make down
-
-# Rebuild and restart influx image separately, attaching to log
-make influxdb
-
-# Rebuild and restart grafana image separately, attaching to log
-make grafana
-
-# Rebuild and restart postgres image separately, attaching to log
-make postgres
-
-# Rebuild and restart adminer image separately, attaching to log
-make adminer
-
-# Rebuild and restart scheduler image separately, attaching to log
-make scheduler
-
-# Rebuild and restart executor-1 image separately, attaching to log
-make executor-1
-
-# Rebuild and restart executor-2 image separately, attaching to log
-make executor-2
+make
 ```
-
 
 ## Connecting to Gordo
 
@@ -315,9 +263,8 @@ unsetproxy
 
 ```bash
 az login
-
-# NOTE: At this point you should see a list of subscriptions that you have access to in the terminal. Make sure you see the subscription(s) you expect to be working with!
 ```
+*NOTE: At this point you should see a list of subscriptions that you have access to in the terminal. Make sure you see the subscription(s) you expect to be working with!*
 
 ### Select active subscription
 ```bash
@@ -345,7 +292,7 @@ az aks install-cli
 # Now we can tell aks to focus on one particular cluster
 az aks get-credentials --overwrite-existing --resource-group gordotest28 --name gordotest28 --admin
 ```
-*NOTE: Here we used "gordotest28" as a placeholder for the actual cluster name that you will get from Gordo team (it may change dayly/weekly what cluster that is usable)*
+*NOTE: Here we used "gordotest28" as a placeholder for the actual cluster name that you will use. Please ask Gordo team which cluster that is recommende for use*
 
 ### Select context
 Now that we have selected which cluster to work with we can start sending commands to it with kubectl
@@ -362,18 +309,25 @@ kubectl get gordos
 
 ### Set up port forwarding to Gordo cluster
 ```bash
-# Now we set up port forwarding so that our project can talk to the cluster
+# Now we set up port forwarding so that our code can talk to the cluster
 kubectl port-forward svc/ambassador -n ambassador 8080:80
 ```
 *NOTE: Here 8080 is the port you want to use locally. Feel free to use whatever port is convenient for you.*
+To terminate the port forwarding simply stop the process with <ctrl>+<C>.
+
+*NOTE: The port forwarding can be flaky and will likely quit at random. To overcome the frustration, you can use the command below:*
+```bash
+# Put portforwarding in infinite loop so it is restarted whenever it go down unexpectedly
+make port-forward
+```
 
 *To verify that the connection works, you could open the URL for a Gordo project in the browser:*
 ```bash
 xdg-open http://localhost:8080/gordo/v0/ioc-1130/
 ```
-*NOTE: Please make sure to use correct port and project name. We used 8080 and ioc-1130 in the example.*
+*NOTE: Please make sure to use correct port and project name. We used "8080" and "ioc-1130" as placeholders in the example.*
 
-Now you should see a browser full of metadata in json signaling that you are now ready to connect to cluster from code!
+🍰 Now you should see a browser full of metadata in json format signaling that you are now ready to connect to cluster from code!
 
 ## Requirement pinning
 

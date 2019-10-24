@@ -18,15 +18,10 @@ scheduler:
 
 model_info:
     type: "gordo"
-    project: ['1130-gordo-tilstandomatic']
+    connection_string: "https://gordotest28.omnia-aurora-equinor.net/gordo/v0/"
+    projects: ['ioc-1130']
     target: null
-    host: "localhost"
-    port: 8888
-    scheme: "http"
-    gordo_version: "v0"
     metadata: null
-    data_provider: null
-    prediction_forwarder: null
     batch_size: 1000
     parallelism: 10
     forward_resampled_sensors : false
@@ -38,3 +33,9 @@ model_info:
     prediction_forwarder:
         debug: false
         n_retries: 5
+    auth:
+        resource: "set from env"
+        tenant: "set from env"
+        authority_host_url: "set from env"
+        client_id: "set from env"
+        client_secret: "DO NOT PUT SECRETS IN THIS FILE"

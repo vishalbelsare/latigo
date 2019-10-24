@@ -19,6 +19,7 @@ if not config_base:
 
 # Augment loaded config with secrets from environment
 # fmt: off
+# NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
 config_secrets = {
     "executor": {
         "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_executor"),
@@ -34,6 +35,15 @@ config_secrets = {
     },
     "prediction-storage": {
         "connection-string": environ.get("LATIGO_PREDICTION_STORAGE_CONNECITON", "NOT SET"),
+    },
+    "predictor": {
+        "auth":{
+            "resource": environ.get("LATIGO_GORDO_RESOURCE", "NOT SET"),
+            "tenant" : environ.get("LATIGO_GORDO_TENANT", "NOT SET"),
+            "authority_host_url" : environ.get("LATIGO_GORDO_AUTH_HOST_URL", "NOT SET"),
+            "client_id" : environ.get("LATIGO_GORDO_CLIENT_ID", "NOT SET"),
+            "client_secret" : environ.get("LATIGO_GORDO_CLIENT_SECRET", "NOT SET"),
+        },
     },
 }
 # fmt: on
