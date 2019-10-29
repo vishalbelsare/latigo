@@ -4,14 +4,14 @@
 
 Latigo is a service that is responsible for continuously running machine learning algorithms on a set of input sensor data to predict the next datapoint in sensor data. This is useful to do predictive maintenance for production equipment.
 
-The basic operation followsa the following steps:
+The basic operation follows these steps:
 - Follow a predefined schedule to determine when prediction should occur.
-- Fetches meta data about which data sources and ML models to use from Gordo.
+- Fetches meta data about which data sources and ML models to use from [Gordo](/equinor/gordo-components).
 - Fetches the source sensor data from the timeseries API.
 - Uses Gordo to generate the predictions.
 - Persists the resulting predictions back to the timeseries API.
 
-This project has been based on the original prototype project "ioc-gordo-oracle" ( https://github.com/equinor/ioc-gordo-oracle ) and has since evolved to support other needs and technical dependencies.
+This project has been based on the original prototype project [ioc-gordo-oracle] ( /equinor/ioc-gordo-oracle ) and has since evolved to support other needs and technical dependencies.
 
 ## Architecture
 
@@ -159,8 +159,8 @@ IMPORTANT: You must open this file and fill in the correct values. Some of the s
 
 ### Set up event hub
 
-Go to Azure portal and copy the connection string for your eventhub to clipboard. See screenshot for example
-
+Go to Azure portal and create a event_hubs namespace that has **Kafka enabled** (important).
+Create an ewvent hub in the namespace for testing and copy the connection string for your event_hub to clipboard. See screenshot for example:
 
 ![Event Hub Connection string](documentation/screenshots/event_hub_connection_string.png?raw=true "Event Hub Connection string")
 
