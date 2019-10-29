@@ -188,7 +188,7 @@ Now your environment is set up and docker-compose will pass this environment on 
 
 ### Start docker compose
 
-You can use docker-compose directly or you can use the Makefile. Please keep in mind that the Makefile is a convenience wrapper and will be explained after the docker-compose basics have been covered.
+You can use docker-compose directly or you can use the [Makefile](#makefile). Please keep in mind that the Makefile is a convenience wrapper and will be explained after the docker-compose basics have been covered.
 
 ```bash
 # Start the services
