@@ -160,7 +160,7 @@ IMPORTANT: You must open this file and fill in the correct values. Some of the s
 ### Set up event hub
 
 Go to Azure portal and create a event_hubs namespace that has **Kafka enabled** (important).
-Create an ewvent hub in the namespace for testing and copy the connection string for your event_hub to clipboard. See screenshot for example:
+Create a new event_hub in the namespace for testing and copy the connection string for your event_hub to clipboard. See screenshot for example:
 
 ![Event Hub Connection string](documentation/screenshots/event_hub_connection_string.png?raw=true "Event Hub Connection string")
 
