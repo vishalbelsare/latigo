@@ -67,12 +67,11 @@ def parse_event_hub_connection_string(connection_string: str):
 
 
 def parse_gordo_connection_string(connection_string: str):
-    logger.info(f"PARSING GORDO CONNECTION STRING; {connection_string}")
-    from urllib.parse import urlparse
-
     if not connection_string:
         return None
     # Rely on url_parse instead of regex for robustness while parsing url
+    from urllib.parse import urlparse
+
     parts = urlparse(connection_string)
     regex = r"/gordo/(?P<gordo_version>v[0-9]*)/"
     matches = list(re.finditer(regex, parts.path))
@@ -87,10 +86,6 @@ def parse_gordo_connection_string(connection_string: str):
             data["port"] = int(parts.port)
         else:
             data["port"] = 443 if scheme == "https" else 80
-        logger.info(f"PARSED GORDO CONNECTION STRING: {connection_string}, INTO:")
-        logger.info(f"{data}")
-        logger.info(pprint.pformat(data))
-
         return data
 
 

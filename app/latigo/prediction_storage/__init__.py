@@ -5,29 +5,47 @@ logger = logging.getLogger(__name__)
 
 
 class PredictionStorageProviderInterface:
-    def put_predictions(self, predictions: PredictionData):
+    def put_predictions(self, prediction_data: PredictionData):
         """
-        Store the predictions
+        Store the prediction data
         """
         pass
 
 
 class MockPredictionStorageProvider(PredictionStorageProviderInterface):
-    def put_predictions(self, predictions: PredictionData):
+    def __init__(self, config: dict):
+        self.config = config
+
+    def put_predictions(self, prediction_data: PredictionData):
         """
-        Store the predictions
+        Store the prediction data
         """
         pass
 
 
 class DevNullPredictionStorageProvider(PredictionStorageProviderInterface):
-    def __init__(self, do_log: bool = False):
-        self.do_log = do_log
+    def __init__(self, config: dict):
+        self.config = config
 
-    def put_predictions(self, predictions: PredictionData):
+    def put_predictions(self, prediction_data: PredictionData):
         """
-        Don't store the predictions on purpose
+        Don't store the prediction data on purpose
         """
-        if self.do_log:
-            logger.info(f"Deleting predictions: {predictions}")
+        if self.config.get("do_log", False):
+            logger.info(f"Deleting prediction data: {prediction_data}")
         pass
+
+
+def prediction_storage_provider_factory(prediction_storage_provider_config):
+    prediction_storage_provider_type = prediction_storage_provider_config.get("type", None)
+    prediction_storage_provider = None
+
+    if "influx" == prediction_storage_provider_type:
+        from latigo.prediction_storage_provider import InfluxPredictionStorageProvider
+
+        prediction_storage_provider = InfluxPredictionStorageProvider(prediction_storage_provider_config)
+    elif "mock" == prediction_storage_provider_type:
+        prediction_storage_provider = MockPredictionStorageProvider(prediction_storage_provider_config)
+    else:
+        prediction_storage_provider = DevNullPredictionStorageProvider(prediction_storage_provider_config)
+    return prediction_storage_provider

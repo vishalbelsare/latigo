@@ -12,6 +12,8 @@ services:
       dockerfile: Dockerfile.scheduler
     links:
       - postgres
+    volumes:
+      - ../volumes/latigo/scheduler:/tmp/data:Z
     environment:
       - LATIGO_INSTANCE_NAME="latigo-scheduler"
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
@@ -83,12 +85,12 @@ services:
      - ../volumes/latigo/postgres:/var/lib/postgresql/data:Z
 
 # Tool for easily managing relational database in browser
-  adminer:
-    image: adminer
-    restart: always
-    container_name: adminer
-    ports:
-      - 8080:8080
+#  adminer:
+#    image: adminer
+#    restart: always
+#    container_name: adminer
+#    ports:
+#      - 8080:8080
 
 
 # Time series database to keep sensor and prediction data
@@ -113,18 +115,18 @@ services:
       - ../volumes/latigo/influxdb:/var/lib/influxdb
 
 # Visualization tool for influx and postgres
-  grafana:
-    image: grafana/grafana:latest
-    restart: always
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    environment:
-     - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
-    links:
-      - influxdb
-      - postgres
-    volumes:
-      # sudo mkdir -p ../volumes/latigo/grafana/data
-      # sudo chown 472:472 ../volumes/latigo/grafana/data
-      - ../volumes/latigo/grafana:/var/lib/grafana
+#  grafana:
+#    image: grafana/grafana:latest
+#    restart: always
+#    container_name: grafana
+#    ports:
+#      - "3000:3000"
+#    environment:
+#     - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+#    links:
+#      - influxdb
+#      - postgres
+#    volumes:
+#      # sudo mkdir -p ../volumes/latigo/grafana/data
+#      # sudo chown 472:472 ../volumes/latigo/grafana/data
+#      - ../volumes/latigo/grafana:/var/lib/grafana

@@ -1,7 +1,7 @@
 db:
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
 
-task_queue:
+task_queue_old:
     type: "event_hub"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     name: "executor_task_queue"
@@ -9,7 +9,23 @@ task_queue:
     offset_persistence:
         type: "memory"
         name: "arnold"
-    
+
+task_queue:
+    type: "kafka"
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    security.protocol: "SASL_SSL"
+    ssl.ca.location: "/etc/ssl/certs/ca-certificates.crt"
+    sasl.mechanism: "PLAIN"
+    group.id: "1"
+    client.id: "executor"
+    request.timeout.ms: 10000
+    session.timeout.ms: 10000
+    default.topic.config: {"auto.offset.reset": "smallest"}
+    debug: "fetch"
+    topic: "latigo_topic"
+    enable.auto.commit: true
+    auto.commit.interval.ms: 1000
+
 sensor_data:
     type: "timeseries_api"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
@@ -17,7 +33,7 @@ sensor_data:
     do_trace: False
     n_retries: 5
 
-prediction_data:
+prediction_storage:
     type: "timeseries_api"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     partition: "0"

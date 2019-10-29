@@ -6,8 +6,8 @@ import typing
 import pandas as pd
 from datetime import datetime, timedelta
 from os import environ
-from latigo.task_queue import Task, DevNullTaskQueue
-from latigo.task_queue.event_hub import EventHubTaskQueueDestionation
+from latigo.task_queue import Task, task_queue_sender_factory
+
 from latigo.utils import Timer
 from latigo.gordo import GordoModelInfoProvider
 
@@ -24,9 +24,12 @@ class Scheduler:
         model_info_type = self.model_info_config.get("type", None)
         self.model_info = None
         self.model_filter = {}
+        self.model_filter["projects"] = []
         if "gordo" == model_info_type:
             self.model_info = GordoModelInfoProvider(self.model_info_config)
-            self.model_filter["project"] = self.model_info_config.get("project", [])
+            self.model_filter["projects"] = self.model_info_config.get("projects", [])
+            logger.info("FILTER:")
+            logger.info(self.model_filter["projects"])
         else:
             self.model_info = DevNullModelInfo(self.model_info_config)
         self.idle_time = datetime.now()
@@ -39,12 +42,7 @@ class Scheduler:
         self.task_queue_config = self.config.get("task_queue", None)
         if not self.task_queue_config:
             raise Exception("No task queue config specified")
-        task_queue_type = self.task_queue_config.get("type", None)
-        self.task_queue = None
-        if "event_hub" == task_queue_type:
-            self.task_queue = EventHubTaskQueueDestionation(self.task_queue_config)
-        else:
-            self.task_queue = DevNullTaskQueue(self.task_queue_config)
+        self.task_queue = task_queue_sender_factory(self.task_queue_config)
         self.idle_time = datetime.now()
         self.idle_number = 0
         if not self.task_queue:
@@ -73,21 +71,37 @@ class Scheduler:
         self.models: typing.List[typing.Dict] = []
 
     def synchronize_configuration(self):
-        logger.info(f"Synchronizing configuration")
         self.models = self.model_info.get_models(self.model_filter)
-        logger.info("-GOT MODELS-")
-        logger.info(pprint.pformat(self.models))
+        logger.info(f"Found {len(self.models)} models")
+        # logger.info(pprint.pformat(self.models))
 
     def perform_prediction_step(self):
-        logger.info(f"Performing prediction step")
+        stats_projects_ok = {}
+        stats_models_ok = {}
+        stats_projects_bad = {}
+        stats_models_bad = {}
+        stats_start_time = datetime.now()
+        prediction_start_time = datetime.now()
+        prediction_end_time = prediction_start_time + timedelta(seconds=60 * 30)
         for model in self.models:
-            task = Task(f"Task {self.task_serial} from {self.name} for {model}")
+            model_name = model.get("name", "unnamed")
+            project_name = model.get("project", "unnamed")
+            task = Task(project_name=project_name, model_name=model_name, from_time=prediction_start_time, to_time=prediction_end_time)
             try:
                 self.task_queue.put_task(task)
                 self.task_serial += 1
+                # logger.info(f"Enqueued '{model_name}' in '{project_name}'")
+                stats_projects_ok[project_name] = stats_projects_ok.get(project_name, 0) + 1
+                stats_models_ok[model_name] = stats_models_ok.get(model_name, 0) + 1
             except Exception as e:
-                logger.error(f"Could not send task: {e}")
-                traceback.print_exc()
+                # logger.error(f"Could not send task: {e}")
+                # traceback.print_exc()
+                stats_projects_bad[project_name] = stats_projects_bad.get(project_name, 0) + 1
+                stats_models_bad[model_name] = stats_models_bad.get(model_name, 0) + 1
+        stats_interval = datetime.now() - stats_start_time
+        logger.info(f"Scheduled {len(stats_models_ok)} models in {len(stats_projects_ok)} projects in {stats_interval}")
+        if len(stats_models_bad) > 0 or len(stats_projects_bad) > 0:
+            logger.error(f"          {len(stats_models_bad)} models in {len(stats_projects_bad)} projects failed")
 
     def run(self):
         logger.info(f"Starting {self.__class__.__name__}")

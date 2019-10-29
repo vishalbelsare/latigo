@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sys  # noqa
 import asyncio
 import copy
@@ -33,11 +35,13 @@ logger = logging.getLogger(__name__)
 class Client:
     """
     Basic client shipped with Gordo
+
     Enables some basic communication with a deployed Gordo project
     """
 
     def __init__(self, project: str, target: typing.Optional[str] = None, host: str = "localhost", port: int = 443, scheme: str = "https", gordo_version: str = "v0", metadata: typing.Optional[dict] = None, data_provider: typing.Optional[GordoBaseDataProvider] = None, prediction_forwarder: typing.Optional[PredictionForwarder] = None, batch_size: int = 100000, parallelism: int = 10, forward_resampled_sensors: bool = False, ignore_unhealthy_targets: bool = False, n_retries: int = 5, use_parquet: bool = False, session: typing.Optional[requests.Session] = None):
         """
+
         Parameters
         ----------
         project: str
@@ -90,7 +94,6 @@ class Client:
 
         self.base_url = f"{scheme}://{host}:{port}"
         self.watchman_endpoint = f"{self.base_url}/gordo/{gordo_version}/{project}/"
-        logger.warning(f"GORDO CLIENT endpoint: {self.watchman_endpoint}")
         self.metadata = metadata if metadata is not None else dict()
         self.session = session or requests.Session()
         self.endpoints = self._endpoints_from_watchman(self.watchman_endpoint)
@@ -114,6 +117,7 @@ class Client:
         """
         Based on the current configuration, filter out endpoints which the client
         should not care about.
+
         Parameters
         ----------
         endpoints: List[EndpointMetadata]
@@ -122,6 +126,7 @@ class Client:
             Name of the target/machine/endpoint we should filter down to
         ignore_unhealthy_targets: Optional[bool] (False)
             Should the client ignore any unhealthy endpoints?
+
         Returns
         -------
         List[EndpointMetadata]
@@ -158,15 +163,14 @@ class Client:
         """
         resp = self.session.get(endpoint)
         if not resp.ok:
-            logger.error(resp.request.__dict__)
-            resp.raise_for_status()
-            # raise IOError(f"Failed to get endpoints: {resp.content}")
+            raise IOError(f"Failed to get endpoints: {resp.content}")
 
         return [EndpointMetadata(target_name=data["endpoint-metadata"]["metadata"]["name"], healthy=data["healthy"], endpoint=f'{self.base_url}{data["endpoint"].rstrip("/")}', tag_list=normalize_sensor_tags(data["endpoint-metadata"]["metadata"]["dataset"]["tag_list"]), target_tag_list=normalize_sensor_tags(data["endpoint-metadata"]["metadata"]["dataset"]["target_tag_list"]), resolution=data["endpoint-metadata"]["metadata"]["dataset"]["resolution"], model_offset=data["endpoint-metadata"]["metadata"]["model"].get("model-offset", 0)) if data["healthy"] else EndpointMetadata(target_name=None, healthy=data["healthy"], endpoint=f'{self.base_url}{data["endpoint"].rstrip("/")}', tag_list=None, target_tag_list=None, resolution=None, model_offset=None) for data in resp.json()["endpoints"]]
 
     def download_model(self) -> typing.Dict[str, BaseEstimator]:
         """
         Download the actual model(s) from the ML server /download-model
+
         Returns
         -------
         Dict[str, BaseEstimator]
@@ -184,10 +188,12 @@ class Client:
     def get_metadata(self) -> typing.Dict[str, dict]:
         """
         Get the metadata for each target
+
         Parameters
         ----------
         target: str
             Name of the machine/target to get metadata from
+
         Returns
         -------
         Dict[str, dict]
@@ -205,10 +211,12 @@ class Client:
     def predict(self, start: datetime, end: datetime) -> typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]]:
         """
         Start the prediction process.
+
         Parameters
         ----------
         start: datetime
         end: datetime
+
         Returns
         -------
         List[Tuple[str, pandas.core.DataFrame, List[str]]
@@ -230,12 +238,14 @@ class Client:
     async def _predict(self, endpoint: EndpointMetadata, start: datetime, end: datetime) -> PredictionResult:
         """
         Get predictions based on the /prediction POST endpoint of Gordo ML Servers
+
         Parameters
         ----------
         endpoint: EndpointMetadata
             Named tuple which has 'endpoint' specifying the full url to the base ml server
         start: datetime
         end: datetime
+
         Returns
         -------
         dict
@@ -260,6 +270,7 @@ class Client:
     async def _process_prediction_task(self, X: pd.DataFrame, y: typing.Optional[pd.DataFrame], chunk: slice, endpoint: EndpointMetadata, start: datetime, end: datetime, session: typing.Optional[aiohttp.ClientSession] = None):
         """
         Post a slice of data to the endpoint
+
         Parameters
         ----------
         X: pandas.core.DataFrame
@@ -269,9 +280,11 @@ class Client:
         endpoint: EndpointMetadata
         start: datetime
         end: datetime
+
         Notes
         -----
         PredictionResult.predictions may be None if the prediction process fails
+
         Returns
         -------
         PredictionResult
@@ -327,12 +340,14 @@ class Client:
         """
         Take a list of un-awaited async prediction coroutines and return
         a single PredictionResult
+
         Parameters
         ----------
         endpoint: Endpoint
         jobs: List[Coroutine]
             An awaitable coroutine which will return a single PredictionResult
             from a single prediction task
+
         Returns
         -------
         PredictionResult
@@ -355,12 +370,14 @@ class Client:
         """
         Fetch the required raw data in this time range which would
         satisfy this endpoint's /prediction POST
+
         Parameters
         ----------
         endpoint: EndpointMetadata
             Named tuple representing the endpoint info from Watchman
         start: datetime
         end: datetime
+
         Returns
         -------
         pandas.core.DataFrame
@@ -391,6 +408,7 @@ class Client:
         Adjust the given date by multiplying ``n_intervals`` by ``resolution``. Such that
         a date of 12:00:00 with ``n_intervals=2`` and ``resolution='10m'`` (10 minutes)
         would result in 11:40
+
         Parameters
         ----------
         dt: datetime
@@ -399,10 +417,12 @@ class Client:
             A string code capable of being parsed by :meth::`pandas.Timedelta`.
         n_intervals: int
             Number of resolution steps to take earlier than the given date.
+
         Returns
         -------
         datetime
             The new offset datetime object.
+
         Examples
         --------
         >>> import dateutil
@@ -418,10 +438,12 @@ class Client:
         """
         The response from the server, parsed as either JSON / dict or raw bytes,
         of which would be expected to be loadable from :func:`server.utils.dataframe_from_parquet_bytes`
+
         Parameters
         ----------
         response: Union[dict, bytes]
             The parsed response from the ML server.
+
         Returns
         -------
         pandas.DataFrame
@@ -438,7 +460,9 @@ def make_date_ranges(start: datetime, end: datetime, max_interval_days: int, fre
     Split start and end datetimes into a list of datetime intervals.
     If the interval between start and end is less than ``max_interval_days`` then
     the resulting list will contain the original start & end. ie. [(start, end)]
+
     Otherwise it will split the intervals by ``freq``, parse-able by pandas.
+
     Parameters
     ----------
     start: datetime
@@ -447,6 +471,7 @@ def make_date_ranges(start: datetime, end: datetime, max_interval_days: int, fre
         Maximum days between start and end before splitting into intervals
     freq: str
         String frequency parse-able by Pandas
+
     Returns
     -------
     List[Tuple[datetime, datetime]]

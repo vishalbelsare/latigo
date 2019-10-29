@@ -6,7 +6,7 @@ from azure.eventhub.client import EventHubClient
 from azure.eventhub import EventData, Offset
 
 from latigo.utils import parse_event_hub_connection_string
-from latigo.task_queue import Task, TaskQueueSourceInterface, TaskQueueDestinationInterface
+from latigo.task_queue import Task, TaskQueueSenderInterface, TaskQueueReceiverInterface
 from latigo.task_queue.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
 
 logger = logging.getLogger(__name__)
@@ -105,9 +105,9 @@ class EventClient:
 
     def run(self):
         try:
-            logger.info(f"Running {self.name}")
+            logger.info(f"Running event hub client {self.name}")
             self.client.run()
-            logger.info(f"Run completed for {self.name}")
+            logger.info(f"Running of event hub client for {self.name} completed")
         except BaseException:
             raise
 
@@ -133,7 +133,7 @@ class EventClient:
             raise
 
 
-class EventHubTaskQueueDestionation(EventClient, TaskQueueDestinationInterface):
+class EventHubTaskQueueSender(EventClient, TaskQueueSenderInterface):
     def __init__(self, config: dict):
         super().__init__(config)
         self.sender = self.add_sender()
@@ -143,7 +143,7 @@ class EventHubTaskQueueDestionation(EventClient, TaskQueueDestinationInterface):
         self.send_event(task)
 
 
-class EventHubTaskQueueSource(EventClient, TaskQueueSourceInterface):
+class EventHubTaskQueueReceiver(EventClient, TaskQueueReceiverInterface):
     def __init__(self, config: dict):
         super().__init__(config)
         self.receiver = self.add_receiver()

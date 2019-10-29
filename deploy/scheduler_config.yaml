@@ -1,13 +1,30 @@
 db:
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
 
-task_queue:
+task_queue_old:
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     name: "scheduler_task_queue"
     do_trace: True
     offset_persistence:
         type: "memory"
         name: "arnold"
+        
+task_queue:
+    type: "kafka"
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    security.protocol: "SASL_SSL"
+    ssl.ca.location: "/etc/ssl/certs/ca-certificates.crt"
+    sasl.mechanism: "PLAIN"
+    group.id: "1"
+    client.id: "latigo_scheduler"
+    request.timeout.ms: 10000
+    session.timeout.ms: 10000
+    default.topic.config: {"auto.offset.reset": "smallest"}
+    debug: "fetch"
+    topic: "latigo_topic"
+    enable.auto.commit: true
+    auto.commit.interval.ms: 1000
+
 
 scheduler:
     configuration_sync_interval: "20s"
