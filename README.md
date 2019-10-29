@@ -332,11 +332,11 @@ xdg-open http://localhost:8080/gordo/v0/ioc-1130/
 
 ## Requirement pinning
 
-We use requirements.in and requirements.txt files to keep track of dependencies. requirements.in is the version ranges we want. We use make file to convert this into requirements.txt which are the exactly pinned requirements.
+We use **requirements.in** and **requirements.txt** files to keep track of dependencies. requirements.in is the version ranges we want. We use make file to convert this into requirements.txt which are the exactly pinned requirements.
 
 ```bash
 # Rebuild requirements.txt from requirements.in
-make rebuild-req
+make req
 ```
 
 NOTE: Both requirements.in and requirements.txt are kept in git
