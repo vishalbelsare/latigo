@@ -79,6 +79,15 @@ executor: build
 	docker-compose up --build -d latigo-executor-1
 	docker-compose logs -f latigo-executor-1
 
+images:
+	@echo "LATIGO MAKEFILE IS BUILDING IMAGES"
+
+push-executor:
+	@echo "LATIGO MAKEFILE IS PUSHING EXECUTOR IMAGE"
+	
+push-scheduler:
+	@echo "LATIGO MAKEFILE IS PUSHING SCHEDULER IMAGE"
+
 
 help:
 	@echo "#############################################"
