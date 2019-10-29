@@ -240,7 +240,7 @@ There is a makefile in the project that is meant as a convenience to save time, 
 make
 ```
 
-## Connecting to Gordo
+## Connecting directly to Gordo
 
 ### About Gordo
 Gordo is the actual prediction engine that Latigo will lean on to get work done. Gordo is a kubernetes cluster, and you will need access to this cluster for Latigo to be usefull.
@@ -249,7 +249,8 @@ There are some things you need to know about Gordo up front:
 
 - Gordo is in active development
 - At the time of writing (2019-10-17) there currently exists no Gordo in "production", however many candidate clusters are running. You will have to communicate with Gordo team to find out which of their test/dev clusters are the best to be using while testing. Some are more stable than others.
-- The way you connect to a Gordo cluster in development is by using a port forwarding. This is not how the connection will be done once Gordo and Latigo are in production. At that point we will be using api gateway and a so called "bearer token" for authentication.
+- If you need to access Gordo directly during development for debugging purposes you can use port forwarding. This is documented below.
+- Latigo will connect to Gordo using api gateway and a so called "bearer token" for authentication.
 
 ### Disable proxy
 Before you can have portforwarding set up successfully, you need to disable proxy settings (Gordo is available via external network). For more information about proxy setup in Equinor please see [this link](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
