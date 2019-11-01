@@ -90,8 +90,8 @@ push-scheduler:
 	@echo "LATIGO MAKEFILE IS PUSHING SCHEDULER IMAGE"
 	@sleep 3
 
-build-documentation:
-	@echo "LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
+make-docs:
+	@echo "LATIGO MAKEFILE IS MAKING DOCUMENTATION"
 	@sleep 3
 
 help:

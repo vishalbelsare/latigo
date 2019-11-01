@@ -10,6 +10,7 @@ executors:
 commands:
   save-eggs-cache:
     description: "Save the .eggs directory after tests"
+    working_directory: "app"
     steps:
       - save_cache:
           key: v1-test-eggs-cache-{{ checksum "requirements.txt" }}-{{ checksum "test_requirements.txt" }}
@@ -17,12 +18,14 @@ commands:
             - ~/code/.eggs
   restore-eggs-cache:
     description: "Load .eggs cache"
+    working_directory: "app"
     steps:
       - restore_cache:
           keys:
             - v1-test-eggs-cache-{{ checksum "requirements.txt" }}-{{ checksum "test_requirements.txt" }}
   save-venv-cache:
     description: "Save the virtualenv"
+    working_directory: "app"
     steps:
       - save_cache:
           key: v1-cache-{{ checksum "requirements.txt" }}-{{ checksum "test_requirements.txt" }}
@@ -30,6 +33,7 @@ commands:
             - ~/code/venv
   restore-venv-cache:
     description: "Restore the virtualenv"
+    working_directory: "app"
     steps:
       - restore_cache:
           keys:
@@ -154,12 +158,13 @@ jobs:
           name: Install Requirements
           command: |
             echo $(which python)
-            pip install -r requirements.txt
+            pwd
+            pip install -r app/requirements.txt
       - run:
           name: Test Requirements
           command: |
             echo $(which python)
-            pip install -r test_requirements.txt
+            pip install -r app/test_requirements.txt
       - save-venv-cache
 
   # Specific collections of python tests
