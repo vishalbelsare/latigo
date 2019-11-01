@@ -34,6 +34,17 @@ commands:
       - restore_cache:
           keys:
             - v1-cache-{{ checksum "app/requirements.txt" }}-{{ checksum "app/test_requirements.txt" }}
+
+  install-apt-reqs:
+    description: Install prequisite apt packages
+    steps:
+      - run:
+          name: Update apt
+          command: sudo apt-get update
+      - run:
+          name: Install prequisite apt packages
+          command: sudo apt-get intsall -y --no-install-recommends libpq-dev python-dev
+
   run-test:
     description: "Run a group of tests, ie 'formatting'."
     parameters:
@@ -136,13 +147,9 @@ jobs:
   install:
     executor: python-executor
     steps:
+      - install-apt-reqs
       - checkout
       - restore-venv-cache
-      - run:
-          name: Install prequisite apt packages
-          commnand: |
-            sudo apt-get update
-            sudo apt-get intsall -y --no-install-recommends libpq-dev python-dev
       - run:
           name: Set Python Version
           command: |
