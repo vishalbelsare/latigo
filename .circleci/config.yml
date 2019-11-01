@@ -73,7 +73,7 @@ commands:
 jobs:
 
   # Build documentation
-  push-images:
+  build-docs:
     machine:
       docker_layer_caching: false
     environment:
