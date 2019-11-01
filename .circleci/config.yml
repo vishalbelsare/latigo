@@ -72,6 +72,21 @@ commands:
             bash <(curl -s https://codecov.io/bash)
 jobs:
 
+  # Build documentation
+  push-images:
+    machine:
+      docker_layer_caching: false
+    environment:
+      LATIGO_PROD_MODE: true
+      DOCKER_REGISTRY: docker.io
+      DOCKER_REPO: equinor
+    steps:
+      - checkout
+      - run:
+          name: Build documentation
+          command: |
+            make build-docs
+
   # Make the docker images this project uses.
   make-images:
     machine:

@@ -84,10 +84,15 @@ images:
 
 push-executor:
 	@echo "LATIGO MAKEFILE IS PUSHING EXECUTOR IMAGE"
+	@sleep 3
 	
 push-scheduler:
 	@echo "LATIGO MAKEFILE IS PUSHING SCHEDULER IMAGE"
+	@sleep 3
 
+build-documentation:
+	@echo "LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
+	@sleep 3
 
 help:
 	@echo "#############################################"
