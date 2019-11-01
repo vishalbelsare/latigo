@@ -10,34 +10,30 @@ executors:
 commands:
   save-eggs-cache:
     description: "Save the .eggs directory after tests"
-    working_directory: "app"
     steps:
       - save_cache:
-          key: v1-test-eggs-cache-{{ checksum "requirements.txt" }}-{{ checksum "test_requirements.txt" }}
+          key: v1-test-eggs-cache-{{ checksum "app/requirements.txt" }}-{{ checksum "app/test_requirements.txt" }}
           paths:
             - ~/code/.eggs
   restore-eggs-cache:
     description: "Load .eggs cache"
-    working_directory: "app"
     steps:
       - restore_cache:
           keys:
-            - v1-test-eggs-cache-{{ checksum "requirements.txt" }}-{{ checksum "test_requirements.txt" }}
+            - v1-test-eggs-cache-{{ checksum "app/requirements.txt" }}-{{ checksum "app/test_requirements.txt" }}
   save-venv-cache:
     description: "Save the virtualenv"
-    working_directory: "app"
     steps:
       - save_cache:
-          key: v1-cache-{{ checksum "requirements.txt" }}-{{ checksum "test_requirements.txt" }}
+          key: v1-cache-{{ checksum "app/requirements.txt" }}-{{ checksum "app/test_requirements.txt" }}
           paths:
             - ~/code/venv
   restore-venv-cache:
     description: "Restore the virtualenv"
-    working_directory: "app"
     steps:
       - restore_cache:
           keys:
-            - v1-cache-{{ checksum "requirements.txt" }}-{{ checksum "test_requirements.txt" }}
+            - v1-cache-{{ checksum "app/requirements.txt" }}-{{ checksum "app/test_requirements.txt" }}
   run-test:
     description: "Run a group of tests, ie 'formatting'."
     parameters:
