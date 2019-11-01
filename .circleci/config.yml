@@ -139,6 +139,11 @@ jobs:
       - checkout
       - restore-venv-cache
       - run:
+          name: Install prequisite apt packages
+          commnand: |
+            sudo apt-get update
+            sudo apt-get intsall -y --no-install-recommends libpq-dev python-dev
+      - run:
           name: Set Python Version
           command: |
             pyenv versions
