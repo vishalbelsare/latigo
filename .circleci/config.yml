@@ -84,8 +84,7 @@ jobs:
       - checkout
       - run:
           name: Make documentation
-          command: |
-            make make-docs
+          command: make make-docs
 
   # Make the docker images this project uses.
   make-images:
@@ -112,6 +111,7 @@ jobs:
           command: |
             make push-executor
             make push-scheduler
+
   # Publish to PyPi, only on tagged commits.
   publish-to-pypi:
     executor: python-executor
@@ -131,6 +131,7 @@ jobs:
             source ~/code/venv/bin/activate
             python -m pip install twine
             twine upload -u statoil-travis --skip-existing dist/*
+
   # Install step, before any tests are run to create the cache
   install:
     executor: python-executor
@@ -208,11 +209,11 @@ workflows:
                 - master
             tags:
               only: /.*/
-      - publish-to-pypi:
-          requires:
-            - push-images
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-only: /.*/
+#      - publish-to-pypi:
+#          requires:
+#            - push-images
+#          filters:
+#            branches:
+#              ignore: /.*/
+#            tags:
+#               only: /.*/
