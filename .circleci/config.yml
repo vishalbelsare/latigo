@@ -39,6 +39,9 @@ commands:
     description: Install prequisite apt packages
     steps:
       - run:
+          name: Wait for apt to become available
+          command: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do; done
+      - run:
           name: Update apt
           command: sudo apt-get update
       - run:
