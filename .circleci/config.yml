@@ -40,7 +40,7 @@ commands:
     steps:
       - run:
           name: Wait for apt to become available
-          command: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do; done
+          command: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do echo "."; sleep 1; done
       - run:
           name: Update apt
           command: sudo apt-get update
