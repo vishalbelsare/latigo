@@ -66,6 +66,8 @@ commands:
       - run:
           name: Test
           command: |
+            cd app
+            pwd
             source ~/code/venv/bin/activate
             python setup.py test<< parameters.for >>
       - run:
@@ -162,7 +164,7 @@ jobs:
           name: Set Python Version
           command: |
             pyenv versions
-            pyenv global 3.6.5
+            pyenv global 3.7.4
             pyenv versions
       - run:
           name: Virtual Environment
