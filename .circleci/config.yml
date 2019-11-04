@@ -40,13 +40,16 @@ commands:
     steps:
       - run:
           name: Wait for apt to become available
-          command: while fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do echo "."; sleep 1; done
+          command: |
+            SECONDS=0
+            while fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do echo "."; sleep 1; done
+            echo "Waiting took $SECONDS sec"
       - run:
           name: Update apt
           command: sudo apt-get update
       - run:
           name: Install prequisite apt packages
-          command: sudo apt-get intsall -y --no-install-recommends libpq-dev python-dev
+          command: sudo apt-get -y --no-install-recommends install libpq-dev python-dev
 
   run-test:
     description: "Run a group of tests, ie 'formatting'."
