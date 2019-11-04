@@ -41,15 +41,17 @@ commands:
       - run:
           name: Wait for apt to become available
           command: |
-            SECONDS=0
+            START_TIME=$SECONDS
+            echo "Waiting for apt-get to become available"
             while fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do echo "."; sleep 1; done
-            echo "Waiting took $SECONDS sec"
+            ELAPSED_TIME=$(($SECONDS - $START_TIME))
+            echo "Waiting done, took $(($ELAPSED_TIME/60)) min $(($ELAPSED_TIME%60)) sec"
       - run:
           name: Update apt
-          command: sudo apt-get update
+          command:  sudo killall -9 apt-get || true && sudo apt-get update
       - run:
           name: Install prequisite apt packages
-          command: sudo apt-get -y --no-install-recommends install libpq-dev python-dev
+          command:  sudo killall -9 apt-get || true && sudo apt-get -y --no-install-recommends install libpq-dev python-dev
 
   run-test:
     description: "Run a group of tests, ie 'formatting'."
