@@ -5,7 +5,7 @@ executors:
     working_directory: ~/code
     machine:
       docker_layer_caching: false
-      image: "circleci/classic:201808-01"
+      image: "ubuntu-1604:201903-01"
 
 commands:
   save-eggs-cache:
