@@ -1,17 +1,34 @@
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-.PHONY: all test-all test-unit test-integration test-load
+.PHONY: h all all devops unit integration load help
 
-all: test-unit
+h: help
 
-test-devops: test-unit
+all: unit integration load
 
-test-all: test-unit test-integration test-load
+devops: test-unit
 
-test-unit:
+unit:
 	py.test unit
 
-test-integration:
+integration:
 	py.test integration
 
-test-load:
+load:
 	py.test load
+
+############### Help ####################
+
+help:
+	@echo "#############################################"
+	@echo "# This is a conveneince Makefile for Latigo #"
+	@echo "#############################################"
+	@echo ""
+	@echo " Available targets:"
+	@echo ""
+	@echo " + make help          Show this help"
+	@echo " + make all           Run all tests"
+	@echo " + make devops        Run devops tests"
+	@echo " + make unit          Run unit tests"
+	@echo " + make integration   Run integration tests"
+	@echo " + make load          Run load tests"
+	@echo ""

@@ -38,7 +38,7 @@ setup(
     zip_safe=True,
     long_description=read("README.md"),
     install_requires=read_requirements("requirements.in"),  # Allow flexible deps for install
-    tests_require=read_requirements("test_requirements.txt"), # Use rigid deps for testing
+    tests_require=read_requirements("test_requirements.txt"),  # Use rigid deps for testing
     test_suite="../tests",
     python_requires="~=3.7.4",
     include_package_data=True,

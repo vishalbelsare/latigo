@@ -95,7 +95,7 @@ commands:
 jobs:
 
   # Make documentation
-  make-docs:
+  build-docs:
     machine:
       docker_layer_caching: false
     environment:
@@ -106,17 +106,17 @@ jobs:
       - checkout
       - run:
           name: Make documentation
-          command: make make-docs
+          command: make build-docs
 
   # Make the docker images this project uses.
-  make-images:
+  build-images:
     machine:
       docker_layer_caching: false
     steps:
       - checkout
       - run:
           name: Make Images
-          command: make images
+          command: make build-images
 
   # Push images, only when on master and/or tagged commits.
   push-images:
@@ -204,12 +204,12 @@ workflows:
   # Run all tests, ensure images and docs can be built
   test:
     jobs:
-      - make-docs
+      - build-docs
       - install
       - test-unit:
           requires:
             - install
-      - make-images:
+      - build-images:
           filters:
             branches:
               only: /.*/
@@ -225,7 +225,8 @@ workflows:
 #              only: /.*/
       - push-images:
           requires:
-            - make-images
+            - build-images
+            - test-unit
 #            - upload-coverage-reports
           filters:
             branches:

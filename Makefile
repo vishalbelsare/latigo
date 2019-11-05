@@ -4,6 +4,12 @@ TESTS_DIR:="${ROOT_DIR}/tests"
 CODE_QUALITY_DIR:="${ROOT_DIR}/code_quality"
 SHELL := /bin/bash
 COMPUTED_ENV="${ROOT_DIR}/set_env.py"
+
+
+LATIGO_SCHEDULER_IMAGE_NAME="latigo-scheduler"
+LATIGO_EXECUTOR_IMAGE_NAME="latigo-executor"
+
+
 .PHONY: all code-quality tests set-env postgres-permission setup up rebuild-req
 
 all: help
@@ -39,6 +45,7 @@ setup:
 port-forward:
 	while : ; do printf "PORTFORWARDING----\n"; kubectl port-forward svc/ambassador -n ambassador 8888:80; done
 
+############### Convenience docker compose ####################
 
 build: postgres-permission setup code-quality tests show-env
 	docker-compose build
@@ -79,20 +86,37 @@ executor: build
 	docker-compose up --build -d latigo-executor-1
 	docker-compose logs -f latigo-executor-1
 
-images:
-	@echo "LATIGO MAKEFILE IS BUILDING IMAGES"
+############### Build docker images ####################
 
-push-executor:
-	@echo "LATIGO MAKEFILE IS PUSHING EXECUTOR IMAGE"
-	@sleep 3
-	
-push-scheduler:
-	@echo "LATIGO MAKEFILE IS PUSHING SCHEDULER IMAGE"
-	@sleep 3
 
-make-docs:
-	@echo "LATIGO MAKEFILE IS MAKING DOCUMENTATION"
-	@sleep 3
+build-scheduler:
+	docker build . -f Dockerfile.scheduler -t $(LATIGO_SCHEDULER_IMAGE_NAME)
+
+build-executor:
+	docker build . -f Dockerfile.executor -t $(LATIGO_EXECUTOR_IMAGE_NAME)
+
+build-docs:
+	@echo "PLACEHOLDER: LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
+	@sleep 1
+
+build-images: build-scheduler build-executor
+
+
+############### Push docker images ####################
+
+push-scheduler: build-scheduler
+	export DOCKER_NAME=$(LATIGO_SCHEDULER_IMAGE_NAME);\
+	export DOCKER_IMAGE=$(LATIGO_SCHEDULER_IMAGE_NAME);\
+	bash deploy/docker_push.sh
+
+push-executor: build-executor
+	export DOCKER_NAME=$(LATIGO_EXECUTOR_IMAGE_NAME);\
+	export DOCKER_IMAGE=$(LATIGO_EXECUTOR_IMAGE_NAME);\
+	bash deploy/docker_push.sh
+
+push-images: push-scheduler push-executor
+
+############### Help ####################
 
 help:
 	@echo "#############################################"
