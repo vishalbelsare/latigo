@@ -4,6 +4,9 @@ import os
 from setuptools import setup, find_packages
 
 
+setup_requirements = ["pytest-runner", "setuptools_scm"]
+
+
 def read(fname):
     fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
     print(f"Reading from {fn}")
@@ -31,10 +34,11 @@ setup(
     keywords="gordo ioc continuous prediction",
     url="https://github.com/equinor/latigo",
     packages=find_packages(),
+    setup_requires=setup_requirements,
     zip_safe=True,
     long_description=read("README.md"),
     install_requires=read_requirements("requirements.in"),  # Allow flexible deps for install
-    tests_require=read_requirements("test_requirements.txt"),
+    tests_require=read_requirements("test_requirements.txt"), # Use rigid deps for testing
     test_suite="../tests",
     python_requires="~=3.7.4",
     include_package_data=True,
