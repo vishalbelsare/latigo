@@ -190,7 +190,7 @@ jobs:
     executor: python-executor
     steps:
       - run-test:
-          for: builder
+          for: unit
 
   upload-coverage-reports:
     executor: python-executor
