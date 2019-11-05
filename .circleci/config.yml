@@ -70,27 +70,28 @@ commands:
             pwd
             source ~/code/venv/bin/activate
             python setup.py test<< parameters.for >>
-      - run:
-          name: Move coverage report to workspace
-          command: |
-            mkdir /tmp/coverage-reports
-            mv ./coverage.xml /tmp/coverage-reports/<< parameters.for >>-coverage.xml
-      - persist_to_workspace:
-          root: /tmp/coverage-reports
-          paths:
-            - ./*-coverage.xml
-      - save-eggs-cache
-  upload-coverage-reports:
-    description: "Upload the coverage reports"
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /tmp/coverage-reports
-      - run:
-          name: "Upload coverage reports"
-          command: |
-            cp /tmp/coverage-reports/*.xml .
-            bash <(curl -s https://codecov.io/bash)
+#      - run:
+#          name: Move coverage report to workspace
+#          command: |
+#            mkdir /tmp/coverage-reports
+#            mv ./coverage.xml /tmp/coverage-reports/<< parameters.for >>-coverage.xml
+#      - persist_to_workspace:
+#          root: /tmp/coverage-reports
+#          paths:
+#            - ./*-coverage.xml
+#      - save-eggs-cache
+#  upload-coverage-reports:
+#    description: "Upload the coverage reports"
+#    steps:
+#      - checkout
+#      - attach_workspace:
+#          at: /tmp/coverage-reports
+#      - run:
+#          name: "Upload coverage reports"
+#          command: |
+#            cp /tmp/coverage-reports/*.xml .
+#            bash <(curl -s https://codecov.io/bash)
+
 jobs:
 
   # Make documentation
@@ -214,18 +215,18 @@ workflows:
               only: /.*/
             tags:
               only: /.*/
-      - upload-coverage-reports:
-          requires:
-            - test-unit
-          filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
+#      - upload-coverage-reports:
+#          requires:
+#            - test-unit
+#          filters:
+#            branches:
+#              only: /.*/
+#            tags:
+#              only: /.*/
       - push-images:
           requires:
             - make-images
-            - upload-coverage-reports
+#            - upload-coverage-reports
           filters:
             branches:
               only:
