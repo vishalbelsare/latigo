@@ -45,6 +45,10 @@ setup:
 port-forward:
 	while : ; do printf "PORTFORWARDING----\n"; kubectl port-forward svc/ambassador -n ambassador 8888:80; done
 
+build-docs:
+	@echo "PLACEHOLDER: LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
+	@sleep 1
+
 ############### Convenience docker compose ####################
 
 build: postgres-permission setup code-quality tests show-env
@@ -95,10 +99,6 @@ build-scheduler:
 build-executor:
 	docker build . -f Dockerfile.executor -t $(LATIGO_EXECUTOR_IMAGE_NAME)
 
-build-docs:
-	@echo "PLACEHOLDER: LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
-	@sleep 1
-
 build-images: build-scheduler build-executor
 
 
@@ -123,25 +123,35 @@ help:
 	@echo "# This is a conveneince Makefile for Latigo #"
 	@echo "#############################################"
 	@echo ""
-	@echo " Available targets:"
+	@echo " General targets:"
 	@echo ""
-	@echo " + make help          Show this help"
-	@echo " + make up            Build incrementally, test and run all from scratch"
-	@echo " + make down          Shutdown docker images"
-	@echo " + make influxdb      Rebuild and restart influx image separately, attaching to log"
-	@echo " + make grafana       Rebuild and restart grafana image separately, attaching to log"
-	@echo " + make postgres      Rebuild and restart postgres image separately, attaching to log"
-	@echo " + make adminer       Rebuild and restart adminer image separately, attaching to log"
-	@echo " + make scheduler     Rebuild and restart scheduler image separately, attaching to log"
-	@echo " + make executor      Rebuild and restart executor images separately, attaching executor-1 to log"
+	@echo " + make help             Show this help"
+	@echo " + make code-quality     Run code quality tools"
+	@echo " + make tests            Run (almost) all tests. NOTE: For more options see tests/Makefile"
+	@echo " + make show-env         Show the variables related to Latigo in the current environment"
+	@echo " + make pgsql-perm       Set up permissions of the postgres docker image's volume (necessary nuisance)"
+	@echo " + make req              Rebuild pinned versions in *requirements.txt from *requirements.in"
+	@echo " + make setup            Build latigo pip package"
 	@echo ""
-	@echo " + make code-quality  Run code quality tools"
-	@echo " + make tests         Run (almost) all tests. NOTE: For more options see tests/Makefile"
-	@echo " + make show-env      Show the variables related to Latigo in the current environment"
-	@echo " + make pgsql-perm    Set up permissions of the postgres docker image's volume (necessary nuisance)"
-	@echo " + make req           Rebuild pinned versions in *requirements.txt from *requirements.in"
-	@echo " + make setup         Build latigo pip package"
-	@echo " + make build         Build docker images"
+	@echo " Development targets:"
 	@echo ""
-	@echo "Not mentioned: push-executor, push-scheduler, make-docs and some more. Documentation pending."
+	@echo " + make help             Show this help"
+	@echo " + make up               Build incrementally, test and run all from scratch"
+	@echo " + make down             Shutdown docker images"
+	@echo " + make influxdb         Rebuild and restart influx image separately, attaching to log"
+	@echo " + make grafana          Rebuild and restart grafana image separately, attaching to log"
+	@echo " + make postgres         Rebuild and restart postgres image separately, attaching to log"
+	@echo " + make adminer          Rebuild and restart adminer image separately, attaching to log"
+	@echo " + make scheduler        Rebuild and restart scheduler image separately, attaching to log"
+	@echo " + make executor         Rebuild and restart executor images separately, attaching executor-1 to log"
 	@echo ""
+	@echo " Deployment targets:"
+	@echo ""
+	@echo " + make build-scheduler  Build scheduler docker image"
+	@echo " + make build-executor   Build executor docker image"
+	@echo " + make build-images     Build all docker images"
+	@echo " + make push-scheduler   Build and push scheduler docker image"
+	@echo " + make push-executor    Build and push executor docker image"
+	@echo " + make push-images      Build and push all docker images"
+	@echo ""
+
