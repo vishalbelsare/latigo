@@ -186,7 +186,7 @@ jobs:
       - save-venv-cache
 
   # Specific collections of python tests
-  test-builder:
+  test-unit:
     executor: python-executor
     steps:
       - run-test:
@@ -205,7 +205,7 @@ workflows:
     jobs:
       - make-docs
       - install
-      - test-builder:
+      - test-unit:
           requires:
             - install
       - make-images:
@@ -216,7 +216,7 @@ workflows:
               only: /.*/
       - upload-coverage-reports:
           requires:
-            - test-builder
+            - test-unit
           filters:
             branches:
               only: /.*/
