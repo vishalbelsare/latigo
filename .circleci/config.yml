@@ -205,12 +205,14 @@ workflows:
       - test-unit:
           requires:
             - install
-      - build-images:
-          filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
+# COMMENTED OUT FOR NOW. COMMENT BACK IN WHEN WE GET COINS IN CIRCLECI
+# NOTE: REMEMBER TO UNCOMMNENT REFERENEC in push-images AS WELL
+#      - build-images:
+#          filters:
+#            branches:
+#              only: /.*/
+#            tags:
+#              only: /.*/
 #      - upload-coverage-reports:
 #          requires:
 #            - test-unit
@@ -221,7 +223,7 @@ workflows:
 #              only: /.*/
       - push-images:
           requires:
-            - build-images
+#            - build-images
             - test-unit
 #            - upload-coverage-reports
           filters:

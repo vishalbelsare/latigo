@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Stolen from https://github.com/equinor/gordo-components/blob/master/docker_push.sh
+# Adapted from https://github.com/equinor/gordo-components/blob/master/docker_push.sh
 
 # Script to push an docker image to a docker registry. The docker image can
 # either exist and be provided in the env variable DOCKER_IMAGE, or it will be
@@ -18,9 +18,9 @@
 # "gordo-infrastructure/gordo-deploy".
 #
 # Expects the following environment variables to be set:
-# DOCKER_NAME: Required. Docker name to push to.
 # DOCKER_FILE: Semi-Required. Dockerfile to build. Either DOCKER_IMAGE or
 #              DOCKER_FILE must be set.
+# DOCKER_NAME: Required. Docker name to push to.
 # DOCKER_IMAGE: Semi-Required. The local docker image to push. Either
 #               DOCKER_IMAGE or DOCKER_FILE must be set.
 # DOCKER_USERNAME: If set then it uses it an the password to log in to the
@@ -29,20 +29,31 @@
 #                  registry
 # DOCKER_REGISTRY: Docker registry to push to. Defaults to
 #                  auroradevacr.azurecr.io
+# DOCKER_REPO: The docker repository of concern
 # PROD_MODE: If false then pushed tags will include a -dev suffix.
 #                  Defaults to false
-# DOCKER_REPO: The docker repository of concern
 
 export tmp_tag=$(date +%Y-%m-%d)
 
-echo "Variables:"
+echo "Expected environment variables with values:"
 echo " + DOCKER_FILE:      ${DOCKER_FILE}"
-echo " + DOCKER_USERNAME:  ${DOCKER_USERNAME}"
 echo " + DOCKER_REGISTRY:  ${DOCKER_REGISTRY}"
 echo " + DOCKER_REPO:      ${DOCKER_REPO}"
 echo " + DOCKER_IMAGE:     ${DOCKER_IMAGE}"
 echo " + DOCKER_NAME:      ${DOCKER_NAME}"
-echo " + tmp_tag:          ${tmp_tag}"
+echo " + DOCKER_USERNAME:  ${DOCKER_USERNAME}"
+echo " + DOCKER_PASSWORD:  NOT SHOWN"
+
+
+if [[ -z "${DOCKER_FILE}" ]]; then
+    echo "DOCKER_FILE must be set, exiting"
+    exit 1
+fi
+
+if [[ -z "${DOCKER_NAME}" ]]; then
+    echo "DOCKER_NAME must be set, exiting"
+    exit 1
+fi
 
 if [[ -z "${DOCKER_REGISTRY}" ]]; then
     echo "DOCKER_REGISTRY must be set, exiting"
@@ -51,11 +62,6 @@ fi
 
 if [[ -z "${DOCKER_REPO}" ]]; then
     echo "DOCKER_REPO must be set, exiting"
-    exit 1
-fi
-
-if [[ -z "${DOCKER_NAME}" ]]; then
-    echo "DOCKER_NAME must be set, exiting"
     exit 1
 fi
 
@@ -77,7 +83,7 @@ fi
 
 # Ensure we're getting the latest version, including any dirty state of the repo
 # replacing any '+' development identifier with an underscore for docker compatibility
-export version=$(docker run --rm $DOCKER_IMAGE gordo-components --version | tr + _)
+export version=$(docker run --rm $DOCKER_IMAGE latigo --version | tr + _)
 
 
 if [[ -z "${PROD_MODE}" ]]; then
