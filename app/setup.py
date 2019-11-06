@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 setup_requirements = ["pytest-runner", "setuptools_scm"]
 
 
-def read(fname):
+def read_file(fname):
     fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
     print(f"Reading from {fn}")
     if os.path.exists(fn):
@@ -16,7 +16,7 @@ def read(fname):
     return ""
 
 
-def read_requirements(fname: str):
+def read_requirements_file(fname: str):
     fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
     print(f"Reading requirements from {fn}")
     with open(fn) as f:
@@ -26,7 +26,7 @@ def read_requirements(fname: str):
 
 setup(
     name="latigo",
-    version="0.0.2",
+    version=read_file("VERSION"),
     author="Lennart Rolland",
     author_email="lroll@equinor.com",
     description=("A continuous prediction service that uses Gordo to predict data for IOC"),
@@ -36,9 +36,9 @@ setup(
     packages=find_packages(),
     setup_requires=setup_requirements,
     zip_safe=True,
-    long_description=read("README.md"),
-    install_requires=read_requirements("requirements.in"),  # Allow flexible deps for install
-    tests_require=read_requirements("test_requirements.txt"),  # Use rigid deps for testing
+    long_description=read_file("README.md"),
+    install_requires=read_requirements_file("requirements.in"),  # Allow flexible deps for install
+    tests_require=read_requirements_file("test_requirements.txt"),  # Use rigid deps for testing
     test_suite="../tests",
     python_requires="~=3.7.4",
     include_package_data=True,

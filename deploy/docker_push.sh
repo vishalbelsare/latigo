@@ -83,7 +83,7 @@ fi
 
 # Ensure we're getting the latest version, including any dirty state of the repo
 # replacing any '+' development identifier with an underscore for docker compatibility
-export version=$(docker run --rm $DOCKER_IMAGE latigo --version | tr + _)
+export version=$(docker run --rm $DOCKER_IMAGE cat ./VERSION | tr + _)
 
 
 if [[ -z "${PROD_MODE}" ]]; then
