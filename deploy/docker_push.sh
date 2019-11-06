@@ -45,11 +45,6 @@ echo " + DOCKER_USERNAME:  ${DOCKER_USERNAME}"
 echo " + DOCKER_PASSWORD:  NOT SHOWN"
 
 
-if [[ -z "${DOCKER_FILE}" ]]; then
-    echo "DOCKER_FILE must be set, exiting"
-    exit 1
-fi
-
 if [[ -z "${DOCKER_NAME}" ]]; then
     echo "DOCKER_NAME must be set, exiting"
     exit 1
