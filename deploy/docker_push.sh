@@ -29,12 +29,28 @@
 #                  registry
 # DOCKER_REGISTRY: Docker registry to push to. Defaults to
 #                  auroradevacr.azurecr.io
-# GORDO_PROD_MODE: If false then pushed tags will include a -dev suffix.
+# PROD_MODE: If false then pushed tags will include a -dev suffix.
 #                  Defaults to false
 # DOCKER_REPO: The docker repository of concern
 
+export tmp_tag=$(date +%Y-%m-%d)
+
+echo "Variables:"
+echo " + DOCKER_FILE:      ${DOCKER_FILE}"
+echo " + DOCKER_USERNAME:  ${DOCKER_USERNAME}"
+echo " + DOCKER_REGISTRY:  ${DOCKER_REGISTRY}"
+echo " + DOCKER_REPO:      ${DOCKER_REPO}"
+echo " + DOCKER_IMAGE:     ${DOCKER_IMAGE}"
+echo " + DOCKER_NAME:      ${DOCKER_NAME}"
+echo " + tmp_tag:          ${tmp_tag}"
+
 if [[ -z "${DOCKER_REGISTRY}" ]]; then
     echo "DOCKER_REGISTRY must be set, exiting"
+    exit 1
+fi
+
+if [[ -z "${DOCKER_REPO}" ]]; then
+    echo "DOCKER_REPO must be set, exiting"
     exit 1
 fi
 
@@ -50,8 +66,6 @@ else
     echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin $DOCKER_REGISTRY || exit 1
 fi
 
-export tmp_tag=$(date +%Y-%m-%d)
-
 if [[ -z "${DOCKER_IMAGE}" ]]; then
     if [[ -z "${DOCKER_FILE}" ]]; then
         echo "DOCKER_IMAGE or DOCKER_FILE must be provided, exiting"
@@ -66,7 +80,7 @@ fi
 export version=$(docker run --rm $DOCKER_IMAGE gordo-components --version | tr + _)
 
 
-if [[ -z "${GORDO_PROD_MODE}" ]]; then
+if [[ -z "${PROD_MODE}" ]]; then
     echo "Skipping pushing of 'latest' image"
 else
     # if we're in prod mode, we'll push the latest image.
