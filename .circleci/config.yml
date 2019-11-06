@@ -99,9 +99,7 @@ jobs:
     machine:
       docker_layer_caching: false
     environment:
-      LATIGO_PROD_MODE: true
-      DOCKER_REGISTRY: docker.io
-      DOCKER_REPO: equinor
+      PROD_MODE: true
     steps:
       - checkout
       - run:
@@ -123,9 +121,7 @@ jobs:
     machine:
       docker_layer_caching: false
     environment:
-      LATIGO_PROD_MODE: true
-      DOCKER_REGISTRY: docker.io
-      DOCKER_REPO: equinor
+      PROD_MODE: true
     steps:
       - checkout
       - run:
