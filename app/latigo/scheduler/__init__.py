@@ -6,9 +6,10 @@ import typing
 import pandas as pd
 from datetime import datetime, timedelta
 from os import environ
-from latigo.task_queue import Task, task_queue_sender_factory
+from latigo.types import Task
+from latigo.task_queue import task_queue_sender_factory
 
-from latigo.utils import Timer
+from latigo.utils import Timer, human_delta
 from latigo.gordo import GordoModelInfoProvider
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ class Scheduler:
                 stats_projects_bad[project_name] = stats_projects_bad.get(project_name, 0) + 1
                 stats_models_bad[model_name] = stats_models_bad.get(model_name, 0) + 1
         stats_interval = datetime.now() - stats_start_time
-        logger.info(f"Scheduled {len(stats_models_ok)} models in {len(stats_projects_ok)} projects in {stats_interval}")
+        logger.info(f"Scheduled {len(stats_models_ok)} models in {len(stats_projects_ok)} projects in {human_delta(stats_interval)}")
         if len(stats_models_bad) > 0 or len(stats_projects_bad) > 0:
             logger.error(f"          {len(stats_models_bad)} models in {len(stats_projects_bad)} projects failed")
 

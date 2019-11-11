@@ -5,10 +5,12 @@ import logging
 import sys
 import pprint
 import time
+import typing
 from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 from confluent_kafka.admin import AdminClient, NewTopic
 from latigo.utils import parse_event_hub_connection_string
-from latigo.task_queue import Task, deserialize_task, serialize_task, TaskQueueSenderInterface, TaskQueueReceiverInterface
+from latigo.task_queue import deserialize_task, serialize_task, TaskQueueSenderInterface, TaskQueueReceiverInterface
+from latigo.types import Task
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +28,8 @@ def delivery_callback(err, msg):
         # logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] @ {msg.offset()}")
 
 
-def prepare_kafka_config(config: dict):
-    parts = parse_event_hub_connection_string(config.get("connection_string")) or {}
+def prepare_kafka_config(config: typing.Dict[str, typing.Any]) -> dict:
+    parts = parse_event_hub_connection_string(str(config.get("connection_string"))) or {}
     # fmt: off
     return {
         "bootstrap.servers": f"{parts.get('endpoint')}:9093",
@@ -67,7 +69,7 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         # See https://github.com/edenhill/librdkafka/wiki/Using-SSL-with-librdkafka#prerequisites for SSL issues
         self.config = prepare_kafka_config(config)
         # Find our topic
-        parts = parse_event_hub_connection_string(config.get("connection_string")) or {}
+        parts = parse_event_hub_connection_string(str(config.get("connection_string"))) or {}
         self.topic = parts.get("entity_path")
         # self._create_topics()
         # Create Producer instance
@@ -103,7 +105,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
         self.config = prepare_kafka_config(config)
         # Find our topic
-        parts = parse_event_hub_connection_string(config.get("connection_string")) or {}
+        parts = parse_event_hub_connection_string(str(config.get("connection_string"))) or {}
         self.topic = parts.get("entity_path")
         # Create Consumer instance
         self.consumer = Consumer(self.config)

@@ -27,41 +27,34 @@ import adal, uuid, time
 
 logger = logging.getLogger(__name__)
 
-# TODO: Merge with fetch_access_token()
-def get_bearer_token(auth_config):
-    authority_url = f"{auth_config['authority_host_url']}/{auth_config['tenant']}"
-    resource = auth_config.get("resource", "00000002-0000-0000-c000-000000000000")
-    validate_authority = auth_config.get("tenant", "adfs") != "adfs"
-    token = None
-    try:
-        context = adal.AuthenticationContext(authority_url, validate_authority=validate_authority)
-        token = context.acquire_token_with_client_credentials(resource, auth_config["client_id"], auth_config["client_secret"])
-        print("Here is the token:")
-        print(json.dumps(token, indent=2))
-    except Exception as e:
-        logger.error(f"Error fetching token: {e}")
-    return token
-
 
 def fetch_access_token(auth_config: dict):
     client_id = auth_config.get("client_id")
     client_secret = auth_config.get("client_secret")
-    authority_host_url = auth_config.get("authority_host_url")
-    tenant = auth_config.get("tenant")
-    authority_host_uri = "https://login.microsoftonline.com"
+    tenant = auth_config.get("tenant", "adfs")
+    validate_authority = tenant != "adfs"
+    authority_host_url = auth_config.get("authority_host_url", "https://login.microsoftonline.com")
     authority_uri = f"{authority_host_url}/{tenant}"
-    resource_uri = "https://management.core.windows.net/"
+    resource_uri = auth_config.get("resource", "https://management.core.windows.net/")
     token = None
     oathlib_token = None
     try:
-        context = adal.AuthenticationContext(authority_uri, api_version=None)
+        context = adal.AuthenticationContext(authority=authority_uri, validate_authority=validate_authority, api_version=None)
         token = context.acquire_token_with_client_credentials(resource_uri, client_id, client_secret) or {}
         if token:
+            print("Got auth token:")
+            print(json.dumps(token, indent=2))
             # logger.info("fetch_access_token:")
             oathlib_token = {"access_token": token.get("accessToken", ""), "refresh_token": token.get("refreshToken", ""), "token_type": token.get("tokenType", "Bearer"), "expires_in": token.get("expiresIn", 0)}
             # logger.info(pprint.pformat(token))
     except Exception as e:
+        logger.info(f"client_id:            {client_id}")
+        logger.info(f"tenant:               {tenant}")
+        logger.info(f"validate_authority:   {validate_authority}")
+        logger.info(f"authority_host_url:   {authority_host_url}")
+        logger.info(f"authority_uri:        {authority_uri}")
         logger.error(f"Error fetching token: {e}")
+        raise e
     return oathlib_token
 
 

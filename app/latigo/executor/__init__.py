@@ -5,11 +5,12 @@ from os import environ
 import typing
 import logging
 import pprint
-from latigo.sensor_data import TimeRange, SensorData, PredictionData, sensor_data_provider_factory
+from latigo.types import Task, SensorDataSpec, SensorData, TimeRange, PredictionData, LatigoSensorTag
+from latigo.sensor_data import sensor_data_provider_factory
 
 from latigo.prediction_execution import prediction_execution_provider_factory
 from latigo.prediction_storage import prediction_storage_provider_factory
-from latigo.task_queue import Task, task_queue_receiver_factory
+from latigo.task_queue import task_queue_receiver_factory
 
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,10 @@ class PredictionExecutor:
         # Create the predictor
         self._prepare_prediction_executor_provider()
 
+    def _fetch_spec(self, project_name: str, model_name: str):
+        tag_list: typing.List[LatigoSensorTag] = []
+        return SensorDataSpec(tag_list=tag_list)
+
     def _fetch_task(self) -> typing.Optional[Task]:
         """
         The task describes what the executor is supposed to do. This internal helper fetches one task from event hub
@@ -91,8 +96,11 @@ class PredictionExecutor:
         """
         sensor_data = None
         try:
-            time_range = TimeRange(task.from_time, task.to_time)
-            sensor_data = self.sensor_data_provider.get_data_for_range(time_range)
+            time_range: TimeRange = TimeRange(task.from_time, task.to_time)
+            project_name: str = task.project_name
+            model_name: str = task.model_name
+            spec: SensorDataSpec = self._fetch_spec(project_name, model_name)
+            sensor_data = self.sensor_data_provider.get_data_for_range(spec, time_range)
         except Exception as e:
             logger.error(f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}")
             traceback.print_exc()

@@ -50,26 +50,6 @@ class SensorInformationProviderInterface:
         pass
 
 
-class SensorDataProviderInterface:
-    """
-    Where can we get access to data from a sensor given its name?
-    """
-
-    def get_native_range_specifier(self, range_from: datetime, range_to: datetime, parameters: str):
-        """
-        return a specification of the given time span in a representation that is native to
-        this particular sensor data provider.
-        For example for influx this would be an influx query or complete query url (parameter can be used to select)
-        """
-        pass
-
-    def get_data_for_range(self, sensor_name: str, range_from: datetime, range_to: datetime) -> SensorData:
-        """
-        Return a dataset for the given sensor and timespan
-        """
-        pass
-
-
 class TestSensorInformationProvider(SensorInformationProviderInterface):
     """
     Test implementation of SensorInformationProviderInterface

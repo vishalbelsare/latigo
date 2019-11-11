@@ -27,18 +27,26 @@ task_queue:
     auto.commit.interval.ms: 1000
 
 sensor_data:
-    type: "timeseries_api"
-    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
-    partition: "0"
-    do_trace: False
-    n_retries: 5
+    type: "time_series_api"
+    base_url: "https://api.gateway.equinor.com/plant-beta"
+    async: False
+    auth:
+        resource: "not set from env in executor_config.yaml"
+        tenant: "not set from env in executor_config.yaml"
+        authority_host_url: "not set from env in executor_config.yaml"
+        client_id: "not set from env in executor_config.yaml"
+        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+    
 
 prediction_storage:
-    type: "timeseries_api"
-    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
-    partition: "0"
-    do_trace: False
-    n_retries: 5
+    type: "time_series_api"
+    async: False
+    auth:
+        resource: "not set from env in executor_config.yaml"
+        tenant: "not set from env in executor_config.yaml"
+        authority_host_url: "not set from env in executor_config.yaml"
+        client_id: "not set from env in executor_config.yaml"
+        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
 
 predictor:
     type: "gordo"
@@ -58,8 +66,8 @@ predictor:
         debug: false
         n_retries: 5
     auth:
-        resource: "set from env"
-        tenant: "set from env"
-        authority_host_url: "set from env"
-        client_id: "set from env"
+        resource: "not set from env in executor_config.yaml"
+        tenant: "not set from env in executor_config.yaml"
+        authority_host_url: "not set from env in executor_config.yaml"
+        client_id: "not set from env in executor_config.yaml"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"

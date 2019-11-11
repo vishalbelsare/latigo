@@ -10,11 +10,11 @@ from datetime import datetime
 import latigo.utils
 from latigo.prediction_execution import PredictionExecutionProviderInterface
 
-from latigo.sensor_data import TimeRange, SensorData, PredictionData
-from latigo.sensor_data.sensor_data import SensorDataProviderInterface
+from latigo.types import TimeRange, SensorDataSpec, SensorData, PredictionData
+from latigo.sensor_data import SensorDataProviderInterface
 
 from latigo.model_info import ModelInfoProviderInterface
-from latigo.gordo.auth import create_auth_session
+from latigo.auth import create_auth_session
 from latigo.gordo.client import Client
 
 # from gordo_components.client import Client
@@ -30,10 +30,14 @@ gordo_client_instances_by_hash: dict = {}
 gordo_client_instances_by_project: dict = {}
 gordo_client_auth_session: typing.Optional[requests.Session] = None
 
+# Defeat dependency on gordo
+def _gordo_to_latigo_tag_list(gordo_tag_list):
+    return gordo_tag_list
+
 
 class LatigoDataProvider(GordoBaseDataProvider):
     """
-    A GordoBaseDataset that wraps Latigo spesific data providers
+    A GordoBaseDataProvider that wraps Latigo spesific data providers
     """
 
     @capture_args
@@ -46,7 +50,9 @@ class LatigoDataProvider(GordoBaseDataProvider):
 
     def load_series(self, from_ts: datetime, to_ts: datetime, tag_list: typing.List[SensorTag], dry_run: typing.Optional[bool] = False) -> typing.Iterable[pd.Series]:
         if self.sensor_data_provider:
-            sensor_data = self.sensor_data_provider.get_data_for_range(TimeRange(from_ts, to_ts))
+            spec: SensorDataSpec = SensorDataSpec(tag_list=_gordo_to_latigo_tag_list(tag_list))
+            time_range = TimeRange(from_ts, to_ts)
+            sensor_data = self.sensor_data_provider.get_data_for_range(spec, time_range)
             if sensor_data and sensor_data.data:
                 for item in sensor_data.data:
                     yield item
@@ -155,7 +161,7 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         result = client.predict(sensor_data.time_range.from_time, sensor_data.time_range.to_time)
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
-        return PredictionData(name=model_name, time_range=sensor_data.time_range, result=result)
+        return PredictionData(name=model_name, time_range=sensor_data.time_range, data=result)
 
 
 class GordoModelInfoProvider(ModelInfoProviderInterface):

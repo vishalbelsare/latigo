@@ -6,8 +6,9 @@ from azure.eventhub.client import EventHubClient
 from azure.eventhub import EventData, Offset
 
 from latigo.utils import parse_event_hub_connection_string
-from latigo.task_queue import Task, TaskQueueSenderInterface, TaskQueueReceiverInterface
+from latigo.task_queue import TaskQueueSenderInterface, TaskQueueReceiverInterface
 from latigo.task_queue.offset_persistence import DBOffsetPersistance, MemoryOffsetPersistance
+from latigo.types import Task
 
 logger = logging.getLogger(__name__)
 

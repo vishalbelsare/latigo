@@ -20,29 +20,44 @@ if not config_base:
 # Augment loaded config with secrets from environment
 # fmt: off
 # NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
+not_found="environemnt variable not found"
 config_secrets = {
     "executor": {
         "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_executor"),
     },
     "task_queue": {
-        "connection_string": environ.get("LATIGO_INTERNAL_EVENT_HUB", "NOT SET"),
+        "connection_string": environ.get("LATIGO_INTERNAL_EVENT_HUB", not_found),
     },
     "db": {
-        "connection-string": environ.get("LATIGO_INTERNAL_DATABASE", "NOT SET"),
+        "connection_string": environ.get("LATIGO_INTERNAL_DATABASE", not_found),
     },
-    "sensor-data": {
-        "connection-string": environ.get("LATIGO_SENSOR_DATA_CONNECITON", "NOT SET"),
+    "sensor_data": {
+        "base_url": environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
+        "auth":{
+            "resource": environ.get("LATIGO_TIME_SERIES_RESOURCE", not_found),
+            "tenant" : environ.get("LATIGO_TIME_SERIES_TENANT", not_found),
+            "authority_host_url" : environ.get("LATIGO_TIME_SERIES_AUTH_HOST_URL", not_found),
+            "client_id" : environ.get("LATIGO_TIME_SERIES_CLIENT_ID", not_found),
+            "client_secret" : environ.get("LATIGO_TIME_SERIES_CLIENT_SECRET", not_found),
+        },
     },
-    "prediction-storage": {
-        "connection-string": environ.get("LATIGO_PREDICTION_STORAGE_CONNECITON", "NOT SET"),
+    "prediction_storage": {
+        "base_url": environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
+        "auth":{
+            "resource": environ.get("LATIGO_TIME_SERIES_RESOURCE", not_found),
+            "tenant" : environ.get("LATIGO_TIME_SERIES_TENANT", not_found),
+            "authority_host_url" : environ.get("LATIGO_TIME_SERIES_AUTH_HOST_URL", not_found),
+            "client_id" : environ.get("LATIGO_TIME_SERIES_CLIENT_ID", not_found),
+            "client_secret" : environ.get("LATIGO_TIME_SERIES_CLIENT_SECRET", not_found),
+        },
     },
     "predictor": {
         "auth":{
-            "resource": environ.get("LATIGO_GORDO_RESOURCE", "NOT SET"),
-            "tenant" : environ.get("LATIGO_GORDO_TENANT", "NOT SET"),
-            "authority_host_url" : environ.get("LATIGO_GORDO_AUTH_HOST_URL", "NOT SET"),
-            "client_id" : environ.get("LATIGO_GORDO_CLIENT_ID", "NOT SET"),
-            "client_secret" : environ.get("LATIGO_GORDO_CLIENT_SECRET", "NOT SET"),
+            "resource": environ.get("LATIGO_GORDO_RESOURCE", not_found),
+            "tenant" : environ.get("LATIGO_GORDO_TENANT", not_found),
+            "authority_host_url" : environ.get("LATIGO_GORDO_AUTH_HOST_URL", not_found),
+            "client_id" : environ.get("LATIGO_GORDO_CLIENT_ID", not_found),
+            "client_secret" : environ.get("LATIGO_GORDO_CLIENT_SECRET", not_found),
         },
     },
 }
@@ -53,7 +68,6 @@ config = {}
 merge(config_base, config)
 merge(config_secrets, config)
 logger.info("Preparing Latigo - Executor")
-
 executor = PredictionExecutor(config)
 logger.info("Running Latigo - Executor")
 executor.run()

@@ -5,6 +5,7 @@ try:
 except ImportError:
     __version__ = "0.0.0"
 
+
 def latigo_cli():
     """
     The main entry point for the CLI interface
@@ -12,7 +13,7 @@ def latigo_cli():
     if "--version" in sys.argv:
         print(__version__)
     else:
-        print(f"usage: {sys.argv[0]} --version" )
+        print(f"usage: {sys.argv[0]} --version")
 
 
 if __name__ == "__main__":

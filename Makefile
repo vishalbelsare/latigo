@@ -15,10 +15,10 @@ LATIGO_EXECUTOR_IMAGE_NAME="latigo-executor"
 all: help
 
 code-quality:
-	cd "${CODE_QUALITY_DIR}" && make
+	cd "${CODE_QUALITY_DIR}" && make all
 
-tests:
-	cd "${TESTS_DIR}" && make
+test:
+	cd "${TESTS_DIR}" && make all
 
 show-env:
 	env | grep -i latigo
@@ -59,7 +59,7 @@ up: build
 	sudo mkdir -p ../volumes/latigo/influxdb/data
 	sudo mkdir -p ../volumes/latigo/grafana/data
 	sudo chown 472:472 ../volumes/latigo/grafana/data
-	docker-compose up --remove-orphans
+	eval $(./set_env.py) && docker-compose up --remove-orphans
 	docker ps -a
 
 down:
@@ -67,27 +67,27 @@ down:
 	docker ps -a
 
 influxdb:
-	docker-compose up --build -d influxdb
+	eval $(./set_env.py) && docker-compose up --build -d influxdb
 	docker-compose logs -f influxdb
 
 grafana:
-	docker-compose up --build -d grafana
+	eval $(./set_env.py) && docker-compose up --build -d grafana
 	docker-compose logs -f grafana
 
 postgres:
-	docker-compose up --build -d postgres
+	eval $(./set_env.py) && docker-compose up --build -d postgres
 	docker-compose logs -f postgres
 
 adminer:
-	docker-compose up --build -d adminer
+	eval $(./set_env.py) && docker-compose up --build -d adminer
 	docker-compose logs -f adminer
 
 scheduler: build
-	docker-compose up --build -d latigo-scheduler
+	eval $(./set_env.py) && docker-compose up --build -d latigo-scheduler
 	docker-compose logs -f latigo-scheduler
 
 executor: build
-	docker-compose up --build -d latigo-executor-1
+	eval $(./set_env.py) && docker-compose up --build -d latigo-executor-1
 	docker-compose logs -f latigo-executor-1
 
 ############### Build docker images ####################

@@ -1,5 +1,7 @@
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 APP_DIR="${ROOT_DIR}/../app"
+TESTS_DIR="${ROOT_DIR}/../tests"
+
 
 .PHONY: h all flake pylint mypy coverage black low-hanging help
 
@@ -12,15 +14,18 @@ flake:
 
 pylint:
 	pylint --exit-zero --rcfile pylintrc --output-format=colorized "${APP_DIR}"
+	pylint --exit-zero --rcfile pylintrc --output-format=colorized "${TESTS_DIR}"
 
 mypy:
 	mypy --ignore-missing-imports "${APP_DIR}"
-
-coverage:
-	python -m pytest --junitxml=junit-results.xml --cov="${APP_DIR}" --cov-report=xml --cov-report=html unit
+	mypy --ignore-missing-imports "${TESTS_DIR}"
 
 black:
 	black -l 999 -t py37 "${APP_DIR}"
+	black -l 999 -t py37 "${TESTS_DIR}"
+
+coverage:
+	python -m pytest --junitxml=junit-results.xml --cov="${APP_DIR}" --cov-report=xml --cov-report=html unit
 
 #	autopep8 -r -i -j 0 --max-line-length 999 -a -a -a ./
 

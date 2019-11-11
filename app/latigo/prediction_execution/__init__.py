@@ -6,7 +6,7 @@ import pandas as pd
 from pprint import pprint
 from dataclasses import dataclass
 
-from latigo.sensor_data import SensorData, PredictionData
+from latigo.types import SensorData, PredictionData
 
 
 class PredictionExecutionProviderInterface:
@@ -24,7 +24,7 @@ class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
         """
         Testing mock prediction execution provider
         """
-        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, result=[])
+        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, data=[])
         return prediction_data
 
 
@@ -36,7 +36,7 @@ class DevNullPredictionExecutionProvider(PredictionExecutionProviderInterface):
         """
         Dummy no-op prediction execution provider
         """
-        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, result=[])
+        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, data=[])
         return prediction_data
 
 

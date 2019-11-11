@@ -39,9 +39,21 @@ setup(
     long_description=read_file("README.md"),
     install_requires=read_requirements_file("requirements.in"),  # Allow flexible deps for install
     tests_require=read_requirements_file("test_requirements.txt"),  # Use rigid deps for testing
-    test_suite="../tests",
+    #    test_suite="../tests",
     python_requires="~=3.7.4",
     include_package_data=True,
     # From https://pypi.org/pypi?%3Aaction=list_classifiers
-    classifiers=["Development Status :: 3 - Alpha", "Intended Audience :: Developers", "Intended Audience :: Other Audience", "Topic :: Utilities", "License :: OSI Approved :: GNU Affero General Public License v3", "Natural Language :: English", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3.7", "Topic :: Other/Nonlisted Topic"],
+    # fmt: off
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Other Audience",
+        "Topic :: Utilities",
+        "License :: OSI Approved :: GNU Affero General Public License v3",
+        "Natural Language :: English",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3.7",
+        "Topic :: Other/Nonlisted Topic"
+    ],
+    # fmt: on
 )

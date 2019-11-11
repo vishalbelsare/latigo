@@ -2,7 +2,7 @@
 
 from os import environ, path, system
 
-from app.latigo.utils import load_yaml, save_yaml
+from latigo.utils import load_yaml, save_yaml
 
 pwd=path.dirname(path.realpath(__file__))
 
@@ -37,6 +37,12 @@ if not path.exists(filename):
         "INFLUXDB_USER": "The name of the non-admin user in influx database",
         "INFLUXDB_USER_PASSWORD": "The password for the non-admin user in influx database",
         "GF_SECURITY_ADMIN_PASSWORD": "The admin password for grafana (username is 'admin')",
+        "LATIGO_TIME_SERIES_RESOURCE": "The resource ID of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_TENANT": "The tenant of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_BASE_URL": "The base url of the time series api. This is what we create endpoint urls from when using the API.",
+        "LATIGO_TIME_SERIES_AUTH_HOST_URL": "The authority host URL for time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_CLIENT_ID": "The client ID of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_CLIENT_SECRET": "The client secret of time series api. Used for bearer authentication.",
     }
     # fmt: on
     

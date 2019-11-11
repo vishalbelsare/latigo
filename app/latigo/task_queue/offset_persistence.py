@@ -6,7 +6,7 @@ from sqlalchemy import Column, String, Integer, DateTime
 from latigo.db import session_scope, Base
 
 
-logger = logging.getLogger("latigo.offset_persistence")
+logger = logging.getLogger(__name__)
 
 
 class OffsetPersistanceInterface:
