@@ -1,0 +1,61 @@
+task_queue:
+    type: "kafka"
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    security.protocol: "SASL_SSL"
+    ssl.ca.location: "/etc/ssl/certs/ca-certificates.crt"
+    sasl.mechanism: "PLAIN"
+    group.id: "1"
+    client.id: "executor"
+    request.timeout.ms: 10000
+    session.timeout.ms: 10000
+    default.topic.config: {"auto.offset.reset": "smallest"}
+    debug: "fetch"
+    topic: "latigo_topic"
+    enable.auto.commit: true
+    auto.commit.interval.ms: 1000
+
+sensor_data:
+    type: "time_series_api"
+    base_url: "https://api.gateway.equinor.com/plant-beta"
+    async: False
+    auth:
+        resource: "not set from env in executor_config.yaml"
+        tenant: "not set from env in executor_config.yaml"
+        authority_host_url: "not set from env in executor_config.yaml"
+        client_id: "not set from env in executor_config.yaml"
+        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+    
+
+prediction_storage:
+    type: "time_series_api"
+    async: False
+    auth:
+        resource: "not set from env in executor_config.yaml"
+        tenant: "not set from env in executor_config.yaml"
+        authority_host_url: "not set from env in executor_config.yaml"
+        client_id: "not set from env in executor_config.yaml"
+        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+
+predictor:
+    type: "gordo"
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    projects: ['ioc-1130']
+    target: null
+    metadata: null
+    batch_size: 1000
+    parallelism: 10
+    forward_resampled_sensors : false
+    ignore_unhealthy_targets: true
+    n_retries: 5
+    data_provider:
+        debug: true
+        n_retries: 5
+    prediction_forwarder:
+        debug: false
+        n_retries: 5
+    auth:
+        resource: "not set from env in executor_config.yaml"
+        tenant: "not set from env in executor_config.yaml"
+        authority_host_url: "not set from env in executor_config.yaml"
+        client_id: "not set from env in executor_config.yaml"
+        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
