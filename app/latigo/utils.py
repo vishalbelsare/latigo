@@ -33,8 +33,6 @@ def load_yaml(filename, output=False):
 
 
 def save_yaml(filename, data, output=False):
-    if not os.path.exists(filename):
-        return None, f"File did not exist: '{filename}'."
     with open(filename, "w") as stream:
         try:
             yaml.dump(data, stream, default_flow_style=False)
@@ -42,6 +40,8 @@ def save_yaml(filename, data, output=False):
             logger.info(exc)
         if output:
             pprint.pprint(data)
+        if not os.path.exists(filename):
+            return None, f"File was not written: '{filename}'."
         return data
 
 

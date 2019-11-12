@@ -70,8 +70,10 @@ def test_save_load_yaml():
     }
     # fmt: on
     save_yaml(config_filename, original_config, True)
+    assert os.path.exists(config_filename)
     config, failure = load_yaml(config_filename, True)
-    os.remove(config_filename)
+    if os.path.exists(config_filename):
+        os.remove(config_filename)
     assert failure == None
     assert original_config == config
 
@@ -103,5 +105,6 @@ def test_load_config():
     config = load_config(config_filename, overlay_config, True)
     print("loaded config:")
     print(pprint.pformat(config))
-    os.remove(config_filename)
+    if os.path.exists(config_filename):
+        os.remove(config_filename)
     assert config == expected
