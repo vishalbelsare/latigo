@@ -10,14 +10,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.scheduler
-    links:
-      - postgres
     volumes:
       - ../volumes/latigo/scheduler:/tmp/data:Z
     environment:
       - LATIGO_INSTANCE_NAME="latigo-scheduler"
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
-      - LATIGO_INTERNAL_DATABASE=${LATIGO_INTERNAL_DATABASE}
       - LATIGO_SCHEDULER_CONFIG_FILE=${LATIGO_SCHEDULER_CONFIG_FILE}
       - LATIGO_GORDO_CONNECTION_STRING=${LATIGO_GORDO_CONNECTION_STRING}
       - LATIGO_GORDO_RESOURCE=${LATIGO_GORDO_RESOURCE}
@@ -34,12 +31,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.executor
-    links:
-      - postgres
     environment:
       - LATIGO_INSTANCE_NAME="latigo-executor-1"
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
-      - LATIGO_INTERNAL_DATABASE=${LATIGO_INTERNAL_DATABASE}
       - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
       - LATIGO_GORDO_CONNECTION_STRING=${LATIGO_GORDO_CONNECTION_STRING}
       - LATIGO_GORDO_RESOURCE=${LATIGO_GORDO_RESOURCE}
@@ -62,12 +56,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.executor
-    links:
-      - postgres
     environment:
       - LATIGO_INSTANCE_NAME="latigo-executor-2"
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
-      - LATIGO_INTERNAL_DATABASE=${LATIGO_INTERNAL_DATABASE}
       - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
       - LATIGO_GORDO_CONNECTION_STRING=${LATIGO_GORDO_CONNECTION_STRING}
       - LATIGO_GORDO_RESOURCE=${LATIGO_GORDO_RESOURCE}

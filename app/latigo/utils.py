@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import asyncio
 import typing
 import yaml
+import os.path
 
 
 logger = logging.getLogger("latigo.utils")
@@ -15,7 +16,8 @@ def rfc3339_from_datetime(dt: datetime):
 
 
 def load_yaml(filename, output=False):
-
+    if not os.path.exists(filename):
+        return None, f"File did not exist: '{filename}'."
     with open(filename, "r") as stream:
         data = {}
         failure = None
@@ -31,7 +33,8 @@ def load_yaml(filename, output=False):
 
 
 def save_yaml(filename, data, output=False):
-
+    if not os.path.exists(filename):
+        return None, f"File did not exist: '{filename}'."
     with open(filename, "w") as stream:
         try:
             yaml.dump(data, stream, default_flow_style=False)
@@ -61,16 +64,17 @@ def merge(source, destination, skip_none=True):
                 destination[key] = value
 
 
-def load_config(config_filename:str, overlay_config:dict, output=False):
+def load_config(config_filename: str, overlay_config: dict, output=False):
     config_base, failure = load_yaml(config_filename, output)
     if not config_base:
         logger.error(f"Could not load configuration from {config_filename}: {failure}")
         return False
     # Augment loaded config with secrets from environment
-    config = {}
+    config: dict = {}
     merge(config_base, config, False)
     merge(overlay_config, config, True)
     return config
+
 
 def parse_event_hub_connection_string(connection_string: str):
     if not connection_string:
@@ -141,7 +145,6 @@ def human_delta(td_object: timedelta, max: int = 0):
             if max > 0 and ct > max:
                 break
     return ", ".join(strings)  # + f"({td_object}, {ms})"
-
 
 
 class Timer:

@@ -27,6 +27,7 @@ def merge_test_worker(skip, expected):
     print(pprint.pformat(b))
     assert b == expected
 
+
 def test_merge_with_skip_none():
     # fmt: off
     expected={
@@ -39,6 +40,7 @@ def test_merge_with_skip_none():
     # fmt: on
     merge_test_worker(True, expected)
     return True
+
 
 def test_merge_without_skip_none():
     # fmt: off
@@ -54,8 +56,9 @@ def test_merge_without_skip_none():
     merge_test_worker(False, expected)
     return True
 
+
 def test_save_load_yaml():
-    config_filename="test_config_save_load.yaml"
+    config_filename = "test_config_save_load.yaml"
     # fmt: off
     original_config={
         'both':'AAAA',
@@ -65,14 +68,14 @@ def test_save_load_yaml():
     }
     # fmt: on
     save_yaml(config_filename, original_config, True)
-    config, failure=load_yaml(config_filename, True)
+    config, failure = load_yaml(config_filename, True)
     os.remove(config_filename)
     assert failure == None
     assert original_config == config
-    
+
 
 def test_load_config():
-    config_filename="test_config_load_config.yaml"
+    config_filename = "test_config_load_config.yaml"
     # fmt: off
     original_config={
         'both':'FILE',
@@ -95,7 +98,7 @@ def test_load_config():
     }
     # fmt: on
     save_yaml(config_filename, original_config)
-    config=load_config(config_filename, overlay_config, True)
+    config = load_config(config_filename, overlay_config, True)
     print("loaded config:")
     print(pprint.pformat(config))
     os.remove(config_filename)

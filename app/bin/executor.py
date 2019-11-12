@@ -6,25 +6,22 @@ from os import environ
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.executor")
-import latigo.utils
+from latigo.utils import load_config
 from latigo.executor import PredictionExecutor
 
 
 logger.info(f"Starting Latigo - Executor")
 
-# Augment loaded config with secrets from environment
+# Augment loaded config with variables from environment
 # fmt: off
 # NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
 not_found=None #"environemnt variable not found"
-config_secrets = {
+config_overlay = {
     "executor": {
         "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_executor"),
     },
     "task_queue": {
         "connection_string": environ.get("LATIGO_INTERNAL_EVENT_HUB", not_found),
-    },
-    "db": {
-        "connection_string": environ.get("LATIGO_INTERNAL_DATABASE", not_found),
     },
     "sensor_data": {
         "base_url": environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
@@ -61,7 +58,7 @@ config_secrets = {
 
 config_filename = environ.get("LATIGO_EXECUTOR_CONFIG_FILE", "executor_config.yaml")
 
-config = utils.load_config(config_filename)
+config = load_config(config_filename, config_overlay)
 if not config:
     logger.error(f"Could not load configuration for executor from {config_filename}")
     sys.exit(1)

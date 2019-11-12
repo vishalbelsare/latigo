@@ -6,25 +6,22 @@ from os import environ
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.scheduler")
-import latigo.utils
+from latigo.utils import load_config
 from latigo.scheduler import Scheduler
 
 
 logger.info("Starting Latigo - Scheduler")
 
-# Augment loaded config with secrets from environment
+# Augment loaded config with variables from environment
 # fmt: off
 # NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
 not_found=None #"environemnt variable not found"
-config_secrets = {
+config_overlay = {
     "scheduler": {
         "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_scheduler")
     },
     "task_queue": {
         "connection_string": environ.get("LATIGO_INTERNAL_EVENT_HUB", not_found)
-    },
-    "db": {
-        "connection_string": environ.get("LATIGO_INTERNAL_DATABASE", not_found)
     },
     "model_info":{
         "connection_string": environ.get("LATIGO_GORDO_CONNECTION_STRING", not_found),
@@ -41,7 +38,7 @@ config_secrets = {
 
 config_filename = environ.get("LATIGO_SCHEDULER_CONFIG_FILE", "scheduler_config.yaml")
 
-config = utils.load_config(config_filename)
+config = load_config(config_filename, config_overlay)
 if not config:
     logger.error(f"Could not load configuration for scheduler from {config_filename}")
     sys.exit(1)
