@@ -16,6 +16,12 @@ integration:
 load:
 	py.test -vv load
 
+gordo:
+	py.test -vv integration/test_gordo_client.py
+
+time_series:
+	py.test -vv integration/test_time_series_api.py
+
 ############### Help ####################
 
 help:
@@ -29,6 +35,10 @@ help:
 	@echo " + make all           Run all tests"
 	@echo " + make devops        Run devops tests"
 	@echo " + make unit          Run unit tests"
+	@echo ""
 	@echo " + make integration   Run integration tests"
+	@echo " + make gordo         Run gordo integration tests"
+	@echo " + make time_series   Run time series API integration tests"
+	@echo ""
 	@echo " + make load          Run load tests"
 	@echo ""
