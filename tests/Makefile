@@ -8,13 +8,13 @@ all: unit integration load
 devops: test-unit
 
 unit:
-	py.test unit
+	py.test -vv unit
 
 integration:
-	py.test integration
+	py.test -vv integration
 
 load:
-	py.test load
+	py.test -vv load
 
 ############### Help ####################
 

@@ -47,7 +47,7 @@ try:
     absl.logging._warn_preinit_stderr = False
 
 except Exception:
-    warnings.warn(f"Failed to fix absl logging bug {traceback.format_exc()}")
+    # warnings.warn(f"Failed to fix absl logging bug {traceback.format_exc()}")
     pass
 
 

@@ -6,21 +6,16 @@ from os import environ
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.executor")
-from latigo.utils import load_yaml, merge
+import latigo.utils
 from latigo.executor import PredictionExecutor
 
-config_filename = environ.get("LATIGO_EXECUTOR_CONFIG_FILE", "executor_config.yaml")
-logger.info(f"Starting Latigo - Executor with configuration from {config_filename}")
 
-config_base, failure = load_yaml(config_filename)
-if not config_base:
-    logger.error(f"Could not load configuration for executor from {config_filename}: {failure}")
-    sys.exit(1)
+logger.info(f"Starting Latigo - Executor")
 
 # Augment loaded config with secrets from environment
 # fmt: off
 # NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
-not_found="environemnt variable not found"
+not_found=None #"environemnt variable not found"
 config_secrets = {
     "executor": {
         "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_executor"),
@@ -52,6 +47,7 @@ config_secrets = {
         },
     },
     "predictor": {
+        "connection_string": environ.get("LATIGO_GORDO_CONNECTION_STRING", not_found),
         "auth":{
             "resource": environ.get("LATIGO_GORDO_RESOURCE", not_found),
             "tenant" : environ.get("LATIGO_GORDO_TENANT", not_found),
@@ -63,10 +59,13 @@ config_secrets = {
 }
 # fmt: on
 
+config_filename = environ.get("LATIGO_EXECUTOR_CONFIG_FILE", "executor_config.yaml")
 
-config = {}
-merge(config_base, config)
-merge(config_secrets, config)
+config = utils.load_config(config_filename)
+if not config:
+    logger.error(f"Could not load configuration for executor from {config_filename}")
+    sys.exit(1)
+
 logger.info("Preparing Latigo - Executor")
 executor = PredictionExecutor(config)
 logger.info("Running Latigo - Executor")

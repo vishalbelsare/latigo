@@ -42,7 +42,7 @@ def save_yaml(filename, data, output=False):
         return data
 
 
-def merge(source, destination):
+def merge(source, destination, skip_none=True):
     """
     run me with nosetests --with-doctest file.py
 
@@ -55,10 +55,22 @@ def merge(source, destination):
         if isinstance(value, dict):
             # get node or create one
             node = destination.setdefault(key, {})
-            merge(value, node)
+            merge(value, node, skip_none)
         else:
-            destination[key] = value
+            if not skip_none or value:
+                destination[key] = value
 
+
+def load_config(config_filename:str, overlay_config:dict, output=False):
+    config_base, failure = load_yaml(config_filename, output)
+    if not config_base:
+        logger.error(f"Could not load configuration from {config_filename}: {failure}")
+        return False
+    # Augment loaded config with secrets from environment
+    config = {}
+    merge(config_base, config, False)
+    merge(overlay_config, config, True)
+    return config
 
 def parse_event_hub_connection_string(connection_string: str):
     if not connection_string:
@@ -129,6 +141,7 @@ def human_delta(td_object: timedelta, max: int = 0):
             if max > 0 and ct > max:
                 break
     return ", ".join(strings)  # + f"({td_object}, {ms})"
+
 
 
 class Timer:

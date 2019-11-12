@@ -80,11 +80,7 @@ class DevNullTaskQueue(TaskQueueSenderInterface, TaskQueueReceiverInterface):
 def task_queue_receiver_factory(task_queue_config):
     task_queue_type = task_queue_config.get("type", None)
     task_queue = None
-    if "event_hub" == task_queue_type:
-        from latigo.task_queue.event_hub import EventHubTaskQueueReceiver
-
-        task_queue = EventHubTaskQueueReceiver(task_queue_config)
-    elif "kafka" == task_queue_type:
+    if "kafka" == task_queue_type:
         from latigo.task_queue.kafka import KafkaTaskQueueReceiver
 
         task_queue = KafkaTaskQueueReceiver(task_queue_config)
@@ -96,11 +92,7 @@ def task_queue_receiver_factory(task_queue_config):
 def task_queue_sender_factory(task_queue_config):
     task_queue_type = task_queue_config.get("type", None)
     task_queue = None
-    if "event_hub" == task_queue_type:
-        from latigo.task_queue.event_hub import EventHubTaskQueueSender
-
-        task_queue = EventHubTaskQueueSender(task_queue_config)
-    elif "kafka" == task_queue_type:
+    if "kafka" == task_queue_type:
         from latigo.task_queue.kafka import KafkaTaskQueueSender
 
         task_queue = KafkaTaskQueueSender(task_queue_config)

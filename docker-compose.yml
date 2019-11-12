@@ -19,6 +19,7 @@ services:
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - LATIGO_INTERNAL_DATABASE=${LATIGO_INTERNAL_DATABASE}
       - LATIGO_SCHEDULER_CONFIG_FILE=${LATIGO_SCHEDULER_CONFIG_FILE}
+      - LATIGO_GORDO_CONNECTION_STRING=${LATIGO_GORDO_CONNECTION_STRING}
       - LATIGO_GORDO_RESOURCE=${LATIGO_GORDO_RESOURCE}
       - LATIGO_GORDO_TENANT=${LATIGO_GORDO_TENANT}
       - LATIGO_GORDO_AUTH_HOST_URL=${LATIGO_GORDO_AUTH_HOST_URL}
@@ -40,6 +41,7 @@ services:
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - LATIGO_INTERNAL_DATABASE=${LATIGO_INTERNAL_DATABASE}
       - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
+      - LATIGO_GORDO_CONNECTION_STRING=${LATIGO_GORDO_CONNECTION_STRING}
       - LATIGO_GORDO_RESOURCE=${LATIGO_GORDO_RESOURCE}
       - LATIGO_GORDO_TENANT=${LATIGO_GORDO_TENANT}
       - LATIGO_GORDO_AUTH_HOST_URL=${LATIGO_GORDO_AUTH_HOST_URL}
@@ -67,6 +69,7 @@ services:
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - LATIGO_INTERNAL_DATABASE=${LATIGO_INTERNAL_DATABASE}
       - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
+      - LATIGO_GORDO_CONNECTION_STRING=${LATIGO_GORDO_CONNECTION_STRING}
       - LATIGO_GORDO_RESOURCE=${LATIGO_GORDO_RESOURCE}
       - LATIGO_GORDO_TENANT=${LATIGO_GORDO_TENANT}
       - LATIGO_GORDO_AUTH_HOST_URL=${LATIGO_GORDO_AUTH_HOST_URL}
@@ -79,47 +82,26 @@ services:
       - LATIGO_TIME_SERIES_CLIENT_ID=${LATIGO_TIME_SERIES_CLIENT_ID}
       - LATIGO_TIME_SERIES_CLIENT_SECRET=${LATIGO_TIME_SERIES_CLIENT_SECRET}
 
-# Relational db for maintaining some state
-  postgres:
-    image: postgres
-    restart: always
-    container_name: postgres
-    ports:
-     - 5432:5432
-    environment:
-     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-     - ../volumes/latigo/postgres:/var/lib/postgresql/data:Z
-
-# Tool for easily managing relational database in browser
-#  adminer:
-#    image: adminer
+# Time series database to keep sensor and prediction data (only for local dev/test)
+#  influxdb:
+#    image: influxdb:latest
 #    restart: always
-#    container_name: adminer
+#    container_name: influxdb
+
 #    ports:
-#      - 8080:8080
-
-
-# Time series database to keep sensor and prediction data
-  influxdb:
-    image: influxdb:latest
-    restart: always
-    container_name: influxdb
-
-    ports:
-      - "8083:8083"
-      - "8086:8086"
-      - "8090:8090"
-    environment:
-     - INFLUXDB_DB=${INFLUXDB_DB}
-     - INFLUXDB_ADMIN_ENABLED=${INFLUXDB_ADMIN_ENABLED}
-     - INFLUXDB_ADMIN_USER=${INFLUXDB_ADMIN_USER}
-     - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
-     - INFLUXDB_USER=${INFLUXDB_USER}
-     - INFLUXDB_USER_PASSWORD=${INFLUXDB_USER_PASSWORD}
-    volumes:
-      # sudo mkdir -p ../volumes/latigo/influxdb/data
-      - ../volumes/latigo/influxdb:/var/lib/influxdb
+#      - "8083:8083"
+#      - "8086:8086"
+#      - "8090:8090"
+#    environment:
+#     - INFLUXDB_DB=${INFLUXDB_DB}
+#     - INFLUXDB_ADMIN_ENABLED=${INFLUXDB_ADMIN_ENABLED}
+#     - INFLUXDB_ADMIN_USER=${INFLUXDB_ADMIN_USER}
+#     - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
+#     - INFLUXDB_USER=${INFLUXDB_USER}
+#     - INFLUXDB_USER_PASSWORD=${INFLUXDB_USER_PASSWORD}
+#    volumes:
+#      # sudo mkdir -p ../volumes/latigo/influxdb/data
+#      - ../volumes/latigo/influxdb:/var/lib/influxdb
 
 # Visualization tool for influx and postgres
 #  grafana:
