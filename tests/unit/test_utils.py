@@ -2,6 +2,8 @@ import pprint
 import os
 from latigo.utils import merge, load_config, load_yaml, save_yaml
 
+# TODO: Actually manage this
+writable_working_dir="/tmp/"
 
 def merge_test_worker(skip, expected):
     # fmt: off
@@ -58,7 +60,7 @@ def test_merge_without_skip_none():
 
 
 def test_save_load_yaml():
-    config_filename = "test_config_save_load.yaml"
+    config_filename = writable_working_dir + "test_config_save_load.yaml"
     # fmt: off
     original_config={
         'both':'AAAA',
@@ -75,7 +77,7 @@ def test_save_load_yaml():
 
 
 def test_load_config():
-    config_filename = "test_config_load_config.yaml"
+    config_filename = writable_working_dir + "test_config_load_config.yaml"
     # fmt: off
     original_config={
         'both':'FILE',
