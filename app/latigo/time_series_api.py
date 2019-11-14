@@ -1,6 +1,7 @@
 import typing
 import logging
 import requests
+from requests.exceptions import HTTPError
 
 from latigo.types import Task, SensorDataSpec, SensorData, TimeRange, PredictionData
 from latigo.sensor_data import SensorDataProviderInterface
@@ -52,12 +53,16 @@ class TimeSeriesAPIClient:
     def _fetch_data(self, id: str, time_range: TimeRange) -> typing.Optional[dict]:
         url = f"{self.base_url}/timeseries/v1.5/{id}/data?startTime={time_range.rfc3339_from()}&endTime={time_range.rfc3339_to()}&limit=100000&includeOutsidePoints=true"
         res = self.session.get(url)
-        if res:
+        try:
+            res.raise_for_status()
             ret = res.json()
             ret["latigo-ok"] = True
             return ret
-        else:
-            logger.warning("Could not fetch data from {url}")
+        except HTTPError as http_err:
+            logger.warning(f"Could not fetch data from {url}: HTTP error occurred: {http_err}")
+            return {"latigo-ok": False}
+        except Exception as err:
+            logger.warning(f"Could not fetch data from {url}: Other error occurred: {err}")
             return {"latigo-ok": False}
 
     def _store_data(self, id: str, data: dict):
@@ -68,7 +73,7 @@ class TimeSeriesAPIClient:
             ret["latigo-ok"] = True
             return ret
         else:
-            logger.warning("Could not store data to {url}")
+            logger.warning(f"Could not store data to {url}")
             return {"latigo-ok": False}
 
 
