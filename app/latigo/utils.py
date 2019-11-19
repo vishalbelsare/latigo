@@ -93,7 +93,7 @@ def parse_gordo_connection_string(connection_string: str):
     from urllib.parse import urlparse
 
     parts = urlparse(connection_string)
-    regex = r"/gordo/(?P<gordo_version>v[0-9]*)/"
+    regex = r"/gordo/(?P<gordo_version>v[0-9]*)"
     matches = list(re.finditer(regex, parts.path))
     if len(matches) > 0:
         match = matches[0]
@@ -107,6 +107,9 @@ def parse_gordo_connection_string(connection_string: str):
         else:
             data["port"] = 443 if scheme == "https" else 80
         return data
+    else:
+        logger.warning(f"No matches for {regex}")
+        return None
 
 
 def parse_time_series_api_base_url(connection_string: str):

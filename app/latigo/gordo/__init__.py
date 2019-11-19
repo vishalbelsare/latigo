@@ -79,15 +79,49 @@ class LatigoPredictionForwarder(PredictionForwarder):
 
 def gordo_config_hash(config: dict):
     key = "gordo"
-    parts = ["scheme", "host", "port", "project", "target", "gordo_version", "batch_size", "parallelism", "forward_resampled_sensors", "ignore_unhealthy_targets", "n_retries"]
+    # fmt: off
+    parts = [
+        "scheme",
+        "host",
+        "port",
+        "project",
+        "target",
+        "gordo_version",
+        "batch_size",
+        "parallelism",
+        "forward_resampled_sensors",
+        "ignore_unhealthy_targets",
+        "n_retries"
+    ]
+    # fmt: on
     if config:
         for part in parts:
-            key += part + config.get("scheme", "")
+            key += part + str(config.get(part, ""))
     return key
 
 
 def clean_gordo_client_args(raw: dict):
-    whitelist = ["project", "target", "host", "port", "scheme", "gordo_version", "metadata", "data_provider", "prediction_forwarder", "batch_size", "parallelism", "forward_resampled_sensors", "ignore_unhealthy_targets", "n_retries", "data_provider", "prediction_forwarder", "session"]
+    # fmt: off
+    whitelist = sorted( [
+        "project",
+        "target",
+        "host",
+        "port",
+        "scheme",
+        "gordo_version",
+        "metadata",
+        "data_provider",
+        "prediction_forwarder",
+        "batch_size",
+        "parallelism",
+        "forward_resampled_sensors",
+        "ignore_unhealthy_targets",
+        "n_retries",
+        "data_provider",
+        "prediction_forwarder",
+        "session"
+    ])
+    # fmt: on
     args = {}
     for w in whitelist:
         args[w] = raw.get(w)
@@ -118,7 +152,13 @@ def allocate_gordo_client_instances(raw_config: dict):
         logger.info(f" + Instanciating Gordo Client: {key}")
         client = gordo_client_instances_by_hash.get(key, None)
         if not client:
-            client = Client(**clean_gordo_client_args(config))
+            clean_config=clean_gordo_client_args(config)
+            logger.info("---------- config")
+            logger.info(config)
+            logger.info("---------- clean_config")
+            logger.info(clean_config)
+            
+            client = Client(**clean_config)
             gordo_client_instances_by_hash[key] = client
             gordo_client_instances_by_project[project] = client
 
@@ -133,6 +173,8 @@ def _expand_gordo_connection_string(config: dict):
         parts = latigo.utils.parse_gordo_connection_string(connection_string)
         if parts:
             config.update(parts)
+        else:
+            raise Exception(f"Could not parse gordo connection string: {connection_string}")
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
