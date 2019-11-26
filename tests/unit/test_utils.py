@@ -2,8 +2,10 @@ import pprint
 import os
 from latigo.utils import merge, load_config, load_yaml, save_yaml
 
+
 # TODO: Actually manage this
-writable_working_dir="/tmp/"
+writable_working_dir = "/tmp/"
+
 
 def merge_test_worker(skip, expected):
     # fmt: off

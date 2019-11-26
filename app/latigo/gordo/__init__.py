@@ -15,11 +15,12 @@ from latigo.sensor_data import SensorDataProviderInterface
 
 from latigo.model_info import ModelInfoProviderInterface
 from latigo.auth import create_auth_session
-from latigo.gordo.client import Client
 
-# from gordo_components.client import Client
+# from latigo.gordo.client import Client
+from gordo_components.client.client import Client
+
 from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
-from gordo_components.client.forwarders import PredictionForwarder
+from gordo_components.client.utils import EndpointMetadata
 from gordo_components.dataset.sensor_tag import SensorTag
 
 
@@ -33,6 +34,11 @@ gordo_client_auth_session: typing.Optional[requests.Session] = None
 # Defeat dependency on gordo
 def _gordo_to_latigo_tag_list(gordo_tag_list):
     return gordo_tag_list
+
+
+class PredictionForwarder:
+    def __call__(self, *, predictions: pd.DataFrame = None, endpoint: EndpointMetadata = None, metadata: dict = dict(), resampled_sensor_data: pd.DataFrame = None) -> typing.Awaitable[None]:
+        ...
 
 
 class LatigoDataProvider(GordoBaseDataProvider):
@@ -52,10 +58,12 @@ class LatigoDataProvider(GordoBaseDataProvider):
         if self.sensor_data_provider:
             spec: SensorDataSpec = SensorDataSpec(tag_list=_gordo_to_latigo_tag_list(tag_list))
             time_range = TimeRange(from_ts, to_ts)
-            sensor_data = self.sensor_data_provider.get_data_for_range(spec, time_range)
+            sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
             if sensor_data and sensor_data.data:
                 for item in sensor_data.data:
                     yield item
+            else:
+                logger.warning(f"Could not load series: {err}")
 
     def can_handle_tag(self, tag: SensorTag) -> bool:
         if self.sensor_data_provider:
@@ -102,7 +110,7 @@ def gordo_config_hash(config: dict):
 
 def clean_gordo_client_args(raw: dict):
     # fmt: off
-    whitelist = sorted( [
+    whitelist = [
         "project",
         "target",
         "host",
@@ -120,13 +128,11 @@ def clean_gordo_client_args(raw: dict):
         "data_provider",
         "prediction_forwarder",
         "session"
-    ])
+    ]
     # fmt: on
     args = {}
     for w in whitelist:
         args[w] = raw.get(w)
-    # logger.info(pprint.pformat(raw))
-    # logger.info(pprint.pformat(args))
     return args
 
 
@@ -136,6 +142,26 @@ def get_auth_session(auth_config: dict):
         # logger.info("CREATING SESSION:")
         gordo_client_auth_session = create_auth_session(auth_config)
     return gordo_client_auth_session
+
+
+def expand_gordo_connection_string(config: dict):
+    if "connection_string" in config:
+        connection_string = config.pop("connection_string")
+        parts = latigo.utils.parse_gordo_connection_string(connection_string)
+        if parts:
+            config.update(parts)
+        else:
+            raise Exception(f"Could not parse gordo connection string: {connection_string}")
+
+
+def expand_gordo_data_provider(config: dict, sensor_data: typing.Optional[SensorDataProviderInterface]):
+    data_provider_config = config.get("data_provider", {})
+    config["data_provider"] = LatigoDataProvider(sensor_data, data_provider_config)
+
+
+def expand_gordo_prediction_forwarder(config: dict, prediction_storage):
+    prediction_forwarder_config = config.get("prediction_forwarder", {})
+    config["prediction_forwarder"] = LatigoPredictionForwarder(prediction_storage, prediction_forwarder_config)
 
 
 def allocate_gordo_client_instances(raw_config: dict):
@@ -149,15 +175,10 @@ def allocate_gordo_client_instances(raw_config: dict):
         config["project"] = project
         config["session"] = session
         key = gordo_config_hash(config)
-        logger.info(f" + Instanciating Gordo Client: {key}")
+        # logger.info(f" + Instanciating Gordo Client: {key}")
         client = gordo_client_instances_by_hash.get(key, None)
         if not client:
-            clean_config=clean_gordo_client_args(config)
-            logger.info("---------- config")
-            logger.info(config)
-            logger.info("---------- clean_config")
-            logger.info(clean_config)
-            
+            clean_config = clean_gordo_client_args(config)
             client = Client(**clean_config)
             gordo_client_instances_by_hash[key] = client
             gordo_client_instances_by_project[project] = client
@@ -167,43 +188,23 @@ def get_gordo_client_instance_by_project(project):
     return gordo_client_instances_by_project.get(project, None)
 
 
-def _expand_gordo_connection_string(config: dict):
-    if "connection_string" in config:
-        connection_string = config.pop("connection_string")
-        parts = latigo.utils.parse_gordo_connection_string(connection_string)
-        if parts:
-            config.update(parts)
-        else:
-            raise Exception(f"Could not parse gordo connection string: {connection_string}")
+def get_model_meta(model: dict):
+    meta = model.get("endpoint-metadata", {}).get("metadata", {})
+    # logger.info("MODEL META:"+pprint.pformat(meta))
+    return meta
 
 
-class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
-    def __init__(self, sensor_data, prediction_storage, config):
-        self.config = config
-        if not self.config:
-            raise Exception("No predictor_config specified")
-        _expand_gordo_connection_string(self.config)
-        # Augment config with the latigo data provider and prediction forwarders
-        self.data_provider_config = config.get("data_provider", {})
-        self.config["data_provider"] = LatigoDataProvider(sensor_data, self.data_provider_config)
-        self.prediction_forwarder_config = config.get("prediction_forwarder", {})
-        self.config["prediction_forwarder"] = LatigoPredictionForwarder(prediction_storage, self.prediction_forwarder_config)
-        allocate_gordo_client_instances(config)
+def get_model_tag_list(model: dict):
+    meta = get_model_meta(model)
+    tag_list = meta.get("dataset", {}).get("tag_list", {})
+    # logger.info("MODEL 0 META TAG_LIST:"+pprint.pformat(tag_list))
+    return tag_list
 
-    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorData) -> PredictionData:
-        if not project_name:
-            raise Exception("No project_name in gordo.execute_prediction()")
-        if not model_name:
-            raise Exception("No model_name in gordo.execute_prediction()")
-        if not sensor_data:
-            raise Exception("No sensor_data in gordo.execute_prediction()")
-        client = get_gordo_client_instance_by_project(project_name)
-        if not client:
-            raise Exception("No client in gordo.execute_prediction()")
-        result = client.predict(sensor_data.time_range.from_time, sensor_data.time_range.to_time)
-        if not result:
-            raise Exception("No result in gordo.execute_prediction()")
-        return PredictionData(name=model_name, time_range=sensor_data.time_range, data=result)
+
+def get_model_name(model: dict):
+    name = model.get("name", "")
+    # logger.info(f"MODEL NAME: {name}")
+    return name
 
 
 class GordoModelInfoProvider(ModelInfoProviderInterface):
@@ -217,7 +218,8 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         if not self.config:
             raise Exception("No predictor_config specified")
         self._prepare_auth()
-        _expand_gordo_connection_string(self.config)
+        # Augment config with expanded gordo connection string
+        expand_gordo_connection_string(self.config)
         allocate_gordo_client_instances(config)
 
     def get_model_info(self, model_name: str):
@@ -256,3 +258,33 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
                 logger.error(f" + NO CLIENT FOUND FOR PROJECT {project}")
         models = self._normalize_to_models(models)
         return models
+
+
+class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
+    def __init__(self, sensor_data, prediction_storage, config):
+        self.config = config
+        if not self.config:
+            raise Exception("No predictor_config specified")
+        # Augment config with expanded gordo connection string
+        expand_gordo_connection_string(self.config)
+        # Augment config with the latigo data provider
+        expand_gordo_data_provider(config, sensor_data)
+        # Augment config with the latigo prediction forwarder
+        expand_gordo_prediction_forwarder(config, prediction_storage)
+        # Allocate gordo clients for our projects
+        allocate_gordo_client_instances(config)
+
+    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorData) -> PredictionData:
+        if not project_name:
+            raise Exception("No project_name in gordo.execute_prediction()")
+        if not model_name:
+            raise Exception("No model_name in gordo.execute_prediction()")
+        if not sensor_data:
+            raise Exception("No sensor_data in gordo.execute_prediction()")
+        client = get_gordo_client_instance_by_project(project_name)
+        if not client:
+            raise Exception(f"No gordo client found for project '{project_name}' in gordo.execute_prediction()")
+        result = client.predict(sensor_data.time_range.from_time, sensor_data.time_range.to_time)
+        if not result:
+            raise Exception("No result in gordo.execute_prediction()")
+        return PredictionData(name=model_name, time_range=sensor_data.time_range, data=result)

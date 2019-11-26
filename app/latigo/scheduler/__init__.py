@@ -85,8 +85,14 @@ class Scheduler:
         prediction_start_time = datetime.now()
         prediction_end_time = prediction_start_time + timedelta(seconds=60 * 30)
         for model in self.models:
-            model_name = model.get("name", "unnamed")
-            project_name = model.get("project", "unnamed")
+            project_name = model.get("project", None)
+            if not project_name:
+                logger.error("No project name found, skipping model")
+                continue
+            model_name = model.get("name", None)
+            if not model_name:
+                logger.error("No model name found, skipping model")
+                continue
             task = Task(project_name=project_name, model_name=model_name, from_time=prediction_start_time, to_time=prediction_end_time)
             try:
                 self.task_queue.put_task(task)

@@ -42,8 +42,8 @@ def fetch_access_token(auth_config: dict):
         context = adal.AuthenticationContext(authority=authority_uri, validate_authority=validate_authority, api_version=None)
         token = context.acquire_token_with_client_credentials(resource_uri, client_id, client_secret) or {}
         if token:
-            #print("Got auth token:")
-            #print(json.dumps(token, indent=2))
+            # print("Got auth token:")
+            # print(json.dumps(token, indent=2))
             # logger.info("fetch_access_token:")
             oathlib_token = {"access_token": token.get("accessToken", ""), "refresh_token": token.get("refreshToken", ""), "token_type": token.get("tokenType", "Bearer"), "expires_in": token.get("expiresIn", 0)}
             # logger.info(pprint.pformat(token))
@@ -80,10 +80,10 @@ def create_auth_session(auth_config: dict):
     if token:
         try:
             session = OAuth2Session(auth_config.get("client_id"), token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
-            #logger.info(f"Authenticated successfully with token:")
-            #logger.info(token)
-            #logger.info(f"Authenticated successfully with session:")
-            #logger.info(session)
+            # logger.info(f"Authenticated successfully with token:")
+            # logger.info(token)
+            # logger.info(f"Authenticated successfully with session:")
+            # logger.info(session)
         except Exception as e:
             logger.error(f"Error creating OAuth2Session: {e}")
     return session

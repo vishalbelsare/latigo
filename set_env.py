@@ -27,12 +27,31 @@ if not path.exists(filename):
         "LATIGO_GORDO_AUTH_HOST_URL": "The authority host URL. Used for bearer authentication.",
         "LATIGO_GORDO_CLIENT_ID": "The client ID of latigo aplication in AD. Used for bearer authentication.",
         "LATIGO_GORDO_CLIENT_SECRET": "The client secret of latigo aplication in AD. Used for bearer authentication.",
+        
+        "LATIGO_TIME_SERIES_BASE_URL": "The base url of the time series api. This is what we create endpoint urls from when using the API.",
+        "LATIGO_TIME_SERIES_IMS_META_BASE_URL": "The base url of the IMS metadata api. This is used to get systemCode for tag name.",
+        "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_BASE_URL": "The base url of the IMS export subscription api. This is used to get timeseries ID for systemCode",
+        
         "LATIGO_TIME_SERIES_RESOURCE": "The resource ID of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_TENANT": "The tenant of time series api. Used for bearer authentication.",
-        "LATIGO_TIME_SERIES_BASE_URL": "The base url of the time series api. This is what we create endpoint urls from when using the API.",
         "LATIGO_TIME_SERIES_AUTH_HOST_URL": "The authority host URL for time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_CLIENT_ID": "The client ID of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_CLIENT_SECRET": "The client secret of time series api. Used for bearer authentication.",
+        
+        
+        "LATIGO_TIME_SERIES_IMS_META_RESOURCE": "The resource ID of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_TENANT": "The tenant of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_IMS_META_AUTH_HOST_URL": "The authority host URL for time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_IMS_META_CLIENT_ID": "The client ID of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_IMS_META_CLIENT_SECRET": "The client secret of time series api. Used for bearer authentication.",
+
+
+        "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_RESOURCE": "The resource ID of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_TENANT": "The tenant of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_AUTH_HOST_URL": "The authority host URL for time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_CLIENT_ID": "The client ID of time series api. Used for bearer authentication.",
+        "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_CLIENT_SECRET": "The client secret of time series api. Used for bearer authentication.",
+
     }
     # fmt: on
     

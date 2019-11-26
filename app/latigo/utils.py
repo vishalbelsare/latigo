@@ -1,18 +1,25 @@
 import re
 import pprint
 import logging
-from datetime import datetime, timedelta
+import datetime
 import asyncio
 import typing
 import yaml
 import os.path
 
+import importlib
+import latigo.rfc3339
+
 
 logger = logging.getLogger("latigo.utils")
 
 
-def rfc3339_from_datetime(dt: datetime):
-    return dt.isoformat("T") + "Z"
+def rfc3339_from_datetime(date_object: datetime.datetime):
+    return latigo.rfc3339.timetostr(date_object)
+
+
+def datetime_from_rfc3339(date_string: str):
+    return latigo.rfc3339.parse_datetime(date_string)
 
 
 def load_yaml(filename, output=False):
@@ -112,17 +119,7 @@ def parse_gordo_connection_string(connection_string: str):
         return None
 
 
-def parse_time_series_api_base_url(connection_string: str):
-    if not connection_string:
-        return None
-    regex = r"Endpoint=sb://(?P<endpoint>.*)/;SharedAccessKeyName=(?P<shared_access_key_name>.*);SharedAccessKey=(?P<shared_access_key>.*);EntityPath=(?P<entity_path>.*)"
-    matches = list(re.finditer(regex, connection_string))
-    if len(matches) > 0:
-        match = matches[0]
-        return match.groupdict()
-
-
-def human_delta(td_object: timedelta, max: int = 0):
+def human_delta(td_object: datetime.timedelta, max: int = 0):
     ms = int(td_object.total_seconds() * 1000)
     # fmt: off
     periods = [
@@ -151,23 +148,23 @@ def human_delta(td_object: timedelta, max: int = 0):
 
 
 class Timer:
-    def __init__(self, trigger_interval: timedelta):
+    def __init__(self, trigger_interval: datetime.timedelta):
         self.trigger_interval = trigger_interval
-        self.start_time: typing.Optional[datetime] = None
+        self.start_time: typing.Optional[datetime.datetime] = None
 
-    def start(self, start_time: typing.Optional[datetime] = None):
+    def start(self, start_time: typing.Optional[datetime.datetime] = None):
         if start_time:
             self.start_time = start_time
         else:
-            self.start_time = datetime.now()
+            self.start_time = datetime.datetime.now()
 
     def stop(self):
         self.start_time = None
 
-    def interval(self) -> typing.Optional[timedelta]:
+    def interval(self) -> typing.Optional[datetime.timedelta]:
         if not self.start_time:
             return None
-        return datetime.now() - self.start_time
+        return datetime.datetime.now() - self.start_time
 
     def is_triggered(self) -> bool:
         iv = self.interval()
@@ -180,3 +177,9 @@ class Timer:
 
     def __str__(self):
         return f"Timer(start_time={self.start_time}, trigger_interval={self.trigger_interval} {'[triggered]' if self.is_triggered() else ''})"
+
+
+def list_loggers():
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for l in loggers:
+        logger.info(f"LOGGER: {l}")

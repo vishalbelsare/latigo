@@ -35,6 +35,8 @@ req:
 	cd app && cat requirements.in, test_requirements.in | sort -u > r.in
 	cd app && pip-compile --output-file=test_requirements.txt r.in
 	[ ! -e r.in ] || rm r.in
+	cd app && pip install -r requirements.txt
+	cd app && pip install -r test_requirements.txt
 
 # Rebuild latest latigo and install it to site-packages
 setup:
@@ -42,12 +44,26 @@ setup:
 	pip uninstall -y latigo
 	pip install app/
 
-port-forward:
-	while : ; do printf "PORTFORWARDING----\n"; kubectl port-forward svc/ambassador -n ambassador 8888:80; done
-
 build-docs:
 	@echo "PLACEHOLDER: LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
 	@sleep 1
+
+############### Convenience gordo access ######################
+
+
+login-gordos:
+	az login
+	az account set --subscription "019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
+	az account show
+	az aks get-credentials --overwrite-existing --resource-group gordotest46 --name gordotest46 --admin
+	kubectl config set-context --current --namespace=kubeflow
+	kubectl get gordos
+
+list-gordos:
+	kubectl get gordos
+
+port-forward:
+	while : ; do printf "PORTFORWARDING----\n"; kubectl port-forward svc/ambassador -n ambassador 8888:80; done
 
 ############### Convenience docker compose ####################
 
@@ -132,6 +148,12 @@ help:
 	@echo " + make pgsql-perm       Set up permissions of the postgres docker image's volume (necessary nuisance)"
 	@echo " + make req              Rebuild pinned versions in *requirements.txt from *requirements.in"
 	@echo " + make setup            Build latigo pip package"
+	@echo ""
+	@echo " Gordo targets:"
+	@echo ""
+	@echo " + login-gordos          Login to gordo cluster"
+	@echo " + list-gordos           List available projects in gordo"
+	@echo " + port-forward          Set up port forwarding to access gordo via localhost:8888"
 	@echo ""
 	@echo " Development targets:"
 	@echo ""

@@ -2,16 +2,17 @@
 
 ## About
 
-Latigo is a service that is responsible for continuously running machine learning algorithms on a set of input sensor data to predict the next datapoint in sensor data. This is useful to do predictive maintenance for production equipment.
+Latigo is a service that is responsible for continuously running machine learning algorithms on a set of input sensor data to predict the next datapoint in sensor data. This is useful to do predictive maintenance for industrial equipment.
+Latigo is a small part of a larger system developed for Equinor.
 
 The basic operation follows these steps:
 - Follow a predefined schedule to determine when prediction should occur.
 - Fetches meta data about which data sources and ML models to use from [Gordo](/equinor/gordo-components).
-- Fetches the source sensor data from the timeseries API.
-- Uses Gordo to generate the predictions.
-- Persists the resulting predictions back to the timeseries API.
+- Fetches the source sensor data from the [Time Series API](/equinor/OmniaPlant/tree/master/Omnia%20Timeseries%20API).
+- Uses [Gordo](/equinor/gordo-components) to generate predictions.
+- Persists the resulting predictions back to [Time Series API](/equinor/OmniaPlant/tree/master/Omnia%20Timeseries%20API).
 
-This project has been based on the original prototype project [ioc-gordo-oracle] ( /equinor/ioc-gordo-oracle ) and has since evolved to support other needs and technical dependencies.
+This project has been based on the original prototype project [ioc-gordo-oracle](/equinor/ioc-gordo-oracle) and has since evolved to support other needs.
 
 ## Architecture
 
@@ -21,108 +22,64 @@ Latigo is a distributed application with two nodes:
 - Scheduler
 - Executor
 
-While Latigo is made to be portable and reusable for other clients, we are coarsly following the needs of IOC right now since that is where it will be used first. IOC has the following requirement:
+While Latigo is made to be portable and reusable for other clients, we are coarsly following the needs of Equinor IOC right now since that is where it will be used first. IOC has the following requirements:
 
-- Produce a prediction for the last 30 minutes for every ML model in Gordo (there are roughly 9000 models)
-- Backfill predictions up to a certain amount of time for every ML model in Gordo so that historical prediction can be reviewed (one-time operation at startup)
+- Produce a prediction for the last 30 minutes for every ML model that is available in Gordo (there are roughly 9000 models at the time of writing).
+- Backfill predictions backward to a certain amount of time for every ML model in Gordo so that historical prediction can be reviewed (one-time operation at startup).
 
 
 #### Scheduler
 
-The scheduler will produce one "task description" for each prediction to be made. The task description will contain the following:
+In Latigo there will be exactly one scheduler instance running. The scheduler instance will produce one "task description" for each prediction to be made. The task description will contain the following:
 - Timespan for prediction
 - The sensor_data tags to predict for
 - The Gordo config for the prediction (which "Gordo machine" to use)
 
-The scheduler will produce these tasks according to the schedule and feed them into an event hub.
+The scheduler will produce these tasks according to the schedule and feed them into an internal message queue ( [Azure Event Hub](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-about) ).
 
 #### Executor
 
-The executors will then pick tasks from the event_hub and "execute" them one by one.There may be more one executor operating concurrently.
+In Latigo there will be one or more executor instances running. The executor instances will each pick tasks from the internal message queue and "execute" them one by one.There may be more one executor operating concurrently for scalability.
 
 For each tasks the executors will do as follows:
-- Read one tasks description
-- Find and download the data required for the prediction
-- Send the data to Gordo and produce a prediction
-- Download the prediction result from Gordo
-- Find and upload the prediction result to the data sink that is supposed to store the result.
+- Read one tasks description.
+- Find the required data for the prediction in the source (Time Series API).
+- Download the data required for the prediction from the source (Time Series API).
+- Send the data to Gordo and produce prediction results.
+- Download the prediction results from Gordo.
+- Upload the prediction result to the destination (Time Series API).
 
 
 ### Interfaces
 
-Latigo opperates through the use of the following interfaces:
+Latigo operates through the use of the following interfaces:
 
-- SensorInformationProvider
-- SensorDataProvider
-- ModelInformationProvider
-- ModelExecutionProvider
 
-#### SensorInformationProvider
+- PredictionExecutionProviderInterface
+- PredictionStorageProviderInterface
+- SensorDataProviderInterface
 
-Where can we get information about available sensors and their naming conventions?
+#### PredictionExecutionProviderInterface
+This interface wraps the engine that produces predictions based on sensor data.
+##### Interface
+- execute_prediction(project_name: str, model_name: str, sensor_data: SensorData) -> PredictionData
 
-Possible implementations:
 
-- Tilstandomatic
-- Data api
+#### PredictionStorageProviderInterface
+This interface wraps the destination where predictions are stored.
+##### Interface
+- put_predictions(prediction_data: PredictionData)
 
-Suggested interface:
-
-- get_sensor_list() – enumerate all available sensors
-- sensor_exists(sensor_name:string) – check if a sensor exists
-
-#### SensorDataProvider
-
-Where can we get access to data from a sensor given its name?
-
-Possible implementations:
-
-- InfluxDB
-- Data api
-
-Suggested interface:
-
-- get_native_range_specifier(from:timestamp, to:timestamp, parameters:string) – return a specification of the given time span in native representation. For example for influx this would be an influx query or complete query url (parameter can be used to select)
-- get_data_for_range(from:timestamp, to:timestamp)
-
-#### ModelInformationProvider
-
-Where can we get information about available models?
-
-Possible implementations:
-
-- Tilstandomatic
-
-Suggested interface:
-
-- get_model_list() – enumerate all available models
-- model_exists(model_name:string) – check if a model exists
-
-#### ModelExecutionProvider
-
-Where can we train and execute models?
-
-Possible implementations:
-
-- Gordo
-
-Suggested interface:
-
-- register_model(model_data:json) – Register a new model into the execution provider
-- unregister_model(model_ name:string) – Unregister existing model from execution provider
-- get_model_status(model_name:string) – Return the full status of a model given its name
-- execute_model (model_name:string, from:timestamp, to:timestamp) – Train and/or run data through a given model
+#### SensorDataProviderInterface
+This interface wraps the source of sensor data.
+##### Interface
+- get_data_for_range(spec: SensorDataSpec, time_range: TimeRange) -> SensorData
 
 
 ### Dependencies
 
 - The application is deployable as *docker* containers with *docker-compose*.
 - The *scheduler* and *executor* programs are implemented in *Python 3.7*.
-- *PostgreSQL* is the database used
-- *Alchemy* is used as the ORM.
-- Database versioning/migration is managed through *alembic*.
-- The python instance is managed by *supervisord*.
-
 
 # Development
 
@@ -132,6 +89,7 @@ Suggested interface:
 - Python 3.x
 - Docker and docker-compose installed (https://wiki.equinor.com/wiki/index.php/WIKIHOW:Set_up_Docker_on_a_CentOS_7_server)
 - Connection string to Azure Event Hub and both read/write permission to it (documentation on how to obtrain this follows)
+- Connection string to Time Series API (Possibility of using local influx has been planned but is not complete at this time)
 
 ## Steps
 
@@ -197,10 +155,6 @@ docker-compose up
 
 At this point you should see the services running:
 
-- influxdb
-- adminer
-- postgres
-- grafana
 - latigo-executor-2
 - latigo-scheduler
 - latigo-executor-1
@@ -250,22 +204,22 @@ There are some things you need to know about Gordo up front:
 - Gordo is in active development
 - At the time of writing (2019-10-17) there currently exists no Gordo in "production", however many candidate clusters are running. You will have to communicate with Gordo team to find out which of their test/dev clusters are the best to be using while testing. Some are more stable than others.
 - If you need to access Gordo directly during development for debugging purposes you can use port forwarding. This is documented below.
-- Latigo will connect to Gordo using api gateway and a so called "bearer token" for authentication.
+- Latigo will connect to Gordo and Time Series API using (Equinor API Gateway)[https://api.equinor.com/] and wil use a so called "bearer token" for authentication.
 
 ### Disable proxy
 Before you can have portforwarding set up successfully, you need to disable proxy settings (Gordo is available via external network). For more information about proxy setup in Equinor please see [this link](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
 
 ```bash
-# Disable proxy
+# Disable proxy (NOTE: if you don't have unset proxy, read the documentation as described above)
 unsetproxy
 ```
 
-### Log in to azure
+### Log in to Azure
 
 ```bash
 az login
 ```
-*NOTE: At this point you should see a list of subscriptions that you have access to in the terminal. Make sure you see the subscription(s) you expect to be working with!*
+*NOTE: At this point you should see a list of subscriptions that you have access to in the terminal. Make sure you see the subscription(s) you expect to be working with.*
 
 ### Select active subscription
 ```bash
@@ -309,6 +263,8 @@ kubectl get gordos
 ```
 
 ### Set up port forwarding to Gordo cluster
+This is useful when manually debugging with Gordo, but you should not rely on it for interfacing Latigo with Gordo, for that use a proper connection through API Gateway.
+
 ```bash
 # Now we set up port forwarding so that our code can talk to the cluster
 kubectl port-forward svc/ambassador -n ambassador 8080:80
@@ -322,7 +278,7 @@ To terminate the port forwarding simply stop the process with <ctrl>+<C>.
 make port-forward
 ```
 
-*To verify that the connection works, you could open the URL for a Gordo project in the browser:*
+*To verify that the connection works, you can open the URL for a Gordo project in the browser:*
 ```bash
 xdg-open http://localhost:8080/gordo/v0/ioc-1130/
 ```
