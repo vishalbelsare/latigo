@@ -60,6 +60,8 @@ class LatigoDataProvider(GordoBaseDataProvider):
             time_range = TimeRange(from_ts, to_ts)
             sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
             if sensor_data and sensor_data.data:
+                logger.info(f"PROVIDING DATA: ")
+                logger.info(pprint.pformat(sensor_data.data))
                 for item in sensor_data.data:
                     yield item
             else:
@@ -125,8 +127,6 @@ def clean_gordo_client_args(raw: dict):
         "forward_resampled_sensors",
         "ignore_unhealthy_targets",
         "n_retries",
-        "data_provider",
-        "prediction_forwarder",
         "session"
     ]
     # fmt: on
@@ -260,6 +260,35 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         return models
 
 
+def print_client(client):
+    if not client:
+        logger.info("Client: None")
+        return
+    logger.info("Client:----------------")
+    # fmt: off
+    data = {
+    "base_url": client.base_url,
+    "watchman_endpoint": client.watchman_endpoint,
+    "metadata": client.metadata,
+    "prediction_forwarder": client.prediction_forwarder,
+    "data_provider": client.data_provider,
+    "use_parquet": client.use_parquet,
+    "session": client.session,
+    "prediction_path": client.prediction_path,
+    "batch_size": client.batch_size,
+    "parallelism": client.parallelism,
+    "forward_resampled_sensors": client.forward_resampled_sensors,
+    "n_retries": client.n_retries,
+    "query": client.query,
+    "target": client.target,
+    "ignore_unhealthy_targets": client.ignore_unhealthy_targets,
+    #"endpoints": client.endpoints
+    }
+    # fmt: on
+    logger.info(pprint.pformat(data))
+    logger.info("-----------------------")
+
+
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
     def __init__(self, sensor_data, prediction_storage, config):
         self.config = config
@@ -284,7 +313,11 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         client = get_gordo_client_instance_by_project(project_name)
         if not client:
             raise Exception(f"No gordo client found for project '{project_name}' in gordo.execute_prediction()")
-        result = client.predict(sensor_data.time_range.from_time, sensor_data.time_range.to_time)
+        logger.info("STARTING PREDICTION WITH CLIENT: ------")
+        # logger.info(pprint.pformat(client.__dict__))
+        print_client(client)
+        logger.info("PREDICTION: start={sensor_data.time_range.from_time}  end={sensor_data.time_range.to_time}")
+        result = client.predict(start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time)
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
         return PredictionData(name=model_name, time_range=sensor_data.time_range, data=result)

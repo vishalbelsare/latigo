@@ -91,6 +91,9 @@ def parse_event_hub_connection_string(connection_string: str):
     if len(matches) > 0:
         match = matches[0]
         return match.groupdict()
+    else:
+        logger.warning(f"No matches for {regex}")
+        return None
 
 
 def parse_gordo_connection_string(connection_string: str):

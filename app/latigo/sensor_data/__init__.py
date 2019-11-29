@@ -54,4 +54,4 @@ def sensor_data_provider_factory(sensor_data_provider_config):
         sensor_data_provider = MockSensorDataProvider(sensor_data_provider_config)
     else:
         sensor_data_provider = DevNullSensorDataProvider(sensor_data_provider_config)
-    return sensor_data_provider, None
+    return sensor_data_provider

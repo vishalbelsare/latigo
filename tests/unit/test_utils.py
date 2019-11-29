@@ -1,6 +1,9 @@
 import pprint
+import logging
 import os
-from latigo.utils import merge, load_config, load_yaml, save_yaml
+from latigo.utils import merge, load_config, load_yaml, save_yaml, parse_event_hub_connection_string
+
+logger = logging.getLogger("latigo.utils")
 
 
 # TODO: Actually manage this
@@ -22,13 +25,13 @@ def merge_test_worker(skip, expected):
         'only_b_none':None,
     }
     # fmt: on
-    print("a:")
-    print(pprint.pformat(a))
-    print("b:")
-    print(pprint.pformat(b))
+    # print("a:")
+    # print(pprint.pformat(a))
+    # print("b:")
+    # print(pprint.pformat(b))
     merge(a, b, skip)
-    print("res:")
-    print(pprint.pformat(b))
+    # print("res:")
+    # print(pprint.pformat(b))
     assert b == expected
 
 
@@ -105,8 +108,17 @@ def test_load_config():
     # fmt: on
     save_yaml(config_filename, original_config)
     config = load_config(config_filename, overlay_config, True)
-    print("loaded config:")
-    print(pprint.pformat(config))
+    # print("loaded config:")
+    # print(pprint.pformat(config))
     if os.path.exists(config_filename):
         os.remove(config_filename)
     assert config == expected
+
+
+def test_parse_event_hub_connection_string():
+    input = "Endpoint=sb://some.test.domain.com/;SharedAccessKeyName=some-key-name;SharedAccessKey=SomeKindOfKey2345=;EntityPath=some-topic"
+    output = parse_event_hub_connection_string(input)
+    # logger.info("RESULT:")
+    # logger.info(pprint.pformat(output))
+    output_expected = {"endpoint": "some.test.domain.com", "entity_path": "some-topic", "shared_access_key": "SomeKindOfKey2345=", "shared_access_key_name": "some-key-name"}
+    assert output == output_expected

@@ -22,7 +22,7 @@ def test_gordo_config_hash():
     }
         # fmt: on
     )
-    logger.info(hash)
+    # logger.info(hash)
     assert "gordoschemeAhostBport8080projectDtargetEgordo_versionFbatch_sizeGparallelismHforward_resampled_sensorsIignore_unhealthy_targetsJn_retriesK" == hash
 
 
@@ -39,7 +39,11 @@ def test_clean_gordo_client_args():
         "parallelism":"H",
         "forward_resampled_sensors":"I",
         "ignore_unhealthy_targets":"J",
-        "n_retries":"K"
+        "n_retries":5,
+        "metadata":"L",
+        "data_provider":"M",
+        "prediction_forwarder":"N",
+        "session":"O",
     }
     # fmt: on
     clean_ok = clean_gordo_client_args(ok)

@@ -103,12 +103,17 @@ class Scheduler:
             except Exception as e:
                 # logger.error(f"Could not send task: {e}")
                 # traceback.print_exc()
-                stats_projects_bad[project_name] = stats_projects_bad.get(project_name, 0) + 1
-                stats_models_bad[model_name] = stats_models_bad.get(model_name, 0) + 1
+                stats_projects_bad[project_name] = stats_projects_bad.get(project_name, "") + f", {e}"
+                stats_models_bad[model_name] = stats_models_bad.get(model_name, "") + f", {e}"
+                raise e
+            logger.warning("Early termination for testing")
+            break
         stats_interval = datetime.now() - stats_start_time
         logger.info(f"Scheduled {len(stats_models_ok)} models in {len(stats_projects_ok)} projects in {human_delta(stats_interval)}")
         if len(stats_models_bad) > 0 or len(stats_projects_bad) > 0:
             logger.error(f"          {len(stats_models_bad)} models in {len(stats_projects_bad)} projects failed")
+            for name in stats_models_bad:
+                logger.error(f"          + {name}({stats_models_bad[name]})")
 
     def run(self):
         logger.info(f"Starting {self.__class__.__name__}")

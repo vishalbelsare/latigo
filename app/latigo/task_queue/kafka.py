@@ -28,8 +28,17 @@ def delivery_callback(err, msg):
         # logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] @ {msg.offset()}")
 
 
+def print_assignment(consumer, partitions):
+    print("Assignment:", partitions)
+
+
 def prepare_kafka_config(config: typing.Dict[str, typing.Any]) -> dict:
-    parts = parse_event_hub_connection_string(str(config.get("connection_string"))) or {}
+    connection_string = str(config.get("connection_string"))
+    if not connection_string:
+        raise Exception("No connection_string configured")
+    parts = parse_event_hub_connection_string(connection_string) or {}
+    if not parts:
+        raise Exception(f"No parts found in connection_string")
     # fmt: off
     return {
         "bootstrap.servers": f"{parts.get('endpoint')}:9093",
@@ -42,7 +51,11 @@ def prepare_kafka_config(config: typing.Dict[str, typing.Any]) -> dict:
         "group.id": config.get("group.id"),
         "request.timeout.ms": config.get("request.timeout.ms"),
         "session.timeout.ms": config.get("session.timeout.ms"),
-        "enable.auto.commit": config.get("enable.auto.commit"), "auto.commit.interval.ms": config.get("auto.commit.interval.ms"), "default.topic.config": config.get("default.topic.config"), "debug": config.get("debug")}
+        "enable.auto.commit": config.get("enable.auto.commit"),
+        "auto.commit.interval.ms": config.get("auto.commit.interval.ms"),
+        "default.topic.config": config.get("default.topic.config"),
+        "debug": config.get("debug")
+        }
     # fmt: on
 
 
@@ -67,10 +80,18 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         # Producer configuration
         # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
         # See https://github.com/edenhill/librdkafka/wiki/Using-SSL-with-librdkafka#prerequisites for SSL issues
+        connection_string = str(config.get("connection_string"))
+        if not connection_string:
+            raise Exception("No connection_string configured")
         self.config = prepare_kafka_config(config)
         # Find our topic
-        parts = parse_event_hub_connection_string(str(config.get("connection_string"))) or {}
+
+        parts = parse_event_hub_connection_string(connection_string) or {}
+        if not parts:
+            raise Exception(f"No parts found in connection_string")
         self.topic = parts.get("entity_path")
+        if not self.topic:
+            raise Exception("No topic configured")
         # self._create_topics()
         # Create Producer instance
         self.producer = Producer(self.config)
@@ -83,20 +104,23 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         if self.producer:
             self.producer.close()
 
-    def put_task(self, task: Task):
+    def send_event(self, msg: typing.Optional[bytes]):
         try:
-            task_bytes = serialize_task(task)
-            if task_bytes:
-                self.producer.produce(self.topic, task_bytes, callback=delivery_callback)
-            else:
-                raise Exception("Could not serialize task")
+            self.producer.produce(self.topic, msg, callback=delivery_callback)
         except BufferError as e:
             logger.info(f"Local producer queue is full ({len(self.producer)} messages awaiting delivery): try again")
         self.producer.poll(0)
 
-
-def print_assignment(consumer, partitions):
-    print("Assignment:", partitions)
+    def put_task(self, task: Task):
+        task_bytes: typing.Optional[bytes] = None
+        try:
+            task_bytes = serialize_task(task)
+        except Exception as e:
+            logger.error(f"Error while serizlising task: {e}")
+            raise e
+        if not task_bytes:
+            raise Exception("Could not serialize task")
+        self.send_event(task_bytes)
 
 
 class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
@@ -105,8 +129,18 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
         self.config = prepare_kafka_config(config)
         # Find our topic
-        parts = parse_event_hub_connection_string(str(config.get("connection_string"))) or {}
+        connection_string = str(config.get("connection_string"))
+        if not connection_string:
+            raise Exception("No connection_string configured")
+        # self.config = prepare_kafka_config(config)
+
+        parts = parse_event_hub_connection_string(connection_string) or {}
+        if not parts:
+            raise Exception(f"No parts found in connection_string")
         self.topic = parts.get("entity_path")
+        if not self.topic:
+            raise Exception("No topic configured")
+
         # Create Consumer instance
         self.consumer = Consumer(self.config)
         # Subscribe to topics
@@ -116,9 +150,15 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         if self.consumer:
             self.consumer.close()
 
-    def receive_event(self, timeout=100):
-        msg = self.consumer.poll(timeout=timeout)
+    def receive_event(self, timeout=100) -> typing.Optional[bytes]:
+        msg = None
+        try:
+            msg = self.consumer.poll(timeout=timeout)
+        except Exception as e:
+            logger.warning("Error polling: {e}")
+            return None
         if msg is None:
+            logger.warning(f"Polling timed out after {timeout} sec")
             return None
         if msg.error():
             # Error or event
@@ -127,16 +167,17 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
                 logger.info(f"{msg.topic()} [msg.partition()] reached end at offset {msg.offset()}")
             else:
                 # Error
-                e = KafkaException(msg.error())
+                ke = KafkaException(msg.error())
                 # raise e
-                logger.error(f"Error occurred: {e}")
+                logger.error(f"Error occurred: {ke}")
+            return None
         else:
             # Proper message
             return msg.value()
 
-    def receive_event_with_backoff(self, timeout=100, backoff=1000):
+    def receive_event_with_backoff(self, timeout=100, backoff=1000) -> typing.Optional[Task]:
         task_bytes = self.receive_event(timeout)
-        task = None
+        task: typing.Optional[Task] = None
         if not task_bytes:
             time.sleep(backoff)
         else:
@@ -145,5 +186,5 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
             logger.error("Could not deserialize task")
         return task
 
-    def get_task(self) -> Task:
+    def get_task(self) -> typing.Optional[Task]:
         return self.receive_event_with_backoff()

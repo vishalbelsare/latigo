@@ -5,7 +5,7 @@ import pprint
 from datetime import datetime, timedelta
 from os import environ
 from collections import namedtuple
-from latigo.time_series_api import TimeSeriesAPIPredictionStorageProvider, TimeSeriesAPISensorDataProvider, IMSMetadataAPIClient, _itemes_present, _id_in_data
+from latigo.time_series_api import TimeSeriesAPIClient, TimeSeriesAPIPredictionStorageProvider, TimeSeriesAPISensorDataProvider, IMSMetadataAPIClient, _itemes_present, _id_in_data
 from latigo.types import PredictionData, TimeRange, SensorDataSpec, LatigoSensorTag
 from latigo.utils import datetime_from_rfc3339
 
@@ -65,24 +65,34 @@ actual_spec: SensorDataSpec = SensorDataSpec(tag_list=actual_tag_list)
 data: typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]] = []
 
 
-def bob_test_time_series_api_write():
+def disabled_test_time_series_api_write():
     prediction_storage_provider = TimeSeriesAPIPredictionStorageProvider(_get_config())
     prediction_data = PredictionData(name=name, time_range=time_range, data=data)
     prediction_storage_provider.put_predictions(prediction_data)
 
 
-def bob_test_time_series_api_read():
+def disabled_test_time_series_api_read():
     sensor_data_provider = TimeSeriesAPISensorDataProvider(_get_config())
     sensor_data = sensor_data_provider.get_data_for_range(spec=spec, time_range=time_range)
 
 
-def bonb_test_time_series_api_actual_read():
+def disabled_test_time_series_api_actual_read():
     sensor_data_provider = TimeSeriesAPISensorDataProvider(_get_config())
     sensor_data = sensor_data_provider.get_data_for_range(spec=actual_spec, time_range=time_range)
     logger.info(pprint.pformat(sensor_data))
 
 
-def bob_test_ims_metadata_api():
+def test_get_id_by_name():
+    tsac = TimeSeriesAPIClient(config=_get_config())
+    input = {"name": "GRA-TIT -23-0615.PV", "asset_id": "1755-gra"}
+    logger.info("WITH: ")
+    logger.info(pprint.pformat(input))
+    res = tsac._get_id_by_name(name=input.get("name"), asset_id=input.get("asset_id"))
+    logger.info("GOT: ")
+    logger.info(pprint.pformat(res))
+
+
+def disabled_test_ims_metadata_api():
     ims_meta = IMSMetadataAPIClient(_get_config())
     tag_name = "GRA-STAT-20-1310_G01.ST"
     system_code = ims_meta._get_system_code_by_tag_name(tag_name=tag_name)

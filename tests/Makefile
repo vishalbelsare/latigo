@@ -33,6 +33,12 @@ time_series:
 	py.test -vv unit/test_time_series_api.py
 	py.test -vv integration/test_time_series_api.py
 
+event_hub:
+#	py.test -vv unit/test_event_hub.py
+	py.test -vv integration/test_event_hub.py
+	
+
+
 ############### Help ####################
 
 help:
@@ -54,6 +60,7 @@ help:
 	@echo " + make integration   Run integration tests"
 	@echo " + make gordo         Run gordo integration tests"
 	@echo " + make time_series   Run time series API integration tests"
+	@echo " + make event_hub     Run event hub integration tests"
 	@echo ""
 	@echo " + make load          Run load tests"
 	@echo ""

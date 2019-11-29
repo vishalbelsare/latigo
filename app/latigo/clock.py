@@ -1,7 +1,7 @@
 import datetime
 import typing
 
-'''
+
 class OnTheClockScheduler:
     """
     Class to provide a schedule from time of day + recurring interval as starting point
@@ -13,6 +13,8 @@ class OnTheClockScheduler:
         self.interval = interval
         self.last_run = start_time
 
+
+"""
     def closest_start_time(now: datetime.datetime = datetime.datetime.now()) -> datetime.datetime:
         pass
 
@@ -21,4 +23,4 @@ class OnTheClockScheduler:
 
     def its_time() -> bool:
         pass
-'''
+"""

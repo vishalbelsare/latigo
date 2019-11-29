@@ -16,12 +16,27 @@ def read_file(fname):
     return ""
 
 
+def remove_comment(line, sep="#"):
+    i = line.find(sep)
+    if i >= 0:
+        line = line[:i]
+    return line.strip()
+
+
 def read_requirements_file(fname: str):
     fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
     print(f"Reading requirements from {fn}")
+    lines = []
     with open(fn) as f:
-        return [r.strip() for r in f.readlines()]
-    return []
+        for r in f.readlines():
+            r = r.strip()
+            if len(r) < 1:
+                continue
+            r = remove_comment(r)
+            if len(r) < 1:
+                continue
+            lines.append(r)
+    return lines
 
 
 setup(

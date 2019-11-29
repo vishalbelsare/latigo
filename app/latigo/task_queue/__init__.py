@@ -60,7 +60,7 @@ class TaskQueueSenderInterface:
 
 
 class TaskQueueReceiverInterface:
-    def get_task(self) -> Task:
+    def get_task(self) -> typing.Optional[Task]:
         """
         Return exactly one task from queue or block
         """

@@ -16,8 +16,8 @@ task_queue:
 
 
 scheduler:
-    configuration_sync_interval: "20s"
-    continuous_prediction_interval: "5s"
+    configuration_sync_interval: "20m"
+    continuous_prediction_interval: "10m"
     back_fill_max_interval: "1d"
     do_async: false
 

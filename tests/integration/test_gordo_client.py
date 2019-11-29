@@ -46,7 +46,7 @@ def _get_config():
     # fmt: on
 
 
-def bob_test_client_instances():
+def test_client_instances():
     dummy_provider = "dummy data provider"
     dummy_prediction_forwarder = "dummy prediction forwarder"
     config = _get_config()
@@ -57,15 +57,15 @@ def bob_test_client_instances():
     # Augment config with the latigo prediction forwarder
     expand_gordo_prediction_forwarder(config, dummy_prediction_forwarder)
     allocate_gordo_client_instances(config)
-    logger.info(pprint.pformat(gordo_client_instances_by_hash))
-    logger.info(pprint.pformat(gordo_client_instances_by_project))
-    logger.info(pprint.pformat(gordo_client_auth_session))
+    # logger.info(pprint.pformat(gordo_client_instances_by_hash))
+    # logger.info(pprint.pformat(gordo_client_instances_by_project))
+    # logger.info(pprint.pformat(gordo_client_auth_session))
 
 
-def bob_test_model_info():
+def test_model_info():
     config = _get_config()
-    logger.info("CONFIG:")
-    logger.info(pprint.pformat(config))
+    # logger.info("CONFIG:")
+    # logger.info(pprint.pformat(config))
     gordo_model_info_provider = GordoModelInfoProvider(config)
     filter = {"projects": [config.get("projects", ["no-projects-in-config"])[0]]}
     models = gordo_model_info_provider.get_models(filter)
@@ -79,7 +79,7 @@ def bob_test_model_info():
     logger.info("MODEL 0 META TAG_LIST:" + pprint.pformat(tag_list))
 
 
-def test_prediction_execution():
+def prediction_execution():
     config = _get_config()
     logger.info("CONFIG:")
     logger.info(pprint.pformat(config))

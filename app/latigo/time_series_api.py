@@ -266,11 +266,10 @@ class TimeSeriesAPIClient:
         body = {"name": name}
         if asset_id:
             body["assetId"] = asset_id
-        logger.info("Getting:")
-        logger.info(pprint.pformat(body))
+        # logger.info("Getting:")        logger.info(pprint.pformat(body))
         res = self.session.get(self.base_url, params=body)
         obj, err = _parse_request_json(res)
-        logger.info(pprint.pformat(obj))
+        # logger.info(pprint.pformat(obj))
         return obj
 
     def _id_exists_for_name(self, name: str, asset_id: typing.Optional[str] = None) -> bool:
@@ -331,6 +330,8 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         missing_id = 0
         completed = 0
         data: typing.List[dict] = []
+        if len(spec.tag_list) < 0:
+            logger.warning("Tag list empty")
         for tag in spec.tag_list:
             logger.info(f"GETTING DATA FOR {tag}")
             meta = self._get_id_by_name(name=tag.name, asset_id=tag.asset)
@@ -358,8 +359,8 @@ class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStor
         """
         Store prediction data in time series api
         """
-        name = "pop"
-        description = "test for latigo ved lennart rolland"
+        name = "test"
+        description = "test for latigo"
         unit = "Kg"
         asset_id = "test_asset_id"
         external_id = "test_external_id"

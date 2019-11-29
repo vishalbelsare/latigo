@@ -36,7 +36,7 @@ class PredictionExecutor:
             raise Exception("No sensor_data_config specified")
         self.sensor_data_provider = sensor_data_provider_factory(self.sensor_data_provider_config)
         if not self.sensor_data_provider:
-            raise Exception("No sensor data configured, cannot continue...")
+            raise Exception(f"No sensor data configured: {err}, cannot continue...")
 
     # Inflate prediction storage provider from config
     def _prepare_prediction_storage_provider(self):
@@ -45,7 +45,7 @@ class PredictionExecutor:
             raise Exception("No prediction_storage_config specified")
         self.prediction_storage_provider = prediction_storage_provider_factory(self.prediction_storage_provider_config)
         if not self.prediction_storage_provider:
-            raise Exception("No prediction storage configured, cannot continue...")
+            raise Exception(f"No prediction storage configured: {err}, cannot continue...")
 
     # Inflate prediction executor provider from config
     def _prepare_prediction_executor_provider(self):
@@ -56,7 +56,7 @@ class PredictionExecutor:
         self.prediction_executor_provider = prediction_execution_provider_factory(self.sensor_data_provider, self.prediction_storage_provider, self.prediction_executor_provider_config)
         self.name = self.prediction_executor_provider_config.get("name", "executor")
         if not self.prediction_executor_provider:
-            raise Exception("No prediction_executor_provider configured, cannot continue...")
+            raise Exception(f"No prediction_executor_provider configured: {err}, cannot continue...")
 
     def __init__(self, config: dict):
         if not config:
@@ -100,7 +100,9 @@ class PredictionExecutor:
             project_name: str = task.project_name
             model_name: str = task.model_name
             spec: SensorDataSpec = self._fetch_spec(project_name, model_name)
-            sensor_data = self.sensor_data_provider.get_data_for_range(spec, time_range)
+            sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
+            if not sensor_data:
+                logger.warning(f"Error getting sensor data: {err}")
         except Exception as e:
             logger.error(f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}")
             traceback.print_exc()
@@ -149,7 +151,7 @@ class PredictionExecutor:
                 try:
                     task = self._fetch_task()
                     if task:
-                        logger.info(f"Processing task for '{task.project_name}.{task.model_name}' from {task.from_time} for {task.to_time - task.from_time}")
+                        logger.info(f"Processing task for '{task.project_name}.{task.model_name}' starting {task.from_time} lasting {task.to_time - task.from_time}")
                         sensor_data = self._fetch_sensor_data(task)
                         prediction_data = self._execute_prediction(task, sensor_data)
                         self._store_prediction_data(task, prediction_data)

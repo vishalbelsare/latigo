@@ -187,4 +187,4 @@ wheel==0.33.6             # via tensorboard, tensorflow
 wrapt==1.11.2             # via tensorflow
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.6.0        # via apscheduler, gunicorn, jsonschema, kiwisolver, kubernetes, markdown, protobuf, tensorboard
+# setuptools
