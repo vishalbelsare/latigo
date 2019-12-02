@@ -182,9 +182,19 @@ def allocate_gordo_client_instances(raw_config: dict):
         client = gordo_client_instances_by_hash.get(key, None)
         if not client:
             clean_config = clean_gordo_client_args(config)
-            client = Client(**clean_config)
-            gordo_client_instances_by_hash[key] = client
-            gordo_client_instances_by_project[project] = client
+            try:
+                client = Client(**clean_config)
+                gordo_client_instances_by_hash[key] = client
+                gordo_client_instances_by_project[project] = client
+            except requests.exceptions.HTTPError as http_error:
+                if 404 == http_error.response.status_code:
+                    logger.warning(f"Skipping client allocation for {project}, project not found")
+                else:
+                    logger.error(f"Skipping client allocation for {project} due to HTTP error '{http_error}'")
+                continue
+            except Exception as error:
+                logger.error(f"Skipping client allocation for {project} due to unknown error '{error}'")
+                continue
 
 
 def get_gordo_client_instance_by_project(project):
@@ -258,7 +268,7 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
                 # logger.info(f" + FOUND METADATA for {project}: {len(meta_data)}")
                 models[project] = meta_data
             else:
-                logger.error(f" + NO CLIENT FOUND FOR PROJECT {project}")
+                logger.error(f"No client found for project '{project}', skipping")
         models = self._normalize_to_models(models)
         return models
 

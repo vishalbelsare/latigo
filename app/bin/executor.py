@@ -10,7 +10,7 @@ from latigo.utils import load_config
 from latigo.executor import PredictionExecutor
 
 
-logger.info(f"Starting Latigo - Executor")
+logger.info(f"Starting Latigo Executor")
 
 # Augment loaded config with variables from environment
 # fmt: off
@@ -63,8 +63,8 @@ if not config:
     logger.error(f"Could not load configuration for executor from {config_filename}")
     sys.exit(1)
 
-logger.info("Preparing Latigo - Executor")
+logger.info("Preparing Latigo Executor")
 executor = PredictionExecutor(config)
-logger.info("Running Latigo - Executor")
+logger.info("Running Latigo Executor")
 executor.run()
-logger.info("Stopping Latigo - Executor")
+logger.info("Stopping Latigo Executor")

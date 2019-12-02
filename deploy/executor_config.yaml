@@ -40,8 +40,6 @@ prediction_storage:
 predictor:
     type: "gordo"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
-    projects: ['ioc-1130']
-#    projects: ['ioc-preprod']
     target: null
     metadata: null
     batch_size: 1000

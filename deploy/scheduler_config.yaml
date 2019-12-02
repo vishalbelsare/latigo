@@ -25,8 +25,7 @@ scheduler:
 model_info:
     type: "gordo"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
-    projects: ['ioc-1130']
-#    projects: ['ioc-preprod']
+    projects: ['ioc-1125', 'ioc-1130', 'ioc-1138','ioc-1140']
     target: null
     metadata: null
     batch_size: 1000

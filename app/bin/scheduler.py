@@ -10,7 +10,7 @@ from latigo.utils import load_config
 from latigo.scheduler import Scheduler
 
 
-logger.info("Starting Latigo - Scheduler")
+logger.info("Starting Latigo Scheduler")
 
 # Augment loaded config with variables from environment
 # fmt: off
@@ -43,8 +43,8 @@ if not config:
     logger.error(f"Could not load configuration for scheduler from {config_filename}")
     sys.exit(1)
 
-logger.info("Preparing Latigo - Scheduler")
+logger.info("Preparing Latigo Scheduler")
 scheduler = Scheduler(config)
-logger.info("Running Latigo - Scheduler")
+logger.info("Running Latigo Scheduler")
 scheduler.run()
-logger.info("Stopping Latigo - Scheduler")
+logger.info("Stopping Latigo Scheduler")

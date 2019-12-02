@@ -59,7 +59,7 @@ spec: SensorDataSpec = SensorDataSpec(tag_list=tag_list)
 # actual_tag_list = [LatigoSensorTag(name="GRA-STAT-20-1310_G01.ST", asset="1755-gra")]
 # actual_tag_list = [LatigoSensorTag(name="GRA-FOI -13-0979.PV", asset="GRA")]
 actual_tag_list = [LatigoSensorTag(name="PT-13005/MeasA/PRIM", asset="1101-sfb")]
-#ioc-preprod.ginkgrog-b17
+# ioc-preprod.ginkgrog-b17
 
 #'PT-13005/MeasA/PRIM', asset='1101-sfb'), SensorTag(name='TT-13092/Meas1/PRIM', asset='1101-sfb'), Sen..., SensorTag(name='DQ-TT-T-B30L/Meas1/PRIM', asset='1101-sfb'), SensorTag(name='PT-13009/MeasA/PRIM', asset='1101-sfb')
 
@@ -88,11 +88,11 @@ def disabled_test_time_series_api_actual_read():
 
 def test_get_id_by_name():
     tsac = TimeSeriesAPIClient(config=_get_config())
-    #input = {"name": "GRA-TIT -23-0615.PV", "asset_id": "1755-gra"}
+    # input = {"name": "GRA-TIT -23-0615.PV", "asset_id": "1755-gra"}
     input = {"name": "PT-13005/MeasA/PRIM", "asset_id": "1101-sfb"}
     logger.info("WITH: ")
     logger.info(pprint.pformat(input))
-    #res = tsac._get_id_by_name(name=input.get("name"), asset_id=input.get("asset_id"))
+    # res = tsac._get_id_by_name(name=input.get("name"), asset_id=input.get("asset_id"))
     res = tsac._get_id_by_name(name=input.get("name"))
     logger.info("GOT: ")
     logger.info(pprint.pformat(res))

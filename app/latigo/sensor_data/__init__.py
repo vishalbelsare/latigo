@@ -1,11 +1,16 @@
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-import pandas as pd
 import typing
+import pprint
+import logging
+import pandas as pd
+from datetime import datetime, timedelta
+from dataclasses import dataclass
 import latigo.utils
 
 
 from latigo.types import SensorData, TimeRange, SensorDataSpec
+
+
+logger = logging.getLogger(__name__)
 
 
 class SensorDataProviderInterface:
@@ -26,6 +31,8 @@ class MockSensorDataProvider(SensorDataProviderInterface):
         """
         mock_data = self.config.get("mock_data")
         if mock_data:
+            logger.info("MOCK PROVIDING SENSOR DATA:")
+            logger.info(pprint.pformat(mock_data))
             data = SensorData(time_range=time_range, data=mock_data)
         return data, None
 

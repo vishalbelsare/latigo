@@ -19,6 +19,7 @@ logging.getLogger("gordo_components").setLevel(logging.WARNING)
 dummy_provider = MockSensorDataProvider({"mock_data": [pd.Series(data=[1, 2, 3, 4, 5])]})
 dummy_prediction_forwarder = MockPredictionStorageProvider({"mock_data": [pd.Series(data=[1, 2, 3, 4, 5])]})
 
+
 def _get_config():
     not_found = "Not found in environment variables"
     # fmt: off
@@ -70,8 +71,8 @@ def test_model_info():
     gordo_model_info_provider = GordoModelInfoProvider(config)
     filter = {"projects": [config.get("projects", ["no-projects-in-config"])[0]]}
     models = gordo_model_info_provider.get_models(filter)
-    #logger.info("MODELS:"+pprint.pformat(models))
-    num=10
+    # logger.info("MODELS:"+pprint.pformat(models))
+    num = 10
     for i in range(num):
         model = models[i]
         # with open('/tmp/model.json', 'w') as fp:

@@ -13,6 +13,7 @@ from latigo.task_queue import deserialize_task, serialize_task, TaskQueueSenderI
 from latigo.types import Task
 
 logger = logging.getLogger(__name__)
+logger_confluent = logging.getLogger(__name__+".confluent")
 
 
 def stats_callback(stats_json_str):
@@ -54,7 +55,8 @@ def prepare_kafka_config(config: typing.Dict[str, typing.Any]) -> dict:
         "enable.auto.commit": config.get("enable.auto.commit"),
         "auto.commit.interval.ms": config.get("auto.commit.interval.ms"),
         "default.topic.config": config.get("default.topic.config"),
-        "debug": config.get("debug")
+        "debug": config.get("debug"),
+        "logger": logger_confluent,
         }
     # fmt: on
 
