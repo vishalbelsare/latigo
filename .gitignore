@@ -106,4 +106,8 @@ venv.bak/
 
 local_config.yaml
 *.db
+app/r.in
+app/pyver.py
+junk
+.directory
 
