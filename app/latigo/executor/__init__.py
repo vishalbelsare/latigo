@@ -101,7 +101,7 @@ class PredictionExecutor:
             model_name: str = task.model_name
             spec: SensorDataSpec = self._fetch_spec(project_name, model_name)
             sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
-            if not sensor_data:
+            if not sensor_data or not sensor_data.ok():
                 logger.warning(f"Error getting sensor data: {err}")
         except Exception as e:
             logger.error(f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}")
@@ -153,9 +153,15 @@ class PredictionExecutor:
                     if task:
                         logger.info(f"Processing task for '{task.project_name}.{task.model_name}' starting {task.from_time} lasting {task.to_time - task.from_time}")
                         sensor_data = self._fetch_sensor_data(task)
-                        prediction_data = self._execute_prediction(task, sensor_data)
-                        self._store_prediction_data(task, prediction_data)
-                        self.idle_count(True)
+                        if sensor_data and sensor_data.ok():
+                            prediction_data = self._execute_prediction(task, sensor_data)
+                            if prediction_data and prediction_data.ok():
+                                self._store_prediction_data(task, prediction_data)
+                                self.idle_count(True)
+                            else:
+                                logger.warning(f"Skipping store due to bad prediction: {prediction_data.data}")
+                        else:
+                            logger.warning(f"Skipping prediciton due to bad data: {sensor_data.data}")
                     else:
                         logger.warning(f"No task")
                         self.idle_count(False)
@@ -163,9 +169,10 @@ class PredictionExecutor:
                 except Exception as e:
                     error_number += 1
                     logger.error("-----------------------------------")
-                    logger.error(f"Error occurred in scheduler: {e}")
+                    logger.error(f"Error occurred in executor: {e}")
                     traceback.print_exc()
                     logger.error("")
+                    logger.error("-----------------------------------")
                     time.sleep(1)
             logger.info(f"Stopping processing in {self.__class__.__name__}")
         else:

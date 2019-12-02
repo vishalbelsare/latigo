@@ -58,8 +58,10 @@ class Scheduler:
         self.configuration_sync_interval = pd.to_timedelta(self.scheduler_config.get("configuration_sync_interval", "1m"))
         self.continuous_prediction_interval = pd.to_timedelta(self.scheduler_config.get("continuous_prediction_interval", "30m"))
         selfdback_fill_max_interval = pd.to_timedelta(self.scheduler_config.get("back_fill_max_interval", "1d"))
-        self.configuration_sync_timer = Timer(self.configuration_sync_interval)
-        self.continuous_prediction_timer = Timer(self.continuous_prediction_interval)
+        self.configuration_sync_timer = Timer(trigger_interval=self.configuration_sync_interval)
+        self.continuous_prediction_timer = Timer(trigger_interval=self.continuous_prediction_interval)
+        logger.info(f"Using configuration sync interval: {self.configuration_sync_interval}")
+        logger.info(f"Using prediction interval:         {self.continuous_prediction_interval}")
 
     def __init__(self, config: dict):
         if not config:
@@ -81,9 +83,11 @@ class Scheduler:
         stats_models_ok = {}
         stats_projects_bad = {}
         stats_models_bad = {}
+        # TODO: Use clock once it is finished
         stats_start_time = datetime.now()
         prediction_start_time = datetime.now()
-        prediction_end_time = prediction_start_time + timedelta(seconds=60 * 30)
+        prediction_end_time = prediction_start_time + self.continuous_prediction_interval
+        early_termination = False
         for model in self.models:
             project_name = model.get("project", None)
             if not project_name:
@@ -106,8 +110,9 @@ class Scheduler:
                 stats_projects_bad[project_name] = stats_projects_bad.get(project_name, "") + f", {e}"
                 stats_models_bad[model_name] = stats_models_bad.get(model_name, "") + f", {e}"
                 raise e
-            logger.warning("Early termination for testing")
-            break
+            if early_termination:
+                logger.warning("Early termination for testing is in place")
+                break
         stats_interval = datetime.now() - stats_start_time
         logger.info(f"Scheduled {len(stats_models_ok)} models in {len(stats_projects_ok)} projects in {human_delta(stats_interval)}")
         if len(stats_models_bad) > 0 or len(stats_projects_bad) > 0:
@@ -144,4 +149,5 @@ class Scheduler:
                 logger.error(f"Error occurred in scheduler: {e}")
                 traceback.print_exc()
                 logger.error("")
+                logger.error("-----------------------------------")
         logger.info(f"Stopping {self.__class__.__name__}")

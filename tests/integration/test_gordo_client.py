@@ -7,6 +7,7 @@ import pprint
 from os import environ
 from latigo.gordo import GordoModelInfoProvider, GordoPredictionExecutionProvider, LatigoDataProvider, LatigoPredictionForwarder, allocate_gordo_client_instances, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, gordo_client_auth_session, gordo_client_instances_by_hash, gordo_client_instances_by_project, gordo_config_hash, get_model_meta, get_model_tag_list, get_model_name
 from latigo.sensor_data import MockSensorDataProvider, sensor_data_provider_factory
+from latigo.prediction_storage import MockPredictionStorageProvider, prediction_storage_provider_factory
 from latigo.types import TimeRange, SensorData
 from latigo.utils import rfc3339_from_datetime, datetime_from_rfc3339
 
@@ -15,12 +16,14 @@ logger = logging.getLogger(__name__)
 # Turn down noiselevel from gordo
 logging.getLogger("gordo_components").setLevel(logging.WARNING)
 
+dummy_provider = MockSensorDataProvider({"mock_data": [pd.Series(data=[1, 2, 3, 4, 5])]})
+dummy_prediction_forwarder = MockPredictionStorageProvider({"mock_data": [pd.Series(data=[1, 2, 3, 4, 5])]})
 
 def _get_config():
     not_found = "Not found in environment variables"
     # fmt: off
     return {
-        "projects": ['ioc-98', 'ioc-31'],
+        "projects": ['ioc-1130'],
         "connection_string": environ.get("LATIGO_GORDO_CONNECTION_STRING", not_found),
         "batch_size": 1000,
         "parallelism": 10,
@@ -47,8 +50,6 @@ def _get_config():
 
 
 def test_client_instances():
-    dummy_provider = "dummy data provider"
-    dummy_prediction_forwarder = "dummy prediction forwarder"
     config = _get_config()
     # Augment config with expanded gordo connection string
     expand_gordo_connection_string(config)
@@ -69,25 +70,25 @@ def test_model_info():
     gordo_model_info_provider = GordoModelInfoProvider(config)
     filter = {"projects": [config.get("projects", ["no-projects-in-config"])[0]]}
     models = gordo_model_info_provider.get_models(filter)
-    # logger.info("MODELS:"+pprint.pformat(models))
-    model = models[0]
-    # with open('/tmp/model.json', 'w') as fp:
-    #    json.dump(model, fp, indent=4, sort_keys=True)
-    name = get_model_name(model)
-    logger.info(f"MODEL 0 NAME: {name}")
-    tag_list = get_model_tag_list(model)
-    logger.info("MODEL 0 META TAG_LIST:" + pprint.pformat(tag_list))
+    #logger.info("MODELS:"+pprint.pformat(models))
+    num=10
+    for i in range(num):
+        model = models[i]
+        # with open('/tmp/model.json', 'w') as fp:
+        #    json.dump(model, fp, indent=4, sort_keys=True)
+        name = get_model_name(model)
+        tag_list = get_model_tag_list(model)
+        logger.info(f"MODEL {i} NAME: {name} META TAG_LIST: {pprint.pformat(tag_list)}")
 
 
-def prediction_execution():
+def test_prediction_execution():
     config = _get_config()
     logger.info("CONFIG:")
     logger.info(pprint.pformat(config))
-    dummy_provider = MockSensorDataProvider({"mock_data": [pd.Series(data=[1, 2, 3, 4, 5])]})
-    dummy_prediction_forwarder = "dummy prediction forwarder"
     gordo_prediction_execution_provider = GordoPredictionExecutionProvider(dummy_provider, dummy_prediction_forwarder, config)
     project_name: str = config.get("projects", ["no-projects-in-config"])[0]
     model_name: str = "lol"
+    logger.info("Prediction for project_name={project_name} and model_name={model_name}")
     from_time = datetime_from_rfc3339("2019-01-02T00:00:00Z")
     to_time = datetime_from_rfc3339("2019-02-02T00:00:00Z")
     time_range = TimeRange(from_time=from_time, to_time=to_time)

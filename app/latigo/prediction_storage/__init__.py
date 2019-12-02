@@ -20,7 +20,8 @@ class MockPredictionStorageProvider(PredictionStorageProviderInterface):
         """
         Store the prediction data
         """
-        pass
+        logger.info("MOCK STORING PREDICTIONS:")
+        logger.info(pprint.pformat(prediction_data))
 
 
 class DevNullPredictionStorageProvider(PredictionStorageProviderInterface):

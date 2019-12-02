@@ -47,7 +47,7 @@ def deserialize_task(task_bytes, mode="json") -> typing.Optional[Task]:
             # Rely on dataclass_json
             task = Task.from_json(task_bytes)
         except Exception as e:
-            logger.error(f"Could not deserialize task from json of size {len(task_bytes)}bytes: {e}")
+            logger.error(f"Could not deserialize task from json of size {len(task_bytes)}bytes: '{task_bytes}', error:'{e}'")
             traceback.print_exc()
     return task
 

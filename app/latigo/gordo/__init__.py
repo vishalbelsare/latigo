@@ -16,8 +16,9 @@ from latigo.sensor_data import SensorDataProviderInterface
 from latigo.model_info import ModelInfoProviderInterface
 from latigo.auth import create_auth_session
 
-# from latigo.gordo.client import Client
-from gordo_components.client.client import Client
+from latigo.gordo.client import Client
+
+# from gordo_components.client.client import Client
 
 from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
 from gordo_components.client.utils import EndpointMetadata
@@ -56,10 +57,12 @@ class LatigoDataProvider(GordoBaseDataProvider):
 
     def load_series(self, from_ts: datetime, to_ts: datetime, tag_list: typing.List[SensorTag], dry_run: typing.Optional[bool] = False) -> typing.Iterable[pd.Series]:
         if self.sensor_data_provider:
+            if isinstance(self.sensor_data_provider, str):
+                raise Exception(f"IS STR: '{self.sensor_data_provider}'")
             spec: SensorDataSpec = SensorDataSpec(tag_list=_gordo_to_latigo_tag_list(tag_list))
             time_range = TimeRange(from_ts, to_ts)
             sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
-            if sensor_data and sensor_data.data:
+            if sensor_data and sensor_data.ok():
                 logger.info(f"PROVIDING DATA: ")
                 logger.info(pprint.pformat(sensor_data.data))
                 for item in sensor_data.data:
@@ -316,7 +319,8 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         logger.info("STARTING PREDICTION WITH CLIENT: ------")
         # logger.info(pprint.pformat(client.__dict__))
         print_client(client)
-        logger.info("PREDICTION: start={sensor_data.time_range.from_time}  end={sensor_data.time_range.to_time}")
+        logger.info(f"PREDICTION: start={sensor_data.time_range.from_time}  end={sensor_data.time_range.to_time}")
+
         result = client.predict(start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time)
         if not result:
             raise Exception("No result in gordo.execute_prediction()")

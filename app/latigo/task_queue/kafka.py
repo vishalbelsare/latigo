@@ -117,6 +117,7 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
             task_bytes = serialize_task(task)
         except Exception as e:
             logger.error(f"Error while serizlising task: {e}")
+            logger.error(f" + Task: {task}")
             raise e
         if not task_bytes:
             raise Exception("Could not serialize task")
@@ -150,7 +151,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         if self.consumer:
             self.consumer.close()
 
-    def receive_event(self, timeout=100) -> typing.Optional[bytes]:
+    def receive_event(self, timeout=5) -> typing.Optional[bytes]:
         msg = None
         try:
             msg = self.consumer.poll(timeout=timeout)
@@ -184,6 +185,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
             task = deserialize_task(task_bytes)
         if not task:
             logger.error("Could not deserialize task")
+            logger.error(f" + Task bytes:{task_bytes}")
         return task
 
     def get_task(self) -> typing.Optional[Task]:

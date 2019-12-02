@@ -3,6 +3,7 @@ APP_DIR:="${ROOT_DIR}/app"
 TESTS_DIR:="${ROOT_DIR}/tests"
 CODE_QUALITY_DIR:="${ROOT_DIR}/code_quality"
 SHELL := /bin/bash
+CLUSTER_NAME:="gordotest47"
 COMPUTED_ENV="${ROOT_DIR}/set_env.py"
 
 
@@ -55,7 +56,7 @@ login-gordos:
 	az login
 	az account set --subscription "019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
 	az account show
-	az aks get-credentials --overwrite-existing --resource-group gordotest46 --name gordotest46 --admin
+	az aks get-credentials --overwrite-existing --resource-group ${CLUSTER_NAME} --name ${CLUSTER_NAME} --admin
 	kubectl config set-context --current --namespace=kubeflow
 	kubectl get gordos
 

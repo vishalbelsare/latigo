@@ -49,6 +49,9 @@ class SensorData:
     def __str__(self):
         return f"PredictionData({self.time_range})"
 
+    def ok(self):
+        return bool(self.time_range) and bool(self.data)
+
 
 @dataclass
 class PredictionData:
@@ -58,3 +61,6 @@ class PredictionData:
 
     def __str__(self):
         return f"PredictionData({self.time_range}, result={len(self.result)})"
+
+    def ok(self):
+        return bool(self.time_range) and bool(self.data)
