@@ -19,6 +19,9 @@ rfc3339:
 clock:
 	py.test -vv unit/test_clock.py
 
+executor:
+	py.test -vv unit/test_executor.py
+
 integration:
 	py.test -vv integration
 
@@ -56,6 +59,7 @@ help:
 	@echo " + make utils         Run unit tests for utils"
 	@echo " + make rfc3339       Run unit tests for rfc3339"
 	@echo " + make clock         Run unit tests for clock"
+	@echo " + make executor      Run unit tests for executor"
 	@echo ""
 	@echo " + make integration   Run integration tests"
 	@echo " + make gordo         Run gordo integration tests"

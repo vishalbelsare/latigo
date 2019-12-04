@@ -330,10 +330,10 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         missing_id = 0
         completed = 0
         data: typing.List[dict] = []
-        if len(spec.tag_list) < 0:
+        if len(spec.tag_list) <= 0:
             logger.warning("Tag list empty")
         for tag in spec.tag_list:
-            logger.info(f"GETTING DATA FOR {tag}")
+            logger.info(f"Getting data for tag '{tag}'")
             meta = self._get_id_by_name(name=tag.name, asset_id=tag.asset)
             if not meta:
                 missing_meta += 1
@@ -344,9 +344,15 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
                 continue
             ts, err = self._fetch_data(id, time_range)
             if err or not ts.get("latigo-ok", False):
-                return None, ts.get("latigo-error", "Unknon failure")
+                return None, err or ts.get("latigo-error", "Unknown failure")
             data += _get_items(ts)
             completed += 1
+        if missing_meta > 0:
+            logger.warning(f"Meta missing for {missing_meta} tags")
+        if missing_id > 0:
+            logger.warning(f"ID missing for {missing_id} tags")
+        if completed > 0:
+            logger.info(f"Completed {missing_id} tags")
         data = transform_from_timeseries_to_gordo(data)
         return SensorData(time_range=time_range, data=data), None
 

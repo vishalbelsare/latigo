@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import logging
 import pprint
 from os import environ
-from latigo.gordo import GordoModelInfoProvider, GordoPredictionExecutionProvider, LatigoDataProvider, LatigoPredictionForwarder, allocate_gordo_client_instances, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, gordo_client_auth_session, gordo_client_instances_by_hash, gordo_client_instances_by_project, gordo_config_hash, get_model_meta, get_model_tag_list, get_model_name
+from latigo.gordo import GordoModelInfoProvider, GordoPredictionExecutionProvider, LatigoDataProvider, LatigoPredictionForwarder, allocate_gordo_client_instances, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, gordo_client_auth_session, gordo_client_instances_by_hash, gordo_client_instances_by_project, gordo_config_hash
 from latigo.sensor_data import MockSensorDataProvider, sensor_data_provider_factory
 from latigo.prediction_storage import MockPredictionStorageProvider, prediction_storage_provider_factory
 from latigo.types import TimeRange, SensorData
@@ -50,7 +50,7 @@ def _get_config():
     # fmt: on
 
 
-def test_client_instances():
+def un_test_client_instances():
     config = _get_config()
     # Augment config with expanded gordo connection string
     expand_gordo_connection_string(config)
@@ -69,20 +69,20 @@ def test_model_info():
     # logger.info("CONFIG:")
     # logger.info(pprint.pformat(config))
     gordo_model_info_provider = GordoModelInfoProvider(config)
-    filter = {"projects": [config.get("projects", ["no-projects-in-config"])[0]]}
-    models = gordo_model_info_provider.get_models(filter)
+    model_info = gordo_model_info_provider.get_model_info()
     # logger.info("MODELS:"+pprint.pformat(models))
+    assert model_info is not None
+    models = model_info.get_all()
     num = 10
     for i in range(num):
         model = models[i]
         # with open('/tmp/model.json', 'w') as fp:
         #    json.dump(model, fp, indent=4, sort_keys=True)
-        name = get_model_name(model)
-        tag_list = get_model_tag_list(model)
-        logger.info(f"MODEL {i} NAME: {name} META TAG_LIST: {pprint.pformat(tag_list)}")
+        spec = model.get_spec()
+        logger.info(f"PROJECT:{model.project_name} MODEL:{model.model_name}({i}) TAG_LIST: {pprint.pformat(model.tag_list)} TARGET_TAG_LIST: {pprint.pformat(model.target_tag_list)} SPEC:{spec}")
 
 
-def test_prediction_execution():
+def un_test_prediction_execution():
     config = _get_config()
     logger.info("CONFIG:")
     logger.info(pprint.pformat(config))

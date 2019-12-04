@@ -21,6 +21,7 @@ if not path.exists(filename):
         "LATIGO_INTERNAL_EVENT_HUB": "GET YOUR EVENT_HUB CONNECTION STRING FROM AZURE PORTAL",
         "LATIGO_EXECUTOR_CONFIG_FILE": "THE LOCATION OF PREDICTION EXECUTOR CONFIG FILE IN YAML FORMAT",
         "LATIGO_SCHEDULER_CONFIG_FILE": "THE LOCATION OF PREDICTION SCHEDULER CONFIG FILE IN YAML FORMAT",
+        "LATIGO_SCHEDULER_PREDICTION_INTERVAL": "The interval at which the scheduler will schedule work",
         "LATIGO_GORDO_CONNECTION_STRING": "The connection string for Gordo",
         "LATIGO_GORDO_RESOURCE": "The resource ID of gordo. Used for bearer authentication.",
         "LATIGO_GORDO_TENANT": "The  tenant latigo application in AD. Used for bearer authentication.",

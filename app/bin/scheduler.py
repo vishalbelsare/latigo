@@ -18,6 +18,9 @@ logger.info("Starting Latigo Scheduler")
 not_found=None #"environemnt variable not found"
 config_overlay = {
     "scheduler": {
+        "continuous_prediction_interval": environ.get("LATIGO_SCHEDULER_PREDICTION_INTERVAL", "90m")
+    },
+    "scheduler": {
         "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_scheduler")
     },
     "task_queue": {

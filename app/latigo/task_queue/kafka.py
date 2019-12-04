@@ -13,7 +13,7 @@ from latigo.task_queue import deserialize_task, serialize_task, TaskQueueSenderI
 from latigo.types import Task
 
 logger = logging.getLogger(__name__)
-logger_confluent = logging.getLogger(__name__+".confluent")
+logger_confluent = logging.getLogger(__name__ + ".confluent")
 
 
 def stats_callback(stats_json_str):
@@ -111,7 +111,7 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
             self.producer.produce(self.topic, msg, callback=delivery_callback)
         except BufferError as e:
             logger.info(f"Local producer queue is full ({len(self.producer)} messages awaiting delivery): try again")
-        self.producer.poll(0)
+        # self.producer.poll(0)
 
     def put_task(self, task: Task):
         task_bytes: typing.Optional[bytes] = None

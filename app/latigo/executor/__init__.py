@@ -11,12 +11,25 @@ from latigo.sensor_data import sensor_data_provider_factory
 from latigo.prediction_execution import prediction_execution_provider_factory
 from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
-
+from latigo.model_info import model_info_provider_factory
 
 logger = logging.getLogger(__name__)
 
 
 class PredictionExecutor:
+
+    # Inflate model info connection from config
+    def _prepare_model_info(self):
+        self.model_info_config = self.config.get("model_info", None)
+        if not self.model_info_config:
+            raise Exception("No model info config specified")
+        self.model_info = model_info_provider_factory(self.model_info_config)
+        self.model_filter = {}
+        self.model_filter["projects"] = self.model_info_config.get("projects", [])
+        if not self.model_info:
+            raise Exception("No model info configured")
+        if not self.model_filter["projects"]:
+            logger.warning("No filter specified")
 
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
@@ -62,18 +75,15 @@ class PredictionExecutor:
         if not config:
             raise Exception("No config specified")
         self.config = config
-        # Make sure we have task queue
         self._prepare_task_queue()
-        # Make sure we have input sensor data
         self._prepare_sensor_data_provider()
-        # Make sure we have output prediction storage
         self._prepare_prediction_storage_provider()
-        # Create the predictor
+        self._prepare_model_info()
         self._prepare_prediction_executor_provider()
+        self.models = self.model_info.get_model_info()
 
     def _fetch_spec(self, project_name: str, model_name: str):
-        tag_list: typing.List[LatigoSensorTag] = []
-        return SensorDataSpec(tag_list=tag_list)
+        return self.models.get_spec(project_name=project_name, model_name=model_name)
 
     def _fetch_task(self) -> typing.Optional[Task]:
         """

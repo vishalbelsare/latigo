@@ -15,7 +15,7 @@ def setup_logging(filename, log_level=logging.INFO):
         datefmt = "%Y-%m-%d %H:%M:%S"
 
         # Suppress overly verbose output that isn't helpful from some libraries we depend on
-        for key in ["requests", "tensorboard", "urllib3", "aiohttp.access", "uamqp", "sqlalchemy", "sqlalchemy.engine.base", "adal-python"]:
+        for key in ["requests", "tensorboard", "urllib3", "aiohttp.access", "uamqp", "sqlalchemy", "sqlalchemy.engine.base", "adal-python", "matplotlib.font_manager"]:
             logging.getLogger(key).setLevel(logging.WARNING)
 
         try:

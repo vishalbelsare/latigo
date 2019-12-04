@@ -13,7 +13,7 @@ from latigo.prediction_execution import PredictionExecutionProviderInterface
 from latigo.types import TimeRange, SensorDataSpec, SensorData, PredictionData
 from latigo.sensor_data import SensorDataProviderInterface
 
-from latigo.model_info import ModelInfoProviderInterface
+from latigo.model_info import ModelInfoProviderInterface, ModelInfo, Model
 from latigo.auth import create_auth_session
 
 from latigo.gordo.client import Client
@@ -63,7 +63,7 @@ class LatigoDataProvider(GordoBaseDataProvider):
             time_range = TimeRange(from_ts, to_ts)
             sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
             if sensor_data and sensor_data.ok():
-                logger.info(f"PROVIDING DATA: ")
+                logger.info(f"Providing data: ")
                 logger.info(pprint.pformat(sensor_data.data))
                 for item in sensor_data.data:
                     yield item
@@ -201,23 +201,36 @@ def get_gordo_client_instance_by_project(project):
     return gordo_client_instances_by_project.get(project, None)
 
 
-def get_model_meta(model: dict):
+def _get_model_meta(model: dict):
     meta = model.get("endpoint-metadata", {}).get("metadata", {})
     # logger.info("MODEL META:"+pprint.pformat(meta))
     return meta
 
 
-def get_model_tag_list(model: dict):
-    meta = get_model_meta(model)
+def _get_model_tag_list(model: dict):
+    meta = _get_model_meta(model)
     tag_list = meta.get("dataset", {}).get("tag_list", {})
     # logger.info("MODEL 0 META TAG_LIST:"+pprint.pformat(tag_list))
     return tag_list
 
 
-def get_model_name(model: dict):
-    name = model.get("name", "")
+def _get_model_target_tag_list(model: dict):
+    meta = _get_model_meta(model)
+    target_tag_list = meta.get("dataset", {}).get("target_tag_list", {})
+    # logger.info("MODEL 0 META TAG_LIST:"+pprint.pformat(tag_list))
+    return target_tag_list
+
+
+def _get_model_name(model: dict):
+    model_name = model.get("name", "")
     # logger.info(f"MODEL NAME: {name}")
-    return name
+    return model_name
+
+
+def _get_project_name(model: dict):
+    project_name = model.get("project", "")
+    # logger.info(f"MODEL NAME: {name}")
+    return project_name
 
 
 class GordoModelInfoProvider(ModelInfoProviderInterface):
@@ -229,48 +242,46 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
     def __init__(self, config):
         self.config = config
         if not self.config:
-            raise Exception("No predictor_config specified")
+            raise Exception("No model_info_config specified")
         self._prepare_auth()
         # Augment config with expanded gordo connection string
         expand_gordo_connection_string(self.config)
         allocate_gordo_client_instances(config)
+        self.models = []
+        self.model_info = None
 
-    def get_model_info(self, model_name: str):
-        """
-        Return any information about a named prediction
-        """
-        return {}
-
-    def _normalize_to_models(self, projects_data):
+    def get_models_raw(self):
         models = []
-        for project_name, project_data in projects_data.items():
-            for model_name, model_data in project_data.items():
-                model_data["name"] = model_name
-                model_data["project"] = project_name
-                models.append(model_data)
-        return models
-
-    def get_models(self, filter: dict):
-        """
-        Return a list of predictions matching the given filter.
-        """
-        models = {}
-        projects = filter.get("projects", [])
-        # logger.info("Getting models for projects: ")
-        # logger.info(pprint.pformat(projects))
+        projects = self.config.get("projects", [])
+        # projects = filter.get("projects", [])
         if not isinstance(projects, list):
             projects = [projects]
-        for project in projects:
-            # logger.info(f"LOOKING AT PROJECT {project}")
-            client = get_gordo_client_instance_by_project(project)
+        for project_name in projects:
+            # logger.info(f"LOOKING AT PROJECT {project_name}")
+            client = get_gordo_client_instance_by_project(project_name)
             if client:
                 meta_data = client.get_metadata()
-                # logger.info(f" + FOUND METADATA for {project}: {len(meta_data)}")
-                models[project] = meta_data
+                for model_name, model_data in meta_data.items():
+                    model_data["model_name"] = model_name
+                    model_data["project_name"] = project_name
+                    models.append(model_data)
             else:
-                logger.error(f"No client found for project '{project}', skipping")
-        models = self._normalize_to_models(models)
+                logger.error(f"No client found for project '{project_name}', skipping")
         return models
+
+    def get_models(self):
+        if not self.models:
+            self.models = self.get_models_raw()
+        return self.models
+
+    def get_model_info(self):
+        if not self.model_info:
+            models = self.get_models()
+            self.model_info = ModelInfo()
+            for model_data in models:
+                model = Model(project_name=model_data.get("project_name", "unnamed"), model_name=model_data.get("model_name", "unnamed"), tag_list=_get_model_tag_list(model_data), target_tag_list=_get_model_target_tag_list(model_data))
+                self.model_info.register_model(model)
+        return self.model_info
 
 
 def print_client(client):

@@ -8,9 +8,11 @@ from datetime import datetime, timedelta
 from os import environ
 from latigo.types import Task
 from latigo.task_queue import task_queue_sender_factory
+from latigo.model_info import model_info_provider_factory
 
 from latigo.utils import Timer, human_delta
 from latigo.gordo import GordoModelInfoProvider
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,21 +24,13 @@ class Scheduler:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             raise Exception("No model info config specified")
-        model_info_type = self.model_info_config.get("type", None)
-        self.model_info = None
+        self.model_info = model_info_provider_factory(self.model_info_config)
         self.model_filter = {}
-        self.model_filter["projects"] = []
-        if "gordo" == model_info_type:
-            self.model_info = GordoModelInfoProvider(self.model_info_config)
-            self.model_filter["projects"] = self.model_info_config.get("projects", [])
-            logger.info("FILTER:")
-            logger.info(self.model_filter["projects"])
-        else:
-            self.model_info = DevNullModelInfo(self.model_info_config)
-        self.idle_time = datetime.now()
-        self.idle_number = 0
+        self.model_filter["projects"] = self.model_info_config.get("projects", [])
         if not self.model_info:
             raise Exception("No model info configured")
+        if not self.model_filter["projects"]:
+            logger.warning("No filter specified")
 
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
@@ -55,13 +49,10 @@ class Scheduler:
         if not self.scheduler_config:
             raise Exception("No scheduler config specified")
         self.name = self.scheduler_config.get("name", "unnamed_scheduler")
-        self.configuration_sync_interval = pd.to_timedelta(self.scheduler_config.get("configuration_sync_interval", "1m"))
         self.continuous_prediction_interval = pd.to_timedelta(self.scheduler_config.get("continuous_prediction_interval", "30m"))
         selfdback_fill_max_interval = pd.to_timedelta(self.scheduler_config.get("back_fill_max_interval", "1d"))
-        self.configuration_sync_timer = Timer(trigger_interval=self.configuration_sync_interval)
         self.continuous_prediction_timer = Timer(trigger_interval=self.continuous_prediction_interval)
-        logger.info(f"Using configuration sync interval: {self.configuration_sync_interval}")
-        logger.info(f"Using prediction interval:         {self.continuous_prediction_interval}")
+        logger.info(f"Prediction interval: {self.continuous_prediction_interval}")
 
     def __init__(self, config: dict):
         if not config:
@@ -122,20 +113,16 @@ class Scheduler:
 
     def run(self):
         logger.info(f"Starting {self.__class__.__name__}")
-        logger.info(f"Configuration sync: {self.configuration_sync_timer}")
         logger.info(f"Prediction step: {self.continuous_prediction_timer}")
         done = False
         while not done:
             try:
-                if self.configuration_sync_timer.is_triggered():
-                    # Restart timer
-                    self.configuration_sync_timer.start()
-                    # Do the configuratio sync
-                    self.synchronize_configuration()
 
                 if self.continuous_prediction_timer.is_triggered():
                     # Restart timer
                     self.continuous_prediction_timer.start()
+                    # Do the configuratio sync
+                    self.synchronize_configuration()
                     # Do the prediction task queueing
                     self.perform_prediction_step()
 
