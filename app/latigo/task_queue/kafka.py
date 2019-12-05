@@ -4,11 +4,11 @@ import json
 import logging
 import sys
 import pprint
-import time
 import typing
+
 from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 from confluent_kafka.admin import AdminClient, NewTopic
-from latigo.utils import parse_event_hub_connection_string
+from latigo.utils import parse_event_hub_connection_string, sleep
 from latigo.task_queue import deserialize_task, serialize_task, TaskQueueSenderInterface, TaskQueueReceiverInterface
 from latigo.types import Task
 
@@ -182,7 +182,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         task_bytes = self.receive_event(timeout)
         task: typing.Optional[Task] = None
         if not task_bytes:
-            time.sleep(backoff)
+            sleep(backoff)
         else:
             task = deserialize_task(task_bytes)
         if not task:

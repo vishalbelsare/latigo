@@ -2,7 +2,7 @@
 
 import sys
 from os import environ
-
+import pprint
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.scheduler")
@@ -16,15 +16,17 @@ logger.info("Starting Latigo Scheduler")
 # fmt: off
 # NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
 not_found=None #"environemnt variable not found"
+
 config_overlay = {
     "scheduler": {
-        "continuous_prediction_interval": environ.get("LATIGO_SCHEDULER_PREDICTION_INTERVAL", "90m")
-    },
-    "scheduler": {
-        "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_scheduler")
+        "projects": environ.get("LATIGO_SCHEDULER_PROJECTS", "ioc-1130, ioc-1125"),
+        "continuous_prediction_start_time": environ.get("LATIGO_SCHEDULER_PREDICTION_START_TIME", "08:00"),
+        "continuous_prediction_interval": environ.get("LATIGO_SCHEDULER_PREDICTION_INTERVAL", "90m"),
+        "continuous_prediction_delay": environ.get("LATIGO_SCHEDULER_PREDICTION_DELAY", "1d"),
+        "name": environ.get("LATIGO_INSTANCE_NAME", "unnamed_scheduler"),
     },
     "task_queue": {
-        "connection_string": environ.get("LATIGO_INTERNAL_EVENT_HUB", not_found)
+        "connection_string": environ.get("LATIGO_INTERNAL_EVENT_HUB", not_found),
     },
     "model_info":{
         "connection_string": environ.get("LATIGO_GORDO_CONNECTION_STRING", not_found),

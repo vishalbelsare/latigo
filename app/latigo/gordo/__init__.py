@@ -13,7 +13,7 @@ from latigo.prediction_execution import PredictionExecutionProviderInterface
 from latigo.types import TimeRange, SensorDataSpec, SensorData, PredictionData
 from latigo.sensor_data import SensorDataProviderInterface
 
-from latigo.model_info import ModelInfoProviderInterface, ModelInfo, Model
+from latigo.model_info import ModelInfoProviderInterface, Model
 from latigo.auth import create_auth_session
 
 from latigo.gordo.client import Client
@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 gordo_client_instances_by_hash: dict = {}
 gordo_client_instances_by_project: dict = {}
 gordo_client_auth_session: typing.Optional[requests.Session] = None
+gordo_client_config = None
 
 # Defeat dependency on gordo
 def _gordo_to_latigo_tag_list(gordo_tag_list):
@@ -167,13 +168,11 @@ def expand_gordo_prediction_forwarder(config: dict, prediction_storage):
     config["prediction_forwarder"] = LatigoPredictionForwarder(prediction_storage, prediction_forwarder_config)
 
 
-def allocate_gordo_client_instances(raw_config: dict):
-    projects = raw_config.get("projects", [])
-    auth_config = raw_config.get("auth", dict())
-    session = get_auth_session(auth_config)
-    if not isinstance(projects, list):
-        projects = [projects]
-    for project in projects:
+def allocate_gordo_client_instance(raw_config: dict, project: str):
+    client = gordo_client_instances_by_project.get(project, None)
+    if not client:
+        auth_config = raw_config.get("auth", dict())
+        session = get_auth_session(auth_config)
         config = {**raw_config}
         config["project"] = project
         config["session"] = session
@@ -191,14 +190,20 @@ def allocate_gordo_client_instances(raw_config: dict):
                     logger.warning(f"Skipping client allocation for {project}, project not found")
                 else:
                     logger.error(f"Skipping client allocation for {project} due to HTTP error '{http_error}'")
-                continue
             except Exception as error:
                 logger.error(f"Skipping client allocation for {project} due to unknown error '{error}'")
-                continue
+                logger.error(f"NOTE: Using config {pprint.pformat(clean_config)}")
+    return client
 
 
-def get_gordo_client_instance_by_project(project):
-    return gordo_client_instances_by_project.get(project, None)
+def allocate_gordo_client_instances(raw_config: dict):
+    global gordo_client_config
+    gordo_client_config = raw_config
+    projects = raw_config.get("projects", [])
+    if not isinstance(projects, list):
+        projects = [projects]
+    for project in projects:
+        allocate_gordo_client_instance(raw_config, project)
 
 
 def _get_model_meta(model: dict):
@@ -244,24 +249,22 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         if not self.config:
             raise Exception("No model_info_config specified")
         self._prepare_auth()
-        # Augment config with expanded gordo connection string
         expand_gordo_connection_string(self.config)
-        allocate_gordo_client_instances(config)
-        self.models = []
-        self.model_info = None
 
-    def get_models_raw(self):
+    def get_models_data(self, projects: typing.Optional[typing.List] = None, model_names: typing.Optional[typing.List] = None):
         models = []
-        projects = self.config.get("projects", [])
-        # projects = filter.get("projects", [])
-        if not isinstance(projects, list):
-            projects = [projects]
+        if not projects:
+            projects = self.config.get("projects", [])
+            if not isinstance(projects, list):
+                projects = [projects]
         for project_name in projects:
             # logger.info(f"LOOKING AT PROJECT {project_name}")
-            client = get_gordo_client_instance_by_project(project_name)
+            client = allocate_gordo_client_instance(self.config, project_name)
             if client:
                 meta_data = client.get_metadata()
                 for model_name, model_data in meta_data.items():
+                    if model_names and model_name not in model_names:
+                        continue
                     model_data["model_name"] = model_name
                     model_data["project_name"] = project_name
                     models.append(model_data)
@@ -269,19 +272,30 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
                 logger.error(f"No client found for project '{project_name}', skipping")
         return models
 
-    def get_models(self):
-        if not self.models:
-            self.models = self.get_models_raw()
-        return self.models
+    def get_all_models(self, projects: typing.List):
+        models_data = self.get_models_data(projects)
+        models = []
+        for model_data in models_data:
+            model = Model(project_name=model_data.get("project_name", "unnamed"), model_name=model_data.get("model_name", "unnamed"), tag_list=_get_model_tag_list(model_data), target_tag_list=_get_model_target_tag_list(model_data))
+            models.append(model)
+        return models
 
-    def get_model_info(self):
-        if not self.model_info:
-            models = self.get_models()
-            self.model_info = ModelInfo()
-            for model_data in models:
-                model = Model(project_name=model_data.get("project_name", "unnamed"), model_name=model_data.get("model_name", "unnamed"), tag_list=_get_model_tag_list(model_data), target_tag_list=_get_model_target_tag_list(model_data))
-                self.model_info.register_model(model)
-        return self.model_info
+    def get_model_by_key(self, project_name: str, model_name: str):
+        models_data = self.get_models_data(projects=[project_name], model_names=[model_name])
+        if not models_data:
+            return None
+        model = None
+        model_data = models_data[0]
+        if model_data:
+            model = Model(project_name=model_data.get("project_name", "unnamed"), model_name=model_data.get("model_name", "unnamed"), tag_list=_get_model_tag_list(model_data), target_tag_list=_get_model_target_tag_list(model_data))
+        return model
+
+    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
+        model = self.get_model_by_key(project_name=project_name, model_name=model_name)
+        if not model:
+            return None
+        spec = SensorDataSpec(tag_list=model.tag_list)
+        return spec
 
 
 def print_client(client):
@@ -314,18 +328,19 @@ def print_client(client):
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
+    def _prepare_projects(self):
+        self.projects = self.config.get("projects", [])
+        if not isinstance(self.projects, list):
+            self.projects = [self.projects]
+
     def __init__(self, sensor_data, prediction_storage, config):
         self.config = config
         if not self.config:
             raise Exception("No predictor_config specified")
-        # Augment config with expanded gordo connection string
         expand_gordo_connection_string(self.config)
-        # Augment config with the latigo data provider
         expand_gordo_data_provider(config, sensor_data)
-        # Augment config with the latigo prediction forwarder
         expand_gordo_prediction_forwarder(config, prediction_storage)
-        # Allocate gordo clients for our projects
-        allocate_gordo_client_instances(config)
+        self._prepare_projects()
 
     def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorData) -> PredictionData:
         if not project_name:
@@ -334,7 +349,7 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
             raise Exception("No model_name in gordo.execute_prediction()")
         if not sensor_data:
             raise Exception("No sensor_data in gordo.execute_prediction()")
-        client = get_gordo_client_instance_by_project(project_name)
+        client = allocate_gordo_client_instance(self.config, project_name)
         if not client:
             raise Exception(f"No gordo client found for project '{project_name}' in gordo.execute_prediction()")
         logger.info("STARTING PREDICTION WITH CLIENT: ------")

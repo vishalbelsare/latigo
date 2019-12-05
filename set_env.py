@@ -17,11 +17,14 @@ if not path.exists(filename):
     # and running
     # fmt: off
     local_config={
-        "LATIGO_MESSAGE": f"YOUR LOCAL ENV CAN NOW BE EDITED IN {filename}. RE-RUN THIS SCRIPT TO LOAD ANY CHANGES",
+        "LATIGO_SCHEDULER_PROJECTS": "The projects that should be considered for predictions by scheduler",
         "LATIGO_INTERNAL_EVENT_HUB": "GET YOUR EVENT_HUB CONNECTION STRING FROM AZURE PORTAL",
         "LATIGO_EXECUTOR_CONFIG_FILE": "THE LOCATION OF PREDICTION EXECUTOR CONFIG FILE IN YAML FORMAT",
         "LATIGO_SCHEDULER_CONFIG_FILE": "THE LOCATION OF PREDICTION SCHEDULER CONFIG FILE IN YAML FORMAT",
+        "LATIGO_SCHEDULER_PREDICTION_START_TIME": "The time of day at which prediction starts. Subequent predictions will happen in intervals after",
         "LATIGO_SCHEDULER_PREDICTION_INTERVAL": "The interval at which the scheduler will schedule work",
+        "LATIGO_SCHEDULER_PREDICTION_DELAY": "How long back in time from 'now' the data will be fetched during predictions",
+
         "LATIGO_GORDO_CONNECTION_STRING": "The connection string for Gordo",
         "LATIGO_GORDO_RESOURCE": "The resource ID of gordo. Used for bearer authentication.",
         "LATIGO_GORDO_TENANT": "The  tenant latigo application in AD. Used for bearer authentication.",
@@ -39,13 +42,11 @@ if not path.exists(filename):
         "LATIGO_TIME_SERIES_CLIENT_ID": "The client ID of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_CLIENT_SECRET": "The client secret of time series api. Used for bearer authentication.",
         
-        
         "LATIGO_TIME_SERIES_IMS_META_RESOURCE": "The resource ID of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_TENANT": "The tenant of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_IMS_META_AUTH_HOST_URL": "The authority host URL for time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_IMS_META_CLIENT_ID": "The client ID of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_IMS_META_CLIENT_SECRET": "The client secret of time series api. Used for bearer authentication.",
-
 
         "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_RESOURCE": "The resource ID of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_TENANT": "The tenant of time series api. Used for bearer authentication.",
@@ -62,11 +63,10 @@ else:
 
 # from pprint import pprint; pprint(local_config)
 if failure:
-    print(f"Failed with {failure}")
+    print(f"false # Failed with {failure}")
 else:
     for k, v in local_config.items():
-        environ[k] = v
-        system(f"export {k}={v}")
+        environ[k] = str(v)
         print(f'export {k}="{v}"')
     print(f'export LATIGO_LOCAL_CONF_FILENAME="{filename}"')
 

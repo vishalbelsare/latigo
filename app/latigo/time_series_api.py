@@ -97,7 +97,7 @@ def transform_from_timeseries_to_gordo(items: typing.List):
             tag_name = tag_names[j]
             line.append(tag_names_data[tag_name][i])
         gordo_data.append(line)
-    # logger.info(f"tagnames: {tag_names} tagmap {tag_names_map} tagdata {tag_names_data}")
+    logger.info(f"tagnames: {tag_names} tagmap {tag_names_map} tagdata {tag_names_data}")
     return {"X": gordo_data}
 
 
@@ -329,12 +329,15 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         missing_meta = 0
         missing_id = 0
         completed = 0
-        data: typing.List[dict] = []
+        data: typing.List[typing.Dict] = []
         if len(spec.tag_list) <= 0:
             logger.warning("Tag list empty")
-        for tag in spec.tag_list:
-            logger.info(f"Getting data for tag '{tag}'")
-            meta = self._get_id_by_name(name=tag.name, asset_id=tag.asset)
+        else:
+            logger.info(f"Getting data for {len(spec.tag_list)} tags:")
+        for tag_ in spec.tag_list:
+            tag = dict(tag_)
+            logger.info(f" + '{tag}'")
+            meta = self._get_id_by_name(name=tag.get("name", ""), asset_id=tag.get("asset"))
             if not meta:
                 missing_meta += 1
                 continue
@@ -345,7 +348,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             ts, err = self._fetch_data(id, time_range)
             if err or not ts.get("latigo-ok", False):
                 return None, err or ts.get("latigo-error", "Unknown failure")
-            data += _get_items(ts)
+            data.extend(_get_items(ts))
             completed += 1
         if missing_meta > 0:
             logger.warning(f"Meta missing for {missing_meta} tags")
@@ -353,7 +356,11 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             logger.warning(f"ID missing for {missing_id} tags")
         if completed > 0:
             logger.info(f"Completed {missing_id} tags")
+        if not data:
+            logger.warning("No gordo data")
         data = transform_from_timeseries_to_gordo(data)
+        if not data:
+            logger.warning("No converted data")
         return SensorData(time_range=time_range, data=data), None
 
 

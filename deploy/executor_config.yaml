@@ -14,6 +14,30 @@ task_queue:
     enable.auto.commit: true
     auto.commit.interval.ms: 1000
 
+
+model_info:
+    type: "gordo"
+    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    target: null
+    metadata: null
+    batch_size: 1000
+    parallelism: 10
+    forward_resampled_sensors : false
+    ignore_unhealthy_targets: true
+    n_retries: 5
+    data_provider:
+        debug: true
+        n_retries: 5
+    prediction_forwarder:
+        debug: false
+        n_retries: 5
+    auth:
+        resource: "set from env"
+        tenant: "set from env"
+        authority_host_url: "set from env"
+        client_id: "set from env"
+        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+
 sensor_data:
     type: "time_series_api"
     base_url: "https://api.gateway.equinor.com/plant-beta/timeseries/v1.5"

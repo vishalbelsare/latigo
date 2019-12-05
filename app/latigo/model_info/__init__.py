@@ -27,37 +27,22 @@ class Model:
         return SensorDataSpec(tag_list=self.tag_list)
 
 
-class ModelInfo:
-    def __init__(self):
-        self.models_by_key = {}
-        self.models_list = []
+class ModelInfoProviderInterface:
+    #    def get_model_info(self) -> ModelInfo:
+    #        """
+    #        Return the model info
+    #        """
+    #        pass
 
-    def register_model(self, model: Model):
-        key = model.key()
-        self.models_by_key[key] = model
-        self.models_list.append(model)
+    def get_all_models(self, projects: typing.List):
+        pass
 
-    def get_all(self):
-        return self.models_list
-
-    def get_model_by_key(self, key: str):
-        return self.models_by_key.get(key, None)
+    def get_model_by_key(self, project_name: str, model_name: str):
+        pass
 
     def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
         """
         Return a sensor data spec for given project name and model name
-        """
-        key = model_key(project_name, model_name)
-        model = self.get_model_by_key(key)
-        if not model:
-            return None
-        return model.get_spec()
-
-
-class ModelInfoProviderInterface:
-    def get_model_info(self) -> ModelInfo:
-        """
-        Return the model info
         """
         pass
 
@@ -66,16 +51,34 @@ class MockModelInfoProvider(ModelInfoProviderInterface):
     def __init__(self, config: dict):
         self.config = config
 
-    def get_model_info(self) -> ModelInfo:
-        return ModelInfo()
+    #    def get_model_info(self) -> ModelInfo:
+    #        return ModelInfo()
+
+    def get_all_models(self, projects: typing.List):
+        return []
+
+    def get_model_by_key(self, project_name: str, model_name: str):
+        return None
+
+    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
+        return None
 
 
 class DevNullModelInfoProvider(ModelInfoProviderInterface):
     def __init__(self, config: dict):
         pass
 
-    def get_model_info(self) -> ModelInfo:
-        return ModelInfo()
+    #    def get_model_info(self) -> ModelInfo:
+    #        return ModelInfo()
+
+    def get_all_models(self, projects: typing.List):
+        return []
+
+    def get_model_by_key(self, project_name: str, model_name: str):
+        return None
+
+    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
+        return None
 
 
 def model_info_provider_factory(model_info_provider_config):

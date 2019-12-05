@@ -47,7 +47,7 @@ class SensorData:
     data: typing.Iterable[pd.Series]
 
     def __str__(self):
-        return f"PredictionData({self.time_range})"
+        return f"PredictionData(time_range={self.time_range}, data={self.data})"
 
     def ok(self):
         return bool(self.time_range) and bool(self.data)

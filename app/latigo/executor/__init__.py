@@ -12,6 +12,7 @@ from latigo.prediction_execution import prediction_execution_provider_factory
 from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.model_info import model_info_provider_factory
+from latigo.utils import sleep
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +24,9 @@ class PredictionExecutor:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             raise Exception("No model info config specified")
-        self.model_info = model_info_provider_factory(self.model_info_config)
-        self.model_filter = {}
-        self.model_filter["projects"] = self.model_info_config.get("projects", [])
-        if not self.model_info:
+        self.model_info_provider = model_info_provider_factory(self.model_info_config)
+        if not self.model_info_provider:
             raise Exception("No model info configured")
-        if not self.model_filter["projects"]:
-            logger.warning("No filter specified")
 
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
@@ -80,10 +77,9 @@ class PredictionExecutor:
         self._prepare_prediction_storage_provider()
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
-        self.models = self.model_info.get_model_info()
 
     def _fetch_spec(self, project_name: str, model_name: str):
-        return self.models.get_spec(project_name=project_name, model_name=model_name)
+        return self.model_info_provider.get_spec(project_name=project_name, model_name=model_name)
 
     def _fetch_task(self) -> typing.Optional[Task]:
         """
@@ -110,9 +106,14 @@ class PredictionExecutor:
             project_name: str = task.project_name
             model_name: str = task.model_name
             spec: SensorDataSpec = self._fetch_spec(project_name, model_name)
-            sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
-            if not sensor_data or not sensor_data.ok():
-                logger.warning(f"Error getting sensor data: {err}")
+            if spec:
+                sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
+                if not sensor_data:
+                    logger.warning(f"Error getting sensor data: {err}")
+                if not sensor_data.ok():
+                    logger.warning(f"Sensor data '{sensor_data}' was not ok")
+            else:
+                logger.warning(f"Error getting spec for project={project_name} and model={model_name}")
         except Exception as e:
             logger.error(f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}")
             traceback.print_exc()
@@ -171,11 +172,11 @@ class PredictionExecutor:
                             else:
                                 logger.warning(f"Skipping store due to bad prediction: {prediction_data.data}")
                         else:
-                            logger.warning(f"Skipping prediciton due to bad data: {sensor_data.data}")
+                            logger.warning(f"Skipping prediciton due to bad data: {sensor_data}")
                     else:
                         logger.warning(f"No task")
                         self.idle_count(False)
-                        time.sleep(1)
+                        sleep(1)
                 except Exception as e:
                     error_number += 1
                     logger.error("-----------------------------------")
@@ -183,7 +184,7 @@ class PredictionExecutor:
                     traceback.print_exc()
                     logger.error("")
                     logger.error("-----------------------------------")
-                    time.sleep(1)
+                    sleep(1)
             logger.info(f"Stopping processing in {self.__class__.__name__}")
         else:
             logger.info(f"Skipping processing in {self.__class__.__name__}")

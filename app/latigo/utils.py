@@ -2,9 +2,9 @@ import re
 import pprint
 import logging
 import datetime
-import asyncio
 import typing
 import yaml
+import time
 import os.path
 
 import importlib
@@ -150,39 +150,12 @@ def human_delta(td_object: datetime.timedelta, max: int = 0):
     return ", ".join(strings)  # + f"({td_object}, {ms})"
 
 
-class Timer:
-    def __init__(self, trigger_interval: datetime.timedelta):
-        self.trigger_interval = trigger_interval
-        self.start_time: typing.Optional[datetime.datetime] = None
-
-    def start(self, start_time: typing.Optional[datetime.datetime] = None):
-        if start_time:
-            self.start_time = start_time
-        else:
-            self.start_time = datetime.datetime.now()
-
-    def stop(self):
-        self.start_time = None
-
-    def interval(self) -> typing.Optional[datetime.timedelta]:
-        if not self.start_time:
-            return None
-        return datetime.datetime.now() - self.start_time
-
-    def is_triggered(self) -> bool:
-        iv = self.interval()
-        return True if not iv else (iv > self.trigger_interval)
-
-    async def wait_for_trigger(self):
-        iv = self.interval()
-        if iv:
-            await asyncio.sleep(iv)
-
-    def __str__(self):
-        return f"Timer(start_time={self.start_time}, trigger_interval={self.trigger_interval} {'[triggered]' if self.is_triggered() else ''})"
-
-
 def list_loggers():
     loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
     for l in loggers:
         logger.info(f"LOGGER: {l}")
+
+
+def sleep(time_sec):
+    time.sleep(time_sec)
+    # await asyncio.sleep async

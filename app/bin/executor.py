@@ -23,6 +23,16 @@ config_overlay = {
     "task_queue": {
         "connection_string": environ.get("LATIGO_INTERNAL_EVENT_HUB", not_found),
     },
+    "model_info":{
+        "connection_string": environ.get("LATIGO_GORDO_CONNECTION_STRING", not_found),
+        "auth":{
+            "resource": environ.get("LATIGO_GORDO_RESOURCE", not_found),
+            "tenant" : environ.get("LATIGO_GORDO_TENANT", not_found),
+            "authority_host_url" : environ.get("LATIGO_GORDO_AUTH_HOST_URL", not_found),
+            "client_id" : environ.get("LATIGO_GORDO_CLIENT_ID", not_found),
+            "client_secret" : environ.get("LATIGO_GORDO_CLIENT_SECRET", not_found),
+        },
+    },
     "sensor_data": {
         "base_url": environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
         "auth":{
