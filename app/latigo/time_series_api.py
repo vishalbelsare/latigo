@@ -44,6 +44,7 @@ Time series format:
 """
 
 
+
 def transform_from_timeseries_to_gordo(items: typing.List):
     if not items:
         return None
@@ -120,22 +121,35 @@ def _itemes_present(res: dict) -> bool:
 
 
 def _x_in_data(res, x):
-    if not res:
+    if not isinstance(res, dict):
         return None
     data = res.get("data", {})
-    if not data:
+    if not isinstance(data, dict):
         return None
     items = data.get("items", [])
-    if not items:
+    if not isinstance(items, list):
+        return None
+    if len(items) < 1:
         return None
     item = items[0]
-    if not item:
+    if not isinstance(item, dict):
         return None
     return item.get(x, None)
 
 
 def _id_in_data(res):
     return _x_in_data(res, "id")
+
+
+def _get_items(datas: dict) -> typing.List:
+    if not datas:
+        logger.info("NO DATAS")
+        return []
+    data = datas.get("data", {})
+    if not data:
+        logger.info("NO DATA")
+        return []
+    return data.get("items", [])
 
 
 def _get_auth_session(auth_config: dict):
@@ -146,7 +160,7 @@ def _get_auth_session(auth_config: dict):
     return timeseries_client_auth_session
 
 
-def _parse_request_json(res) -> typing.Tuple[typing.Dict, typing.Optional[str]]:
+def _parse_request_json(res) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
     try:
         res.raise_for_status()
         ret = res.json()
@@ -156,12 +170,13 @@ def _parse_request_json(res) -> typing.Tuple[typing.Dict, typing.Optional[str]]:
     except HTTPError as http_err:
         msg = f"Could not {res.request.method} @ {res.request.url}:\nHTTP error occurred: {http_err}"
         logger.error(msg)
-        return {"latigo-ok": False, "latigo-error": msg}, msg
+        return None, msg
     except Exception as err:
         msg = f"Could not {res.request.method} @ {res.request.url}:\nOther error occurred: {err}"
         logger.error(msg)
-        raise err
-        return {"latigo-ok": False, "latigo-error": msg}, msg
+        # raise err
+        return None, msg
+    return None, "ERRROR"
 
 
 class IMSMetadataAPIClient:
@@ -180,20 +195,18 @@ class IMSMetadataAPIClient:
         self._parse_auth_config()
         self._parse_base_url()
 
-    def get_system_code_by_tag_name(self, tag_name: str) -> str:
+    def get_system_code_by_tag_name(self, tag_name: str) -> typing.Optional[str]:
         url = f"{self.base_url}/search/{urllib.parse.quote(tag_name)}"
         logger.info(url)
         res = self.session.get(url)
         obj, err = _parse_request_json(res)
-        logger.info(pprint.pformat(obj))
-        items = obj.get("data", {}).get("items", [])
-        return items[0].get("systemCode", None) if len(items) > 0 else None
-
-
-"""
-    1028548d-6e15-4cef-bab3-467d1b37f700-28 ser ut som en av våre
-    Choke -monitorering på Grane
-        """
+        if obj:
+            logger.info(pprint.pformat(obj))
+            items = obj.get("data", {}).get("items", [])
+            return items[0].get("systemCode", None) if len(items) > 0 else None
+        else:
+            logger.warning(f"Could not get system code by tag name: {err}")
+        return None
 
 
 class IMSSubscriptionAPIClient:
@@ -216,27 +229,49 @@ class IMSSubscriptionAPIClient:
         logger.info(url)
         res = self.session.get(url)
         obj, err = _parse_request_json(res)
-        logger.info(pprint.pformat(obj))
-        items = obj.get("data", {}).get("items", [])
-        return items[0].get("timeseriesId", None) if len(items) > 0 else None
+        if obj:
+            logger.info(pprint.pformat(obj))
+            items = obj.get("data", {}).get("items", [])
+            return items[0].get("timeseriesId", None) if len(items) > 0 else None
+        else:
+            logger.warning(f"Could not get time series id by system code: {err}")
+        return None
 
 
 class TimeSeriesAPIClient:
+    def _fail(self, message):
+        self.good_to_go = False
+        logger.error(message)
+        logger.warning("Using config:")
+        logger.warning(self.config)
+        return None
+
     def _parse_base_url(self):
-        if "base_url" in self.config:
-            self.base_url = self.config.pop("base_url")
+        self.base_url = self.config.get("base_url", None)
+        if not self.base_url:
+            return self.fail("No base_url found in config")
+        logger.info(f"Using base_url: '{self.base_url}'")
 
     def _parse_auth_config(self):
         self.auth_config = self.config.get("auth", dict())
+        if not self.auth_config:
+            return self.fail("No auth_config found in config")
         self.session = _get_auth_session(self.auth_config)
+        if not self.session:
+            return self.fail("Could not create session")
 
     def _prepare_ims_meta_client(self):
         self.ims_meta = IMSMetadataAPIClient(self.conf)
+        if not self.ims_meta:
+            return self.fail("Could not create ims_meta")
 
     def _prepare_ims_subscription_client(self):
         self.ims_subscription = IMSSubscriptionAPIClient(self.conf)
+        if not self.ims_subscription:
+            return self.fail("Could not create ims_subscription")
 
     def __init__(self, config: dict):
+        self.good_to_go = True
         self.config = config
         if not self.config:
             raise Exception("No config specified")
@@ -245,6 +280,8 @@ class TimeSeriesAPIClient:
         self.do_async = self.config.get("async", False)
         # self._prepare_ims_meta_client();
         # self._prepare_ims_subscription_client();
+        if not self.good_to_go:
+            raise Exception("TimeSeriesAPIClient failed. Please see previous errors for clues as to why")
 
     def get_timeseries_id_for_tag_name(self, tag_name: str):
         system_code = self.ims_meta.get_system_code_by_tag_name(tag_name=tag_name)
@@ -256,25 +293,22 @@ class TimeSeriesAPIClient:
         # TODO: Implement cache
         return self.get_timeseries_id_for_tag_name(tag_name=tag_name)
 
-    def _fetch_data(self, id: str, time_range: TimeRange) -> typing.Tuple[typing.Dict, typing.Optional[str]]:
+    def _fetch_data(self, id: str, time_range: TimeRange) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         url = f"{self.base_url}/{id}/data"
         params = {"startTime": time_range.rfc3339_from(), "endTime": time_range.rfc3339_to(), "limit": 100000, "includeOutsidePoints": True}
         res = self.session.get(url, params=params)
         return _parse_request_json(res)
 
-    def _get_id_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Dict:
+    def _get_meta_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         body = {"name": name}
         if asset_id:
             body["assetId"] = asset_id
         # logger.info("Getting:")        logger.info(pprint.pformat(body))
         res = self.session.get(self.base_url, params=body)
         obj, err = _parse_request_json(res)
-        # logger.info(pprint.pformat(obj))
-        return obj
 
-    def _id_exists_for_name(self, name: str, asset_id: typing.Optional[str] = None) -> bool:
-        res = self._get_id_by_name(name=name, asset_id=asset_id)
-        return _itemes_present(res)
+        # logger.info(pprint.pformat(obj))
+        return obj, err
 
     def _create_id(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
         body = {"name": name, "description": description, "step": True, "unit": unit, "assetId": asset_id, "externalId": external_id}
@@ -283,13 +317,13 @@ class TimeSeriesAPIClient:
         res = self.session.post(self.base_url, json=body, params=None)
         obj, err = _parse_request_json(res)
         logger.info(pprint.pformat(obj))
-        return obj
+        return obj, err
 
     def _create_id_if_not_exists(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
-        meta = self._get_id_by_name(name=name, asset_id=asset_id)
-        if not _itemes_present(meta):
-            return self._create_id(name, description, unit, asset_id, external_id)
-        return meta
+        meta, err = self._get_meta_by_name(name=name, asset_id=asset_id)
+        if meta and _itemes_present(meta):
+            return meta, err
+        return self._create_id(name, description, unit, asset_id, external_id)
 
     def _store_data_for_id(self, id: str, data: typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]]):
         datapoints = []
@@ -303,17 +337,6 @@ class TimeSeriesAPIClient:
         url = f"{self.base_url}/timeseries/v1.5/{id}/data?async={self.do_async}"
         res = self.session.post(url, data=data)
         return _parse_request_json(res)
-
-
-def _get_items(datas: dict) -> typing.List:
-    if not datas:
-        logger.info("NO DATAS")
-        return []
-    data = datas.get("data", {})
-    if not data:
-        logger.info("NO DATA")
-        return []
-    return data.get("items", [])
 
 
 class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInterface):
@@ -335,19 +358,27 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         else:
             logger.info(f"Getting data for {len(spec.tag_list)} tags:")
         for tag_ in spec.tag_list:
-            tag = dict(tag_)
+            logger.info(f" #### TAG_  '{tag_}'")
+            tag = dict(tag_._asdict())
             logger.info(f" + '{tag}'")
-            meta = self._get_id_by_name(name=tag.get("name", ""), asset_id=tag.get("asset"))
+            meta, err = self._get_meta_by_name(name=tag.get("name", ""), asset_id=tag.get("asset"))
+            # logger.info(f" O '{meta}, {err}'")
             if not meta:
                 missing_meta += 1
                 continue
             id = _id_in_data(meta)
             if not id:
                 missing_id += 1
+                logger.warning("NO ID:")
+                logger.warning(pprint.pformat(meta))
                 continue
             ts, err = self._fetch_data(id, time_range)
-            if err or not ts.get("latigo-ok", False):
-                return None, err or ts.get("latigo-error", "Unknown failure")
+            if err or not ts:
+                if ts:
+                    msg = ts.get("latigo-ok", "Unknown failure")
+                else:
+                    msg = "No ts"
+                return None, err or msg
             data.extend(_get_items(ts))
             completed += 1
         if missing_meta > 0:
@@ -355,13 +386,13 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         if missing_id > 0:
             logger.warning(f"ID missing for {missing_id} tags")
         if completed > 0:
-            logger.info(f"Completed {missing_id} tags")
+            logger.info(f"Completed {completed} tags")
         if not data:
             logger.warning("No gordo data")
         data = transform_from_timeseries_to_gordo(data)
         if not data:
             logger.warning("No converted data")
-        return SensorData(time_range=time_range, data=data), None
+        return SensorData(time_range=time_range, data=data, ), None
 
 
 class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStorageProviderInterface):
@@ -372,13 +403,13 @@ class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStor
         """
         Store prediction data in time series api
         """
-        name = "test"
-        description = "test for latigo"
-        unit = "Kg"
-        asset_id = "test_asset_id"
-        external_id = "test_external_id"
+        name = prediction_data.name
+        description = "Generated by latigo"
+        unit = prediction_data.unit
+        asset_id = prediction_data.asset_id
+        external_id = prediction_data.name
         data = prediction_data.data
-        meta = self._create_id_if_not_exists(name=name, description=description, unit=unit, asset_id=asset_id, external_id=external_id)
+        meta, err = self._create_id_if_not_exists(name=name, description=description, unit=unit, asset_id=asset_id, external_id=external_id)
         logger.info(f"GOT META: {meta}")
         id = _id_in_data(meta)
         if not id:

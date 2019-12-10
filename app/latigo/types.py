@@ -42,25 +42,29 @@ class SensorDataSpec:
 
 @dataclass
 class SensorData:
-
+    name: str
+    unit: str
+    asset_id: str
     time_range: TimeRange
     data: typing.Iterable[pd.Series]
 
     def __str__(self):
-        return f"PredictionData(time_range={self.time_range}, data={self.data})"
+        return f"SensorData(time_range={self.time_range}, name={self.name}, unit={self.unit}, asset_id={self.asset_id}, data={len(self.data)})"
 
     def ok(self):
-        return bool(self.time_range) and bool(self.data)
+        return bool(self.time_range) and bool(self.data) and bool(self.name) and bool(self.asset_id)
 
 
 @dataclass
 class PredictionData:
     name: str
+    unit: str
+    asset_id: str
     time_range: TimeRange
     data: typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]]
 
     def __str__(self):
-        return f"PredictionData({self.time_range}, result={len(self.result)})"
+        return f"PredictionData({self.time_range}, name={self.name}, unit={self.unit}, asset_id={self.asset_id}, data={len(self.data)})"
 
     def ok(self):
-        return bool(self.time_range) and bool(self.data)
+        return bool(self.time_range) and bool(self.data) and bool(self.name) and bool(self.asset_id)

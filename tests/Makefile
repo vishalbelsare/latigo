@@ -5,7 +5,7 @@ h: help
 
 all: unit integration load
 
-devops: test-unit
+devops: unit
 
 unit:
 	py.test -vv unit
@@ -28,18 +28,33 @@ integration:
 load:
 	py.test -vv load
 
-gordo:
+gordo: u_gordo i_gordo 
+
+time_series: u_time_series i_time_series
+
+event_hub: u_event_hub i_event_hub
+
+intermediate:
+	py.test -vv unit/test_intermediate.py
+
+u_gordo:
 	py.test -vv unit/test_gordo_client.py
+
+u_time_series:
+	py.test -vv unit/test_time_series_api.py
+
+u_event_hub:
+	py.test -vv unit/test_event_hub.py
+
+i_gordo:
 	py.test -vv integration/test_gordo_client.py
 
-time_series:
-	py.test -vv unit/test_time_series_api.py
+i_time_series:
 	py.test -vv integration/test_time_series_api.py
 
-event_hub:
-#	py.test -vv unit/test_event_hub.py
+i_event_hub:
 	py.test -vv integration/test_event_hub.py
-	
+
 
 
 ############### Help ####################
@@ -51,20 +66,31 @@ help:
 	@echo ""
 	@echo " Available targets:"
 	@echo ""
-	@echo " + make help          Show this help"
-	@echo " + make all           Run all tests"
-	@echo " + make devops        Run devops tests"
+	@echo " + make help            Show this help"
+	@echo " + make all             Run all tests"
+	@echo " + make devops          Run devops tests"
+	@echo " + make load            Run load tests (WIP)"
 	@echo ""
-	@echo " + make unit          Run unit tests"
-	@echo " + make utils         Run unit tests for utils"
-	@echo " + make rfc3339       Run unit tests for rfc3339"
-	@echo " + make clock         Run unit tests for clock"
-	@echo " + make executor      Run unit tests for executor"
+	@echo "Unit targets:"
+	@echo " + make unit            Run unit tests"
+	@echo " + make utils           Run unit tests for utils"
+	@echo " + make rfc3339         Run unit tests for rfc3339"
+	@echo " + make clock           Run unit tests for clock"
+	@echo " + make executor        Run unit tests for executor"
+	@echo " + make intermediate    Run unit tests for executor"
+	@echo " + make u_gordo         Run gordo unit tests"
+	@echo " + make u_time_series   Run time series API unit tests"
+	@echo " + make u_event_hub     Run event hub unit tests"
 	@echo ""
-	@echo " + make integration   Run integration tests"
-	@echo " + make gordo         Run gordo integration tests"
-	@echo " + make time_series   Run time series API integration tests"
-	@echo " + make event_hub     Run event hub integration tests"
+	@echo "Integration targets:"
+	@echo " + make integration     Run integration tests"
+	@echo " + make i_gordo         Run gordo integration tests"
+	@echo " + make i_time_series   Run time series API integration tests"
+	@echo " + make i_event_hub     Run event hub integration tests"
 	@echo ""
-	@echo " + make load          Run load tests"
+	@echo "Component targets:"
+	@echo " + make u_gordo         Run all gordo tests"
+	@echo " + make u_time_series   Run all time series API tests"
+	@echo " + make u_event_hub     Run all event hub tests"
+	@echo " + make load            Run load tests"
 	@echo ""

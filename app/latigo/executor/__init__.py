@@ -162,7 +162,7 @@ class PredictionExecutor:
                 try:
                     task = self._fetch_task()
                     if task:
-                        logger.info(f"Processing task for '{task.project_name}.{task.model_name}' starting {task.from_time} lasting {task.to_time - task.from_time}")
+                        logger.info(f"Processing task starting {task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' in '{task.project_name}'")
                         sensor_data = self._fetch_sensor_data(task)
                         if sensor_data and sensor_data.ok():
                             prediction_data = self._execute_prediction(task, sensor_data)

@@ -10,7 +10,7 @@ from latigo.types import SensorData, PredictionData
 
 
 class PredictionExecutionProviderInterface:
-    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorData) -> PredictionData:
+    def execute_prediction(self, project_name: str, model_name: str, asset_id: str, sensor_data: SensorData, unit: str = None) -> PredictionData:
         """
         Train and/or run data through a given model
         """
@@ -20,11 +20,11 @@ class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
     def __init__(self, sensor_data, prediction_storage, config: dict):
         self.config = config
 
-    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorData) -> PredictionData:
+    def execute_prediction(self, project_name: str, model_name: str, asset_id: str, sensor_data: SensorData, unit: str = None) -> PredictionData:
         """
         Testing mock prediction execution provider
         """
-        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, data=[])
+        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, asset_id=asset_id, data=sensor_data, unit=unit)
         return prediction_data
 
 
@@ -32,11 +32,11 @@ class DevNullPredictionExecutionProvider(PredictionExecutionProviderInterface):
     def __init__(self, sensor_data, prediction_storage, config: dict):
         self.config = config
 
-    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorData) -> PredictionData:
+    def execute_prediction(self, project_name: str, model_name: str, asset_id: str, sensor_data: SensorData, unit: str = None) -> PredictionData:
         """
         Dummy no-op prediction execution provider
         """
-        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, data=[])
+        prediction_data = PredictionData(name=model_name, time_range=sensor_data.time_range, asset_id=asset_id, data=sensor_data, unit=unit)
         return prediction_data
 
 

@@ -29,11 +29,14 @@ class MockSensorDataProvider(SensorDataProviderInterface):
         """
         return the actual data as per the range specified
         """
-        mock_data = self.config.get("mock_data")
+        mock_name = self.config.get("mock_name", "mock_name")
+        mock_asset_id = self.config.get("mock_asset_id", "mock_asset_id")
+        mock_unit = self.config.get("mock_unit", "mock_unit")
+        mock_data = self.config.get("mock_data", [])
         if mock_data:
             logger.info("MOCK PROVIDING SENSOR DATA:")
             logger.info(pprint.pformat(mock_data))
-            data = SensorData(time_range=time_range, data=mock_data)
+            data = SensorData(name=mock_name, time_range=time_range, asset_id=mock_asset_id, data=mock_data, unit=mock_unit)
         return data, None
 
 
@@ -45,8 +48,7 @@ class DevNullSensorDataProvider(SensorDataProviderInterface):
         """
         return the actual data as per the range specified
         """
-        data = SensorData(time_range=time_range, data=[])
-        return data, None
+        return None, "No data"
 
 
 def sensor_data_provider_factory(sensor_data_provider_config):
