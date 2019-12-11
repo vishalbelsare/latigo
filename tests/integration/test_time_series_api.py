@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from os import environ
 from collections import namedtuple
 from latigo.time_series_api import TimeSeriesAPIClient, TimeSeriesAPIPredictionStorageProvider, TimeSeriesAPISensorDataProvider, IMSMetadataAPIClient, _itemes_present, _id_in_data
-from latigo.types import PredictionData, TimeRange, SensorDataSpec, LatigoSensorTag
+from latigo.types import PredictionDataSet, TimeRange, SensorDataSpec, LatigoSensorTag
 from latigo.utils import datetime_from_rfc3339
 
 
@@ -56,7 +56,7 @@ datapoint_3 = 420.42
 unit: str = "Tesla"
 
 
-data: typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]] = [{datapoint_1, datapoint_2, datapoint_3}]
+# data: typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]] = [{datapoint_1, datapoint_2, datapoint_3}]
 
 from_time = datetime_from_rfc3339("2019-01-02T00:00:00Z")
 to_time = datetime_from_rfc3339("2019-11-02T00:00:00Z")
@@ -86,7 +86,7 @@ actual_spec: SensorDataSpec = SensorDataSpec(tag_list=actual_tag_list)
 # , ("GRA-HIC -13-0035.PV", "1755-gra")]
 
 
-def bob_test_time_series_api_get_meta_by_name():
+def disabled_test_time_series_api_get_meta_by_name():
     items = {"latigo_integration_name_test": "92e41ea1-b2eb-43d1-b629-4d547cd29a45", "latigo_integration_name_test_not_exist": None}
     tsac = TimeSeriesAPIClient(config=_get_config())
     for name, id in items.items():
@@ -100,7 +100,7 @@ def bob_test_time_series_api_get_meta_by_name():
             assert None == err
 
 
-def test_time_series_api_write_read():
+def disabled_test_time_series_api_write_read():
     config = _get_config()
     logger.info("")
     logger.info("WRITING ---------------")

@@ -28,12 +28,6 @@ class Model:
 
 
 class ModelInfoProviderInterface:
-    #    def get_model_info(self) -> ModelInfo:
-    #        """
-    #        Return the model info
-    #        """
-    #        pass
-
     def get_all_models(self, projects: typing.List):
         pass
 
@@ -51,9 +45,6 @@ class MockModelInfoProvider(ModelInfoProviderInterface):
     def __init__(self, config: dict):
         self.config = config
 
-    #    def get_model_info(self) -> ModelInfo:
-    #        return ModelInfo()
-
     def get_all_models(self, projects: typing.List):
         return []
 
@@ -67,9 +58,6 @@ class MockModelInfoProvider(ModelInfoProviderInterface):
 class DevNullModelInfoProvider(ModelInfoProviderInterface):
     def __init__(self, config: dict):
         pass
-
-    #    def get_model_info(self) -> ModelInfo:
-    #        return ModelInfo()
 
     def get_all_models(self, projects: typing.List):
         return []

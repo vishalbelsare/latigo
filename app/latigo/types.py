@@ -2,7 +2,7 @@ import pandas as pd
 import typing
 from datetime import datetime, timedelta
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json, DataClassJsonMixin
 
 from latigo.utils import rfc3339_from_datetime
@@ -41,22 +41,36 @@ class SensorDataSpec:
 
 
 @dataclass
-class SensorData:
-    name: str
-    unit: str
-    asset_id: str
+class SensorDataSet:
     time_range: TimeRange
-    data: typing.Iterable[pd.Series]
-
-    def __str__(self):
-        return f"SensorData(time_range={self.time_range}, name={self.name}, unit={self.unit}, asset_id={self.asset_id}, data={len(self.data)})"
+    data: typing.Optional[typing.Any]
+    meta_data: typing.Dict = field(default_factory=dict)
 
     def ok(self):
-        return bool(self.time_range) and bool(self.data) and bool(self.name) and bool(self.asset_id)
+        return True
+
+    def __str__(self):
+        return f"SensorDataSet(time_range={self.time_range}, data={self.data}, meta_data={self.meta_data})"
 
 
 @dataclass
-class PredictionData:
+class PredictionDataSet:
+    time_range: TimeRange
+    data: typing.Optional[typing.Any]
+    meta_data: typing.Dict = field(default_factory=dict)
+
+    def ok(self):
+        return True
+
+    def __str__(self):
+        return f"PredictionDataSet(time_range={self.time_range}, data={self.data}, meta_data={self.meta_data})"
+
+
+############# ATTIC
+
+
+@dataclass
+class PredictionDataSeries:
     name: str
     unit: str
     asset_id: str
@@ -68,3 +82,12 @@ class PredictionData:
 
     def ok(self):
         return bool(self.time_range) and bool(self.data) and bool(self.name) and bool(self.asset_id)
+
+
+@dataclass
+class SensorDataSeries:
+    tag_name: str
+    asset_id: str
+    unit: str
+    time_range: TimeRange
+    data: typing.Iterable[pd.Series]

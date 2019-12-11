@@ -99,16 +99,14 @@ expected_intermediate_tag_data={'tag_1': [69.69, 42.69, 1337.69, 1337.69], 'tag_
 expected_gordo_data= {'X': [[69.69], [42.69], [1337.69]], 'Y': [[42], [420], [80085]]}
 # fmt: on
 
+
 def test_from_timeseries_to_gordo():
-    info=IntermediateFormat()
+    info = IntermediateFormat()
     info.from_time_series_api(tsapi_datas)
-    #logger.info(f"tagnames: {info.tag_names} tagmap {info.tag_names_map} tagdata {info.tag_names_data}")
-    assert info.tag_names==expected_intermediate_tag_names
-    assert info.tag_names_map==expected_intermediate_tag_map
-    assert info.tag_names_data==expected_intermediate_tag_data
-    gordo_data=info.to_gordo(tags=["tag_1"], target_tags=["tag_2"])
-    #logger.info(f"gordo_data: {gordo_data}")
-    assert gordo_data==expected_gordo_data
-    
-    
-    
+    # logger.info(f"tagnames: {info.tag_names} tagmap {info.tag_names_map} tagdata {info.tag_names_data}")
+    assert info.tag_names == expected_intermediate_tag_names
+    assert info.tag_names_map == expected_intermediate_tag_map
+    assert info.tag_names_data == expected_intermediate_tag_data
+    gordo_data = info.to_gordo(tags=["tag_1"], target_tags=["tag_2"])
+    # logger.info(f"gordo_data: {gordo_data}")
+    assert gordo_data == expected_gordo_data

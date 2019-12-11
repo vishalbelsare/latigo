@@ -124,6 +124,12 @@ def parse_gordo_connection_string(connection_string: str):
 
 def human_delta(td_object: datetime.timedelta, max: int = 0):
     ms = int(td_object.total_seconds() * 1000)
+    if ms == 0:
+        return "0 ms"
+    sign = ""
+    if ms < 0:
+        ms = -ms
+        sign = "-"
     # fmt: off
     periods = [
         ("year",  1000 * 60 * 60 * 24 * 365),
@@ -147,7 +153,7 @@ def human_delta(td_object: datetime.timedelta, max: int = 0):
             ct += 1
             if max > 0 and ct > max:
                 break
-    return ", ".join(strings)  # + f"({td_object}, {ms})"
+    return sign + ", ".join(strings)  # + f"({td_object}, {ms})"
 
 
 def list_loggers():

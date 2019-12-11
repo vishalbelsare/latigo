@@ -7,14 +7,15 @@ from dataclasses import dataclass
 import latigo.utils
 
 
-from latigo.types import SensorData, TimeRange, SensorDataSpec
+from latigo.types import SensorDataSet, TimeRange, SensorDataSpec
+from latigo.intermediate import IntermediateFormat
 
 
 logger = logging.getLogger(__name__)
 
 
 class SensorDataProviderInterface:
-    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorData], typing.Optional[str]]:
+    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """
@@ -25,7 +26,7 @@ class MockSensorDataProvider(SensorDataProviderInterface):
     def __init__(self, config: dict):
         self.config = config
 
-    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorData], typing.Optional[str]]:
+    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """
@@ -36,7 +37,8 @@ class MockSensorDataProvider(SensorDataProviderInterface):
         if mock_data:
             logger.info("MOCK PROVIDING SENSOR DATA:")
             logger.info(pprint.pformat(mock_data))
-            data = SensorData(name=mock_name, time_range=time_range, asset_id=mock_asset_id, data=mock_data, unit=mock_unit)
+            # data = SensorDataSet(name=mock_name, time_range=time_range, asset_id=mock_asset_id, data=mock_data, unit=mock_unit)
+            data = SensorDataSet(time_range=time_range, data=IntermediateFormat())
         return data, None
 
 
@@ -44,7 +46,7 @@ class DevNullSensorDataProvider(SensorDataProviderInterface):
     def __init__(self, config: dict):
         self.config = config
 
-    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorData], typing.Optional[str]]:
+    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """

@@ -5,7 +5,7 @@ from os import environ
 import typing
 import logging
 import pprint
-from latigo.types import Task, SensorDataSpec, SensorData, TimeRange, PredictionData, LatigoSensorTag
+from latigo.types import Task, SensorDataSpec, SensorDataSet, TimeRange, PredictionDataSet, LatigoSensorTag
 from latigo.sensor_data import sensor_data_provider_factory
 
 from latigo.prediction_execution import prediction_execution_provider_factory
@@ -96,7 +96,7 @@ class PredictionExecutor:
             raise e
         return task
 
-    def _fetch_sensor_data(self, task: Task) -> typing.Optional[SensorData]:
+    def _fetch_sensor_data(self, task: Task) -> typing.Optional[SensorDataSet]:
         """
         Sensor data is input to prediction. This internal helper fetches one bulk of sensor data
         """
@@ -119,7 +119,7 @@ class PredictionExecutor:
             traceback.print_exc()
         return sensor_data
 
-    def _execute_prediction(self, task: Task, sensor_data: SensorData) -> typing.Optional[PredictionData]:
+    def _execute_prediction(self, task: Task, sensor_data: SensorDataSet) -> typing.Optional[PredictionDataSet]:
         """
         This internal helper executes prediction on one bulk of data
         """
@@ -132,7 +132,7 @@ class PredictionExecutor:
             # traceback.print_exc()
         return prediction_data
 
-    def _store_prediction_data(self, task, prediction_data: PredictionData):
+    def _store_prediction_data(self, task, prediction_data: PredictionDataSet):
         """
         Prediction data represents the result of performing predictions on sensor data. This internal helper stores one bulk of prediction data to the store
         """

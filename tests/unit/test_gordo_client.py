@@ -1,7 +1,7 @@
 import logging
 import pprint
 from os import environ
-from latigo.gordo import GordoModelInfoProvider, LatigoDataProvider, LatigoPredictionForwarder, allocate_gordo_client_instances, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, gordo_client_auth_session, gordo_client_instances_by_hash, gordo_client_instances_by_project, gordo_config_hash
+from latigo.gordo import GordoModelInfoProvider, LatigoDataProvider, LatigoPredictionForwarder, allocate_gordo_client_instances, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, gordo_client_auth_session, gordo_client_instances_by_hash, gordo_client_instances_by_project, gordo_config_hash, _gordo_to_latigo_tag_list
 
 
 def un_test_gordo_config_hash():
@@ -52,6 +52,17 @@ def test_clean_gordo_client_args():
     bad["bad"] = "bad"
     clean_bad = clean_gordo_client_args(bad)
     assert clean_bad != bad
+
+
+def test_gordo_to_latigo_tag_list():
+    name = "some_name"
+    asset = "some_asset"
+    gordo_tag_list = SensorTag(name, asset)
+    assert type(gordo_tag_list) == "SensorTag"
+    latigo_tag_list = _gordo_to_latigo_tag_list(gordo_tag_list)
+    assert type(latigo_tag_list) == "LatigoSensorTag"
+    assert type(latigo_tag_list.name) == name
+    assert type(latigo_tag_list.asset) == asset
 
 
 def un_test_expand_gordo_data_provider():

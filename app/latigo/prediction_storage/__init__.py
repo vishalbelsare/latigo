@@ -1,12 +1,12 @@
 import pprint
-from latigo.types import PredictionData
+from latigo.types import PredictionDataSet
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class PredictionStorageProviderInterface:
-    def put_predictions(self, prediction_data: PredictionData):
+    def put_predictions(self, prediction_data: PredictionDataSet):
         """
         Store the prediction data
         """
@@ -17,7 +17,7 @@ class MockPredictionStorageProvider(PredictionStorageProviderInterface):
     def __init__(self, config: dict):
         self.config = config
 
-    def put_predictions(self, prediction_data: PredictionData):
+    def put_predictions(self, prediction_data: PredictionDataSet):
         """
         Store the prediction data
         """
@@ -29,7 +29,7 @@ class DevNullPredictionStorageProvider(PredictionStorageProviderInterface):
     def __init__(self, config: dict):
         self.config = config
 
-    def put_predictions(self, prediction_data: PredictionData):
+    def put_predictions(self, prediction_data: PredictionDataSet):
         """
         Don't store the prediction data on purpose
         """

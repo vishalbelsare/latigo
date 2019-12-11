@@ -69,14 +69,14 @@ port-forward:
 ############### Convenience docker compose ####################
 
 build: postgres-permission setup code-quality tests show-env
-	docker-compose build
+	docker-compose build --parallel --pull --compress
 
 up: build
 	# NOTE: The volumes folder must not be inside the context of any docker or the docker builds will fail!
 	sudo mkdir -p ../volumes/latigo/influxdb/data
 	sudo mkdir -p ../volumes/latigo/grafana/data
 	sudo chown 472:472 ../volumes/latigo/grafana/data
-	eval $(./set_env.py) && docker-compose up --remove-orphans
+	eval $(./set_env.py) && docker-compose up --remove-orphans --quiet-pull --no-build
 	docker ps -a
 
 down:

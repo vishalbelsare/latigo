@@ -73,10 +73,13 @@ class Scheduler:
             self.projects = [x.strip(" ") for x in p.split(",")]
         except Exception as e:
             self._fail(f"Could not parse '{p}' into projects: {e}")
+        self.allways_run_once = self.scheduler_config.get("allways_run_once", True)
         self.back_fill_max_interval = pd.to_timedelta(self.scheduler_config.get("back_fill_max_interval", "1d"))
         if not self.projects:
             self._fail("No projects specified")
         if self.good_to_go:
+
+            logger.info(f"Prediction allways run once : {self.allways_run_once}")
             logger.info(f"Prediction start time : {self.continuous_prediction_start_time}")
             logger.info(f"Prediction interval: {self.continuous_prediction_interval}")
             logger.info(f"Prediction delay: {self.continuous_prediction_delay}")
@@ -133,11 +136,30 @@ class Scheduler:
                 stats_models_bad[model_name] = stats_models_bad.get(model_name, "") + f", {e}"
                 raise e
         stats_interval = datetime.datetime.now() - stats_start_time
-        logger.info(f"Scheduled {len(stats_models_ok)} models in {len(stats_projects_ok)} projects in {human_delta(stats_interval)}")
+        logger.info(f"Scheduled {len(stats_models_ok)} models over {len(stats_projects_ok)} projects in {human_delta(stats_interval)}")
         if len(stats_models_bad) > 0 or len(stats_projects_bad) > 0:
             logger.error(f"          {len(stats_models_bad)} models in {len(stats_projects_bad)} projects failed")
             for name in stats_models_bad:
                 logger.error(f"          + {name}({stats_models_bad[name]})")
+
+    def on_time(self):
+        try:
+            start = datetime.datetime.now()
+            self.update_model_info()
+            self.perform_prediction_step()
+            interval = datetime.datetime.now() - start
+            logger.info(f"Scheduling took {human_delta(interval)}")
+            if interval < datetime.timedelta(seconds=1):
+                sleep(interval)
+        except KeyboardInterrupt:
+            logger.info("Keyboard abort triggered, shutting down")
+            done = True
+        except Exception as e:
+            logger.error("-----------------------------------")
+            logger.error(f"Error occurred in scheduler: {e}")
+            traceback.print_exc()
+            logger.error("")
+            logger.error("-----------------------------------")
 
     def run(self):
         if not self.good_to_go:
@@ -146,30 +168,16 @@ class Scheduler:
             logger.error("         Please see previous error messages for clues as to why.")
             logger.error("")
             logger.error(f"         Will pause for {sleep_time} seconds before terminating.")
-            for i in range(sleep_time):
-                logger.error(sleep_time - i)
-                sleep(1)
+            sleep(sleep_time)
             return
         logger.info(f"Starting {self.__class__.__name__}")
         logger.info(f"Prediction step: {self.continuous_prediction_timer}")
         done = False
+        start = datetime.datetime.now()
+        if self.allways_run_once:
+            self.on_time()
         while not done:
-            try:
-                start = datetime.datetime.now()
-                if self.continuous_prediction_timer.wait_for_trigger(now=start):
-                    self.update_model_info()
-                    self.perform_prediction_step()
-                interval = datetime.datetime.now() - start
-                logger.info(f"Spent {interval}")
-                if interval > datetime.timedelta(seconds=1):
-                    sleep(interval)
-            except KeyboardInterrupt:
-                logger.info("Keyboard abort triggered, shutting down")
-                done = True
-            except Exception as e:
-                logger.error("-----------------------------------")
-                logger.error(f"Error occurred in scheduler: {e}")
-                traceback.print_exc()
-                logger.error("")
-                logger.error("-----------------------------------")
-        logger.info(f"Stopping {self.__class__.__name__}")
+            if self.continuous_prediction_timer.wait_for_trigger(now=start):
+                self.on_time()
+        interval = datetime.datetime.now() - start
+        logger.info(f"Stopping {self.__class__.__name__} after {human_delta(interval)}")
