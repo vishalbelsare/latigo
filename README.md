@@ -14,6 +14,10 @@ The basic operation follows these steps:
 
 This project has been based on the original prototype project [ioc-gordo-oracle](/equinor/ioc-gordo-oracle) and has since evolved to support other needs.
 
+## License
+
+Please see [LICENSE](LICENSE) file for details. Latigo has G-Faps and is licensed under GNU AFFERO GENERAL PUBLIC LICENSE.
+
 ## Architecture
 
 ### Nodes
