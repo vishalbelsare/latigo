@@ -57,10 +57,10 @@ class GordoClientPool:
                     if 404 == http_error.response.status_code:
                         logger.warning(f"Skipping client allocation for {project}, project not found")
                     else:
-                        logger.error(f"Skipping client allocation for {project} due to HTTP error '{http_error}'")
+                        logger.error(f"Skipping client allocation for {project} due to HTTP error ('{type(http_error)}'): '{http_error}'")
                 except Exception as error:
-                    logger.error(f"Skipping client allocation for {project} due to unknown error '{error}'")
-                    logger.error(f"NOTE: Using config {pprint.pformat(clean_config)}")
+                    logger.error(f"Skipping client allocation for {project} due to unknown error ('{type(error)}'): '{error}' ")
+                    logger.warning(f"NOTE: Using config {pprint.pformat(clean_config)}")
         return client
 
     def allocate_instances(self):
@@ -111,28 +111,41 @@ class LatigoDataProvider(GordoBaseDataProvider):
         self.sensor_data_provider = sensor_data_provider
 
     def load_series(self, from_ts: datetime, to_ts: datetime, tag_list: typing.List[SensorTag], dry_run: typing.Optional[bool] = False) -> typing.Iterable[pd.Series]:
+        if dry_run:
+            raise NotImplementedError("Dry run for LatigoDataProvider is not implemented")
+        if not tag_list:
+            logger.warning("LatigoDataProvider called with empty tag_list, returning none")
+            return
+        if to_ts < from_ts:
+            raise ValueError(f"LatigoDataProvider called with to_ts: {to_ts} before from_ts: {from_ts}")
         if self.sensor_data_provider:
             spec: SensorDataSpec = SensorDataSpec(tag_list=_gordo_to_latigo_tag_list(tag_list))
             time_range = TimeRange(from_ts, to_ts)
+            logger.info(f"########## ## load_series {time_range}: ---")
             sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
+            logger.info(f"########## ## Result: {sensor_data} {err} ---")
             if sensor_data and sensor_data.ok():
                 if sensor_data.data:
-                    data = sensor_data.data.to_gordo(tags=tag_list, target_tags=[])
-                    logger.info(f"Providing data: --------")
+                    logger.info(f"########## ## {sensor_data.data.to_gordo_all()} taglist= {sensor_data.data.tag_names}")
+                    data = sensor_data.data.to_gordo_dataframe(tags=tag_list, target_tags=[])
+                    logger.info(f"Providing data for tag_list({tag_list}): --------")
                     logger.info(pprint.pformat(data))
-                    logger.info(f"Providing data: --------")
-
-                    for item in data:
-                        yield item
+                    logger.info(f"Data end ---------------")
+                    if data:
+                        for d in data:
+                            d = d[((d.index >= from_ts) & (d.index <= to_ts))]
+                            yield d
                 else:
                     logger.warning("Skipping, no sensor_data")
             else:
                 logger.warning(f"Could not load series: {err}")
 
-    #        return []
-
     def can_handle_tag(self, tag: SensorTag) -> bool:
         if self.sensor_data_provider:
+            if self.sensor_data_provider:
+                self.sensor_data_provider
+                
+            
             # TODO: Actually implement this
             return True
         return False
@@ -226,34 +239,38 @@ def expand_gordo_prediction_forwarder(config: dict, prediction_storage_provider)
     config["prediction_forwarder"] = LatigoPredictionForwarder(prediction_storage_provider, prediction_forwarder_config)
 
 
-def _get_model_meta(model: dict):
-    meta = model.get("endpoint-metadata", {}).get("metadata", {})
+def _get_model_meta(model_data: dict):
+    meta = model_data.get("endpoint-metadata", {}).get("metadata", {})
     # logger.info("MODEL META:"+pprint.pformat(meta))
     return meta
 
 
-def _get_model_tag_list(model: dict):
-    meta = _get_model_meta(model)
-    tag_list = meta.get("dataset", {}).get("tag_list", {})
-    # logger.info("MODEL 0 META TAG_LIST:"+pprint.pformat(tag_list))
+def _get_model_tag_list(model_data: dict) -> typing.List[LatigoSensorTag]:
+    meta = _get_model_meta(model_data)
+    tag_list_data = meta.get("dataset", {}).get("tag_list", {})
+    tag_list = []
+    for tag_data in tag_list_data:
+        tag = LatigoSensorTag(name=tag_data.get("name"), asset=tag_data.get("asset"))
+        tag_list.append(tag)
+    # logger.info("MODEL 0 META TAG_LIST:" + pprint.pformat(tag_list))
     return tag_list
 
 
-def _get_model_target_tag_list(model: dict):
-    meta = _get_model_meta(model)
+def _get_model_target_tag_list(model_data: dict):
+    meta = _get_model_meta(model_data)
     target_tag_list = meta.get("dataset", {}).get("target_tag_list", {})
     # logger.info("MODEL 0 META TAG_LIST:"+pprint.pformat(tag_list))
     return target_tag_list
 
 
-def _get_model_name(model: dict):
-    model_name = model.get("name", "")
+def _get_model_name(model_data: dict):
+    model_name = model_data.get("name", "")
     # logger.info(f"MODEL NAME: {name}")
     return model_name
 
 
-def _get_project_name(model: dict):
-    project_name = model.get("project", "")
+def _get_project_name(model_data: dict):
+    project_name = model_data.get("project", "")
     # logger.info(f"MODEL NAME: {name}")
     return project_name
 
@@ -274,7 +291,7 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         expand_gordo_prediction_forwarder(self.config, prediction_storage_provider=None)
         self.gordo_pool = GordoClientPool(self.config)
 
-    def get_models_data(self, projects: typing.Optional[typing.List] = None, model_names: typing.Optional[typing.List] = None):
+    def get_models_data(self, projects: typing.Optional[typing.List] = None, model_names: typing.Optional[typing.List] = None) -> typing.List[typing.Dict]:
         models = []
         if not projects:
             projects = self.config.get("projects", [])
@@ -295,15 +312,17 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
                 logger.error(f"No client found for project '{project_name}', skipping")
         return models
 
-    def get_all_models(self, projects: typing.List):
+    def get_all_models(self, projects: typing.List) -> typing.List[Model]:
         models_data = self.get_models_data(projects)
         models = []
         for model_data in models_data:
-            model = Model(project_name=model_data.get("project_name", "unnamed"), model_name=model_data.get("model_name", "unnamed"), tag_list=_get_model_tag_list(model_data), target_tag_list=_get_model_target_tag_list(model_data))
-            models.append(model)
+            if model_data:
+                model = Model(project_name=model_data.get("project_name", "unnamed"), model_name=model_data.get("model_name", "unnamed"), tag_list=_get_model_tag_list(model_data), target_tag_list=_get_model_target_tag_list(model_data))
+                if model:
+                    models.append(model)
         return models
 
-    def get_model_by_key(self, project_name: str, model_name: str):
+    def get_model_by_key(self, project_name: str, model_name: str) -> typing.Optional[Model]:
         models_data = self.get_models_data(projects=[project_name], model_names=[model_name])
         if not models_data:
             return None
@@ -321,11 +340,11 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         return spec
 
 
-def print_client(client):
+def print_client_debug(client: typing.Optional[Client]):
     if not client:
-        logger.info("Client: None")
+        logger.debug("Client: None")
         return
-    logger.info("Client:----------------")
+    logger.debug("Client:----------------")
     # fmt: off
     data = {
     "base_url": client.base_url,
@@ -346,8 +365,8 @@ def print_client(client):
     #"endpoints": client.endpoints
     }
     # fmt: on
-    logger.info(pprint.pformat(data))
-    logger.info("-----------------------")
+    logger.debug(pprint.pformat(data))
+    logger.debug("-----------------------")
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
@@ -382,17 +401,9 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         client = self.gordo_pool.allocate_instance(project_name)
         if not client:
             raise Exception(f"No gordo client found for project '{project_name}' in gordo.execute_prediction()")
-        logger.info("")
-        logger.info("### ## # STARTING PREDICTION # ## ###")
-        logger.info("CLIENT:")
-        # logger.info(pprint.pformat(client.__dict__))
-        print_client(client)
-        logger.info("DATA:")
-        logger.info(f"  start={sensor_data.time_range.from_time}")
-        logger.info(f"  end={sensor_data.time_range.to_time}")
-        logger.info("RUN:")
+        print_client_debug(client)
         result = client.predict(start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time)
-        logger.info("### ## # DONE # ## ###")
+        logger.info(f"PREDICTION RESULT: {result}")
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
         return PredictionDataSet(meta_data={project_name: project_name, model_name: model_name}, time_range=sensor_data.time_range, data=result)

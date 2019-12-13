@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import latigo.utils
 
 
-from latigo.types import SensorDataSet, TimeRange, SensorDataSpec
+from latigo.types import SensorDataSet, TimeRange, SensorDataSpec, LatigoSensorTag
 from latigo.intermediate import IntermediateFormat
 
 
@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class SensorDataProviderInterface:
+    def supports_tag(self, tag: LatigoSensorTag) -> bool:
+        pass
+
     def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
@@ -25,6 +28,9 @@ class SensorDataProviderInterface:
 class MockSensorDataProvider(SensorDataProviderInterface):
     def __init__(self, config: dict):
         self.config = config
+
+    def supports_tag(self, tag: LatigoSensorTag) -> bool:
+        return True
 
     def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """

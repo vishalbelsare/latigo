@@ -73,17 +73,19 @@ class Scheduler:
             self.projects = [x.strip(" ") for x in p.split(",")]
         except Exception as e:
             self._fail(f"Could not parse '{p}' into projects: {e}")
-        self.allways_run_once = self.scheduler_config.get("allways_run_once", True)
+        self.run_at_once = self.scheduler_config.get("run_at_once", True)
         self.back_fill_max_interval = pd.to_timedelta(self.scheduler_config.get("back_fill_max_interval", "1d"))
         if not self.projects:
             self._fail("No projects specified")
         if self.good_to_go:
-
-            logger.info(f"Prediction allways run once : {self.allways_run_once}")
-            logger.info(f"Prediction start time : {self.continuous_prediction_start_time}")
-            logger.info(f"Prediction interval: {self.continuous_prediction_interval}")
-            logger.info(f"Prediction delay: {self.continuous_prediction_delay}")
-            logger.info(f"Prediction projects: {self.projects}")
+            next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
+            logger.info(f"Schedule settings:")
+            logger.info(f" Run at once : {self.run_at_once}")
+            logger.info(f" Start time :  {self.continuous_prediction_start_time}")
+            logger.info(f" Interval:     {human_delta(self.continuous_prediction_interval)}")
+            logger.info(f" Data delay:   {human_delta(self.continuous_prediction_delay)}")
+            logger.info(f" Next start:   {next_start}")
+            logger.info(f" Projects:     {', '.join(self.projects)}")
 
     def __init__(self, config: dict):
         self.good_to_go = True
@@ -150,7 +152,7 @@ class Scheduler:
             interval = datetime.datetime.now() - start
             logger.info(f"Scheduling took {human_delta(interval)}")
             if interval < datetime.timedelta(seconds=1):
-                sleep(interval)
+                sleep(interval.total_seconds())
         except KeyboardInterrupt:
             logger.info("Keyboard abort triggered, shutting down")
             done = True
@@ -174,7 +176,7 @@ class Scheduler:
         logger.info(f"Prediction step: {self.continuous_prediction_timer}")
         done = False
         start = datetime.datetime.now()
-        if self.allways_run_once:
+        if self.run_at_once:
             self.on_time()
         while not done:
             if self.continuous_prediction_timer.wait_for_trigger(now=start):

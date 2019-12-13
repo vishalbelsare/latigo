@@ -19,7 +19,7 @@ scheduler:
     continuous_prediction_start_time: "08:00"
     continuous_prediction_interval: "90m"
     continuous_prediction_delay: "1d"
-    projects: ['ioc-1125', 'ioc-1130']
+    projects: ['lat-lit']
     back_fill_max_interval: "1d"
     do_async: false
 

@@ -158,7 +158,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         try:
             msg = self.consumer.poll(timeout=timeout)
         except Exception as e:
-            logger.warning("Error polling: {e}")
+            logger.warning(f"Error polling: {e}")
             return None
         if msg is None:
             logger.warning(f"Polling timed out after {timeout} sec")

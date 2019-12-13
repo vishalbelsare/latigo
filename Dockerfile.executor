@@ -13,3 +13,5 @@ COPY deploy/ ./deploy
 RUN python setup.py install
 WORKDIR /app/latigo
 CMD ["/app/bin/executor.py"]
+
+

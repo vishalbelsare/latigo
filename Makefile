@@ -3,7 +3,8 @@ APP_DIR:="${ROOT_DIR}/app"
 TESTS_DIR:="${ROOT_DIR}/tests"
 CODE_QUALITY_DIR:="${ROOT_DIR}/code_quality"
 SHELL := /bin/bash
-CLUSTER_NAME:="gordotest47"
+CLUSTER_NAME:="ioc48jsv"
+CLUSTER_SUBSCRIPTION="019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
 COMPUTED_ENV="${ROOT_DIR}/set_env.py"
 
 
@@ -52,9 +53,9 @@ build-docs:
 ############### Convenience gordo access ######################
 
 
-login-gordos:
+login-gordo:
 	az login
-	az account set --subscription "019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
+	az account set --subscription $(CLUSTER_SUBSCRIPTION)
 	az account show
 	az aks get-credentials --overwrite-existing --resource-group ${CLUSTER_NAME} --name ${CLUSTER_NAME} --admin
 	kubectl config set-context --current --namespace=kubeflow
@@ -152,7 +153,7 @@ help:
 	@echo ""
 	@echo " Gordo targets:"
 	@echo ""
-	@echo " + login-gordos          Login to gordo cluster"
+	@echo " + login-gordo           Login to gordo cluster"
 	@echo " + list-gordos           List available projects in gordo"
 	@echo " + port-forward          Set up port forwarding to access gordo via localhost:8888"
 	@echo ""

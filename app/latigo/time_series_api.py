@@ -302,7 +302,9 @@ class TimeSeriesAPIClient:
     def _get_meta_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         body = {"name": name}
         if asset_id:
-            body["assetId"] = asset_id
+            # NOTE: This is disaabled on purpose because gordo provide asset ids that are sometimes incompatible with time series api
+            logger.warning("Excluding asset-id from metadata call in time series api because gordo provide asset ids that are sometimes incompatible with time series api")
+            # body["assetId"] = asset_id
         # logger.info("Getting:")        logger.info(pprint.pformat(body))
         res = self.session.get(self.base_url, params=body)
         obj, err = _parse_request_json(res)
@@ -339,16 +341,27 @@ class TimeSeriesAPIClient:
         return _parse_request_json(res)
 
 
+def row_count(data):
+    return len(data)
+
+
 class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInterface):
     def __init__(self, config: dict):
         super().__init__(config)
         self._parse_auth_config()
         self._parse_base_url()
 
+    def supports_tag(self, tag: LatigoSensorTag) -> bool:
+        meta, err = self._get_meta_by_name(name=tag.name, asset_id=tag.asset)
+        if meta and _itemes_present(meta):
+            return True
+        return False
+
     def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """
+        fail_on_missing = True
         missing_meta = 0
         missing_id = 0
         completed = 0
@@ -358,24 +371,32 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         else:
             logger.info(f"Getting data for {len(spec.tag_list)} tags:")
         for tag in spec.tag_list:
-            logger.info(f" + '{tag}'")
-            tag_dict = dict(tag)
-            name = tag_dict.get("name")
-            asset_id = tag_dict.get("asset")
-            if not name or not asset_id:
-                return None, f"Invalid tag: name={name}, asset_id={asset_id}"
+            if not tag:
+                return None, f"Invalid tag"
+            tag_type = type(tag)
+            if not isinstance(tag, LatigoSensorTag):
+                return None, f"Invalid tag type '{tag_type}'"
+            name = tag.name
+            if not name:
+                return None, f"Invalid tag name={name}"
+            # asset_id = tag_dict.get("asset")
+            asset_id = tag.asset
+            if not asset_id:
+                return None, f"Invalid tag asset_id={asset_id}"
             meta, err = self._get_meta_by_name(name=name, asset_id=asset_id)
-            # meta, err = self._get_meta_by_name(name=tag_dict.name, asset_id=tag_dict.asset)
-            # meta, err = self._get_meta_by_name(name="GRA-FOI -13-0979.PV", asset_id="GRA")
             # logger.info(f" O '{meta}, {err}'")
             if not meta:
                 missing_meta += 1
+                if fail_on_missing:
+                    break
                 continue
             id = _id_in_data(meta)
             if not id:
                 missing_id += 1
-                logger.warning("Time series ID not found for requested tag '{tag}', skipping")
-                #logger.warning(pprint.pformat(meta))
+                logger.warning(f"Time series not found for requested tag '{tag}', skipping")
+                # logger.warning(pprint.pformat(meta))
+                if fail_on_missing:
+                    break
                 continue
             ts, err = self._fetch_data(id, time_range)
             if err or not ts:
@@ -388,14 +409,18 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             completed += 1
         if missing_meta > 0:
             logger.warning(f"Meta missing for {missing_meta} tags")
+            if fail_on_missing:
+                return None, f"Meta missing for {missing_meta} tags"
         if missing_id > 0:
             logger.warning(f"ID missing for {missing_id} tags")
-        if completed > 0:
-            logger.info(f"Completed fetching {completed} tags")
+            if fail_on_missing:
+                return None, f"ID missing for {missing_id} tags"
         if not data:
             logger.warning("No gordo data")
         info = IntermediateFormat()
         info.from_time_series_api(data)
+        if completed > 0:
+            logger.info(f"Completed fetching {len(info)} rows from {completed} tags")
         return SensorDataSet(time_range=time_range, data=info), None
 
 

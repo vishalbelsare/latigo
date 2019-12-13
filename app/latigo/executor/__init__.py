@@ -110,7 +110,7 @@ class PredictionExecutor:
                 sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
                 if not sensor_data:
                     logger.warning(f"Error getting sensor data: {err}")
-                if not sensor_data.ok():
+                elif not sensor_data.ok():
                     logger.warning(f"Sensor data '{sensor_data}' was not ok")
             else:
                 logger.warning(f"Error getting spec for project={project_name} and model={model_name}")
