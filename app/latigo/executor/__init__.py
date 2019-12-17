@@ -1,7 +1,6 @@
-from datetime import datetime
+import datetime
 import time
 import traceback
-from os import environ
 import typing
 import logging
 import pprint
@@ -12,7 +11,7 @@ from latigo.prediction_execution import prediction_execution_provider_factory
 from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.model_info import model_info_provider_factory
-from latigo.utils import sleep
+from latigo.utils import sleep, human_delta
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +27,22 @@ class PredictionExecutor:
         if not self.model_info_provider:
             raise Exception("No model info configured")
 
+    # Inflate executor from config
+    def _prepare_executor(self):
+        self.executor_config = self.config.get("executor", None)
+        if not self.executor_config:
+            raise Exception("No executor config specified")
+        self.instance_count = self.executor_config.get("instance_count", 1)
+        if not self.instance_count:
+            raise Exception("No instance count configured")
+
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
         self.task_queue_config = self.config.get("task_queue", None)
         if not self.task_queue_config:
             raise Exception("No task queue config specified")
         self.task_queue = task_queue_receiver_factory(self.task_queue_config)
-        self.idle_time = datetime.now()
+        self.idle_time = datetime.datetime.now()
         self.idle_number = 0
         if not self.task_queue:
             raise Exception("No task queue configured")
@@ -72,6 +80,7 @@ class PredictionExecutor:
         if not config:
             raise Exception("No config specified")
         self.config = config
+        self._prepare_executor()
         self._prepare_task_queue()
         self._prepare_sensor_data_provider()
         self._prepare_prediction_storage_provider()
@@ -145,29 +154,40 @@ class PredictionExecutor:
 
     def idle_count(self, has_task):
         if self.idle_number > 0:
-            logger.info(f"Idle for {self.idle_number} cycles ({self.idle_time-datetime.now()})")
+            logger.info(f"Idle for {self.idle_number} cycles ({human_delta(datetime.datetime.now()-self.idle_time)})")
             self.idle_number = 0
-            self.idle_time = datetime.now()
+            self.idle_time = datetime.datetime.now()
         else:
             self.idle_number += 1
 
     def run(self):
         if self.task_queue:
-            logger.info(f"Starting processing in {self.__class__.__name__}")
+            logger.info("Executor started  processing")
             done = False
             iteration_number = 0
             error_number = 0
+            first_sleep: bool = True
             while not done:
                 iteration_number += 1
                 try:
+                    logger.info("Fetching task...")
+                    task_fetch_start = datetime.datetime.now()
                     task = self._fetch_task()
                     if task:
+                        task_fetch_interval = datetime.datetime.now() - task_fetch_start
+                        logger.info(f"Got task after {human_delta(task_fetch_interval)}")
                         logger.info(f"Processing task starting {task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' in '{task.project_name}'")
                         sensor_data = self._fetch_sensor_data(task)
+                        data_fetch_interval = datetime.datetime.now() - task_fetch_start
+                        logger.info(f"Got data after {human_delta(data_fetch_interval)}")
                         if sensor_data and sensor_data.ok():
                             prediction_data = self._execute_prediction(task, sensor_data)
+                            prediction_execution_interval = datetime.datetime.now() - task_fetch_start
+                            logger.info(f"Prediction completed after {human_delta(prediction_execution_interval)}")
                             if prediction_data and prediction_data.ok():
                                 self._store_prediction_data(task, prediction_data)
+                                prediction_storage_interval = datetime.datetime.now() - task_fetch_start
+                                logger.info(f"Prediction stored after {human_delta(prediction_storage_interval)}")
                                 self.idle_count(True)
                             else:
                                 logger.warning(f"Skipping store due to bad prediction: {prediction_data.data}")
@@ -185,6 +205,6 @@ class PredictionExecutor:
                     logger.error("")
                     logger.error("-----------------------------------")
                     sleep(1)
-            logger.info(f"Stopping processing in {self.__class__.__name__}")
+            logger.info("Executor stopped processing")
         else:
-            logger.info(f"Skipping processing in {self.__class__.__name__}")
+            logger.info("No task queue")

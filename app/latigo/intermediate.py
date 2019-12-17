@@ -25,6 +25,9 @@ class IntermediateFormat:
         self.tag_names_map = {}
         self.tag_names_data: typing.Dict[str, typing.List] = {}
 
+    def __repr__(self):
+        return f"IntermediateFormat(len={len(self)})"
+
     def __len__(self):
         if self.tag_names and self.tag_names_data and len(self.tag_names) > 0:
             return len(self.tag_names_data[self.tag_names[0]])
@@ -32,6 +35,9 @@ class IntermediateFormat:
 
     def __getitem__(self, index):
         logger.info(f"GETTING: {index}")
+
+    def from_data_frame_data(self, data_frame_data):
+        self.data_frame_data = data_frame_data
 
     def from_time_series_api(self, items):
         self.ts_items = items

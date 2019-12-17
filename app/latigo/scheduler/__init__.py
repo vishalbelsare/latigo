@@ -84,6 +84,7 @@ class Scheduler:
             logger.info(f" Start time :  {self.continuous_prediction_start_time}")
             logger.info(f" Interval:     {human_delta(self.continuous_prediction_interval)}")
             logger.info(f" Data delay:   {human_delta(self.continuous_prediction_delay)}")
+            logger.info(f" Backfill max: {human_delta(self.back_fill_max_interval)}")
             logger.info(f" Next start:   {next_start}")
             logger.info(f" Projects:     {', '.join(self.projects)}")
 
@@ -98,20 +99,21 @@ class Scheduler:
         self.task_serial = 0
 
     def update_model_info(self):
+        stats_start_time = datetime.datetime.now()
         self.models = self.model_info_provider.get_all_models(projects=self.projects)
         if None == self.models:
             logger.error("Could not get models from model info")
         if len(self.models) < 1:
             logger.warning("No models found")
         else:
-            logger.info(f"Found {len(self.models)} models")
+            stats_interval = datetime.datetime.now() - stats_start_time
+            logger.info(f"Found {len(self.models)} models in {human_delta(stats_interval)}")
 
     def perform_prediction_step(self):
         stats_projects_ok = {}
         stats_models_ok = {}
         stats_projects_bad = {}
         stats_models_bad = {}
-        # TODO: Use clock once it is finished
         stats_start_time = datetime.datetime.now()
         prediction_start_time = datetime.datetime.now() - self.continuous_prediction_delay
         prediction_end_time = prediction_start_time + self.continuous_prediction_interval
@@ -172,14 +174,14 @@ class Scheduler:
             logger.error(f"         Will pause for {sleep_time} seconds before terminating.")
             sleep(sleep_time)
             return
-        logger.info(f"Starting {self.__class__.__name__}")
-        logger.info(f"Prediction step: {self.continuous_prediction_timer}")
+        logger.info("Scheduler started processing")
         done = False
         start = datetime.datetime.now()
         if self.run_at_once:
             self.on_time()
         while not done:
+            logger.info(f"Next prediction will occur at {self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})")
             if self.continuous_prediction_timer.wait_for_trigger(now=start):
                 self.on_time()
         interval = datetime.datetime.now() - start
-        logger.info(f"Stopping {self.__class__.__name__} after {human_delta(interval)}")
+        logger.info(f"Scheduler stopped processing after {human_delta(interval)}")

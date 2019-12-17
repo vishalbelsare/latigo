@@ -1,6 +1,7 @@
 task_queue:
     type: "kafka"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    poll_timeout_sec: 100000
     security.protocol: "SASL_SSL"
     ssl.ca.location: "/etc/ssl/certs/ca-certificates.crt"
     sasl.mechanism: "PLAIN"
@@ -17,10 +18,10 @@ task_queue:
 
 scheduler:
     continuous_prediction_start_time: "08:00"
-    continuous_prediction_interval: "90m"
-    continuous_prediction_delay: "1d"
+    continuous_prediction_interval: "30m"
+    continuous_prediction_delay: "3h"
     projects: ['lat-lit']
-    back_fill_max_interval: "1d"
+    back_fill_max_interval: "7d"
     do_async: false
 
 
@@ -34,6 +35,7 @@ model_info:
     forward_resampled_sensors : false
     ignore_unhealthy_targets: true
     n_retries: 5
+    use_parquet: true
     data_provider:
         debug: true
         n_retries: 5

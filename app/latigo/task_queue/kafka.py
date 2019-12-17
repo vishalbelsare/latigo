@@ -85,6 +85,7 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         connection_string = str(config.get("connection_string"))
         if not connection_string:
             raise Exception("No connection_string configured")
+        self.poll_timeout_sec = config.get("poll_timeout_sec", 100)
         self.config = prepare_kafka_config(config)
         # Find our topic
 
@@ -135,6 +136,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         connection_string = str(config.get("connection_string"))
         if not connection_string:
             raise Exception("No connection_string configured")
+        self.poll_timeout_sec = config.get("poll_timeout_sec", 100)
         # self.config = prepare_kafka_config(config)
 
         parts = parse_event_hub_connection_string(connection_string) or {}
@@ -179,7 +181,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
             return msg.value()
 
     def receive_event_with_backoff(self, timeout=100, backoff=1000) -> typing.Optional[Task]:
-        task_bytes = self.receive_event(timeout)
+        task_bytes = self.receive_event(timeout=timeout)
         task: typing.Optional[Task] = None
         if not task_bytes:
             sleep(backoff)
@@ -191,4 +193,4 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         return task
 
     def get_task(self) -> typing.Optional[Task]:
-        return self.receive_event_with_backoff()
+        return self.receive_event_with_backoff(timeout=self.poll_timeout_sec)

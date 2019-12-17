@@ -17,6 +17,7 @@ if not path.exists(filename):
     # and running
     # fmt: off
     local_config={
+        "LATIGO_EXECUTOR_INSTANCE_COUNT": 1,
         "LATIGO_SCHEDULER_PROJECTS": "The projects that should be considered for predictions by scheduler",
         "LATIGO_INTERNAL_EVENT_HUB": "GET YOUR EVENT_HUB CONNECTION STRING FROM AZURE PORTAL",
         "LATIGO_EXECUTOR_CONFIG_FILE": "THE LOCATION OF PREDICTION EXECUTOR CONFIG FILE IN YAML FORMAT",

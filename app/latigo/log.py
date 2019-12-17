@@ -19,6 +19,7 @@ def setup_logging(filename, log_level=logging.INFO):
         for key in ["requests", "tensorboard", "urllib3", "aiohttp.access", "uamqp", "sqlalchemy", "sqlalchemy.engine.base", "adal-python", "matplotlib.font_manager", "gordo_components"]:
             logging.getLogger(key).setLevel(logging.WARNING)
 
+        logging.getLogger("gordo_components.client").setLevel(logging.DEBUG)
         try:
             from colorlog import ColoredFormatter
 

@@ -3,7 +3,7 @@ import typing
 import pprint
 import math
 import asyncio
-from latigo.utils import sleep
+from latigo.utils import sleep, human_delta
 
 import logging
 
@@ -37,8 +37,11 @@ class OnTheClockTimer:
 
     def wait_for_trigger(self, now: datetime.datetime = datetime.datetime.now()):
         iv = self.time_left(now=now)
-        if iv:
-            sleep(iv.total_seconds())
+        sec = iv.total_seconds()
+        if sec > 0:
+            logger.info(f"Waiting for {human_delta(iv)}")
+            sleep(sec)
+        return True
 
     def __str__(self):
         return f"OnTheClockTimer(start_time={self.start_time}, interval={self.interval})"

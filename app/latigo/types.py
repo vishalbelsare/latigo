@@ -1,11 +1,16 @@
 import pandas as pd
 import typing
+import logging
 from datetime import datetime, timedelta
 from collections import namedtuple
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json, DataClassJsonMixin
 
 from latigo.utils import rfc3339_from_datetime
+from latigo.intermediate import IntermediateFormat
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -29,7 +34,7 @@ class TimeRange:
         return rfc3339_from_datetime(self.to_time)
 
     def __str__(self):
-        return f"TimeRange({self.from_time} -> {self.to_time})"
+        return f"TimeRange({rfc3339_from_datetime(self.from_time)} -> {rfc3339_from_datetime(self.to_time)})"
 
 
 LatigoSensorTag = namedtuple("LatigoSensorTag", ["name", "asset"])
@@ -43,10 +48,17 @@ class SensorDataSpec:
 @dataclass
 class SensorDataSet:
     time_range: TimeRange
-    data: typing.Optional[typing.Any]
+    data: typing.Optional[IntermediateFormat]
     meta_data: typing.Dict = field(default_factory=dict)
 
     def ok(self):
+        # logger.warning(f"TIME:{self.time_range}")
+        # logger.warning(f"META:{self.meta_data}")
+        # logger.warning(f"DATA:{self.data}")
+        if not self.data:
+            return False
+        if len(self.data) < 1:
+            return False
         return True
 
     def __str__(self):

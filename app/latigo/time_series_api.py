@@ -1,6 +1,9 @@
 import typing
 import logging
+import math
 import requests
+import datetime
+import json
 import pprint
 from requests.exceptions import HTTPError
 import pandas as pd
@@ -10,7 +13,7 @@ from latigo.types import Task, SensorDataSpec, SensorDataSet, TimeRange, Predict
 from latigo.intermediate import IntermediateFormat
 from latigo.sensor_data import SensorDataProviderInterface
 from latigo.prediction_storage import PredictionStorageProviderInterface
-import latigo.utils
+from latigo.utils import rfc3339_from_datetime
 from latigo.auth import create_auth_session
 
 logger = logging.getLogger(__name__)
@@ -137,6 +140,29 @@ def _x_in_data(res, x):
     return item.get(x, None)
 
 
+def _find_tag_in_data(res, tag):
+    if not isinstance(res, dict):
+        return None
+    data = res.get("data", {})
+    if not isinstance(data, dict):
+        return None
+    items = data.get("items", [])
+    if not isinstance(items, list):
+        return None
+    if len(items) < 1:
+        return None
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+
+        name = item.get("name", None)
+        if not name:
+            continue
+        if tag == name:
+            return item
+    return None
+
+
 def _id_in_data(res):
     return _x_in_data(res, "id")
 
@@ -168,7 +194,7 @@ def _parse_request_json(res) -> typing.Tuple[typing.Optional[typing.Dict], typin
         ret["latigo-error"] = None
         return ret, None
     except HTTPError as http_err:
-        msg = f"Could not {res.request.method} @ {res.request.url}:\nHTTP error occurred: {http_err}"
+        msg = f"Could not {res.request.method} @ {res.request.url}:\nHTTP error occurred: {http_err}. Body was '{res.request.body}'"
         logger.error(msg)
         return None, msg
     except Exception as err:
@@ -239,6 +265,9 @@ class IMSSubscriptionAPIClient:
 
 
 class TimeSeriesAPIClient:
+    def __str__(self):
+        return f"TimeSeriesAPIClient({self.base_url})"
+
     def _fail(self, message):
         self.good_to_go = False
         logger.error(message)
@@ -250,7 +279,7 @@ class TimeSeriesAPIClient:
         self.base_url = self.config.get("base_url", None)
         if not self.base_url:
             return self.fail("No base_url found in config")
-        logger.info(f"Using base_url: '{self.base_url}'")
+        # logger.info(f"Using base_url: '{self.base_url}'")
 
     def _parse_auth_config(self):
         self.auth_config = self.config.get("auth", dict())
@@ -293,7 +322,7 @@ class TimeSeriesAPIClient:
         # TODO: Implement cache
         return self.get_timeseries_id_for_tag_name(tag_name=tag_name)
 
-    def _fetch_data(self, id: str, time_range: TimeRange) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def _fetch_data_for_id(self, id: str, time_range: TimeRange) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         url = f"{self.base_url}/{id}/data"
         params = {"startTime": time_range.rfc3339_from(), "endTime": time_range.rfc3339_to(), "limit": 100000, "includeOutsidePoints": True}
         res = self.session.get(url, params=params)
@@ -301,25 +330,23 @@ class TimeSeriesAPIClient:
 
     def _get_meta_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         body = {"name": name}
+        if name is None:
+            return None, "No name specified"
+            # raise Exception("NO NAME")
         if asset_id:
             # NOTE: This is disaabled on purpose because gordo provide asset ids that are sometimes incompatible with time series api
-            logger.warning("Excluding asset-id from metadata call in time series api because gordo provide asset ids that are sometimes incompatible with time series api")
+            # logger.warning("Excluding asset-id from metadata call in time series api because gordo provide asset ids that are sometimes incompatible with time series api")
             # body["assetId"] = asset_id
-        # logger.info("Getting:")        logger.info(pprint.pformat(body))
+            pass
+        # logger.info(f"Getting {pprint.pformat(body)} from {self.base_url}")
         res = self.session.get(self.base_url, params=body)
-        obj, err = _parse_request_json(res)
-
-        # logger.info(pprint.pformat(obj))
-        return obj, err
+        return _parse_request_json(res)
 
     def _create_id(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
         body = {"name": name, "description": description, "step": True, "unit": unit, "assetId": asset_id, "externalId": external_id}
-        logger.info("Posting:")
-        logger.info(pprint.pformat(body))
+        # logger.info(f"Posting {pprint.pformat(body)} from {self.base_url}")
         res = self.session.post(self.base_url, json=body, params=None)
-        obj, err = _parse_request_json(res)
-        logger.info(pprint.pformat(obj))
-        return obj, err
+        return _parse_request_json(res)
 
     def _create_id_if_not_exists(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
         meta, err = self._get_meta_by_name(name=name, asset_id=asset_id)
@@ -327,17 +354,10 @@ class TimeSeriesAPIClient:
             return meta, err
         return self._create_id(name, description, unit, asset_id, external_id)
 
-    def _store_data_for_id(self, id: str, data: typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]]):
-        datapoints = []
-        datapoints.append({"time": "2019-04-12T08:13:44.154Z", "value": 0.5, "status": 2147483843})
+    def _store_data_for_id(self, id: str, datapoints: typing.List[typing.Dict[str, str]]):
         body = {"datapoints": datapoints}
         url = f"{self.base_url}/{id}/data"
         res = self.session.post(url, json=body, params=None)
-        return _parse_request_json(res)
-
-    def _store_data_by_id(self, id: str, data: dict):
-        url = f"{self.base_url}/timeseries/v1.5/{id}/data?async={self.do_async}"
-        res = self.session.post(url, data=data)
         return _parse_request_json(res)
 
 
@@ -350,6 +370,9 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         super().__init__(config)
         self._parse_auth_config()
         self._parse_base_url()
+
+    def __str__(self):
+        return f"TimeSeriesAPISensorDataProvider({self.base_url})"
 
     def supports_tag(self, tag: LatigoSensorTag) -> bool:
         meta, err = self._get_meta_by_name(name=tag.name, asset_id=tag.asset)
@@ -368,8 +391,6 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         data: typing.List[typing.Dict] = []
         if len(spec.tag_list) <= 0:
             logger.warning("Tag list empty")
-        else:
-            logger.info(f"Getting data for {len(spec.tag_list)} tags:")
         for tag in spec.tag_list:
             if not tag:
                 return None, f"Invalid tag"
@@ -390,7 +411,10 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
                 if fail_on_missing:
                     break
                 continue
-            id = _id_in_data(meta)
+            item = _find_tag_in_data(meta, name)
+            id = None
+            if item:
+                id = item.get("id", None)
             if not id:
                 missing_id += 1
                 logger.warning(f"Time series not found for requested tag '{tag}', skipping")
@@ -398,7 +422,8 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
                 if fail_on_missing:
                     break
                 continue
-            ts, err = self._fetch_data(id, time_range)
+            ts, err = self._fetch_data_for_id(id, time_range)
+            # logger.info(f" D '{ts}, {err}'")
             if err or not ts:
                 if ts:
                     msg = ts.get("latigo-ok", "Unknown failure")
@@ -418,39 +443,113 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         if not data:
             logger.warning("No gordo data")
         info = IntermediateFormat()
-        info.from_time_series_api(data)
-        if completed > 0:
-            logger.info(f"Completed fetching {len(info)} rows from {completed} tags")
+        if completed == len(spec.tag_list):
+            info.from_time_series_api(data)
+            rows = len(info)
+            if rows > 0:
+                logger.info(f"Completed fetching {rows} rows from {completed} tags")
+            else:
+                return None, f"No rows found in {completed} tags"
+        else:
+            return None, f"Not all tags fetched ({completed}/{len(spec.tag_list)})"
         return SensorDataSet(time_range=time_range, data=info), None
+
+
+invalid_operations = ["start", "end", "model-input"]
+
+
+def prediction_data_naming_convention(operation: str, model_name: str, tag_name: str, separator: str = "|", global_tag_name: str = "INDICATOR", global_model_name: str = "UNKNOWN_MODEL"):
+    if operation in invalid_operations:
+        return None
+    if not tag_name:
+        tag_name = global_tag_name
+    if not model_name:
+        model_name = global_model_name
+    # Escape separator
+    replacement = "_" if separator == "-" else "-"
+    tag_name = tag_name.replace(separator, replacement)
+    model_name = model_name.replace(separator, replacement)
+    operation = operation.replace(separator, replacement)
+    return f"{tag_name}{separator}{model_name}{separator}{operation}"
 
 
 class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStorageProviderInterface):
     def __init__(self, config: dict):
         super().__init__(config)
 
+    def __str__(self):
+        return f"TimeSeriesAPIPredictionStorageProvider({self.base_url})"
+
     def put_predictions(self, prediction_data: PredictionDataSet):
         """
         Store prediction data in time series api
         """
-        logger.info("")
-        logger.info("GOT PREDICTIONS:::::::.")
-        logger.info(pprint.pformat(prediction_data))
-        logger.info("")
-        """
-        name = prediction_data.name
-        description = "Generated by latigo"
-        unit = prediction_data.unit
-        asset_id = prediction_data.asset_id
-        external_id = prediction_data.name
+        # logger.info("Got predictions:")
+        # logger.info(pprint.pformat(prediction_data))
+        # logger.info("")
         data = prediction_data.data
-        meta, err = self._create_id_if_not_exists(name=name, description=description, unit=unit, asset_id=asset_id, external_id=external_id)
-        logger.info(f"GOT META: {meta}")
-        id = _id_in_data(meta)
-        if not id:
-            raise Exception(f"No ID returned from Time Series API for {name}")
-        obj, err = self._store_data_for_id(id=id, data=data)
-        # logger.info(pprint.pformat(obj))
-        return obj
-    """
-        # raise NotImplementedError("HALP!")
+        if not data:
+            logger.warning("No prediction data for storing")
+            return None
+        output_tag_names: typing.Dict[typing.Tuple[str, str], str] = {}
+        output_time_series_ids: typing.Dict[typing.Tuple[str, str], str] = {}
+        row = data[0]
+        # logger.info("ROW:")
+        # logger.info(row)
+        df = row[1]
+        model_name = prediction_data.meta_data.get("model_name", "")
+        for col in df.columns:
+            output_tag_name = prediction_data_naming_convention(operation=col[0], model_name=model_name, tag_name=col[1])
+            if not output_tag_name:
+                # logger. info("Skipping invalid output tag name: {output_tag_name}")
+                continue
+            output_time_series_ids[col] = ""
+            description = f"Gordo prediction for {col[0]} - {col[1]}"
+            # Units cannot be derrived easily. Should be provided by prediction execution provider or set to none
+            unit = ""
+            # TODO: Should we generate some external_id?
+            external_id = ""
+            meta, err = self._create_id_if_not_exists(name=output_tag_name, description=description, unit=unit, external_id=external_id)
+            if not meta and not err:
+                err = "Meta mising with no error"
+            if err:
+                logger.error(f"Could not create/find id for name {output_tag_name}: {err}")
+                continue
+            id = _id_in_data(meta)
+            if not id:
+                logger.error(f"Could not get ID for {output_tag_name}")
+                continue
+            output_tag_names[col] = output_tag_name
+            output_time_series_ids[col] = id
+        failed_tags = 0
+        stored_tags = 0
+        skipped_values = 0
+        stored_values = 0
+        logger.info(f"Storing {len(df.columns)} predictions:")
+        for key, item in df.items():
+            operation, tag_name = key
+            if operation in invalid_operations:
+                continue
+            datapoints = []
+            id = output_time_series_ids[key]
+            # logger.info(f"Key({key}) id={id}")
+            for time, value in item.items():
+                stored_values += 1
+                # logger.info(f"  Item({time}, {value})")
+                if math.isnan(value):
+                    # logger.info(f"Skipping NaN value for {key} @ {time}")
+                    skipped_values += 1
+                    continue
+                datapoints.append({"time": rfc3339_from_datetime(time), "value": value, "status": "0"})
+            res, err = self._store_data_for_id(id=id, datapoints=datapoints)
+            if not res or err:
+                logger.error(f" Could not store data: {err}")
+                failed_tags += 1
+            else:
+                stored_tags += 1
+        logger.info(f"  {stored_values} values stored, {skipped_values} NaNs skipped. {stored_tags} tags stored, {failed_tags} tags failed")
+        # with pd.option_context("display.max_rows", None, "display.max_columns", None):
+        #    logger.info("")
+        #    logger.info(f"  Item({item})")
+
         return None

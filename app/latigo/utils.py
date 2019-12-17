@@ -14,11 +14,11 @@ import latigo.rfc3339
 logger = logging.getLogger("latigo.utils")
 
 
-def rfc3339_from_datetime(date_object: datetime.datetime):
+def rfc3339_from_datetime(date_object: datetime.datetime) -> str:
     return latigo.rfc3339.timetostr(date_object)
 
 
-def datetime_from_rfc3339(date_string: str):
+def datetime_from_rfc3339(date_string: str) -> datetime.datetime:
     return latigo.rfc3339.parse_datetime(date_string)
 
 
@@ -165,3 +165,9 @@ def list_loggers():
 def sleep(time_sec):
     time.sleep(time_sec)
     # await asyncio.sleep async
+
+
+def print_process_info():
+    if hasattr(os, "getppid"):
+        print(f"Parent process:{os.getppid()}")
+    print(f"Process id:{os.getpid()}")

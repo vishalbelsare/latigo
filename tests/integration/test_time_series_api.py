@@ -9,6 +9,8 @@ from latigo.time_series_api import TimeSeriesAPIClient, TimeSeriesAPIPredictionS
 from latigo.types import PredictionDataSet, TimeRange, SensorDataSpec, LatigoSensorTag
 from latigo.utils import datetime_from_rfc3339
 
+from latigo.intermediate import IntermediateFormat
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,14 +51,32 @@ def _get_config():
 
 
 name: str = "latigo_integration_name_test"
+name2: str = "latigo_integration_name_test_with_appendage"
 asset: str = "latigo_integration_asset_test"
 datapoint_1 = 1337.0
 datapoint_2 = 69.69
 datapoint_3 = 420.42
+time_1 = "2019-12-09T10:37:51.810Z"
+time_2 = "2019-12-09T11:37:51.810Z"
+time_3 = "2019-12-09T12:37:51.810Z"
 unit: str = "Tesla"
 
+im1 = IntermediateFormat()
+# fmt: off
+data1 = [{'tag':name, 'value':datapoint_1, 'time':time_1},
+        {'tag':name, 'value':datapoint_2, 'time':time_2},
+        {'tag':name, 'value':datapoint_3, 'time':time_3}]
+# fmt: on
+im1.from_time_series_api(data1)
 
-# data: typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]] = [{datapoint_1, datapoint_2, datapoint_3}]
+im2 = IntermediateFormat()
+# fmt: off
+data2 = [{'tag':name2, 'value':datapoint_1, 'time':time_1},
+        {'tag':name2, 'value':datapoint_2, 'time':time_2},
+        {'tag':name2, 'value':datapoint_3, 'time':time_3}]
+# fmt: on
+im2.from_time_series_api(data2)
+
 
 from_time = datetime_from_rfc3339("2019-01-02T00:00:00Z")
 to_time = datetime_from_rfc3339("2019-11-02T00:00:00Z")
@@ -105,7 +125,7 @@ def disabled_test_time_series_api_write_read():
     logger.info("")
     logger.info("WRITING ---------------")
     prediction_storage_provider = TimeSeriesAPIPredictionStorageProvider(config)
-    prediction_data = PredictionData(name=name, time_range=time_range, unit=unit, asset_id=asset, data=data)
+    prediction_data = PredictionDataSet(name=name, time_range=time_range, unit=unit, asset_id=asset, data=data)
     meta = prediction_storage_provider.put_predictions(prediction_data=prediction_data)
     logger.info(pprint.pformat(meta))
     logger.info("")
@@ -137,3 +157,30 @@ def disabled_test_ims_metadata_api():
     tag_name = "GRA-STAT-20-1310_G01.ST"
     system_code = ims_meta._get_system_code_by_tag_name(tag_name=tag_name)
     logger.info(f"System code for tag '{tag_name}' is '{system_code}'")
+
+
+def disabled_test_name_lookup_bug1():
+    config = _get_config()
+    logger.info("")
+    logger.info("WRITING Data 1 ---------------")
+    prediction_storage_provider = TimeSeriesAPIPredictionStorageProvider(config)
+    name = "an inconspicuous tag name"
+    in_meta = {"name": name, "unit": unit, "asset_id": asset}
+    prediction_data = PredictionDataSet(meta_data=in_meta, time_range=time_range, data=data1)
+    out_meta = prediction_storage_provider.put_predictions(prediction_data=prediction_data)
+    logger.info(pprint.pformat(out_meta))
+    logger.info("")
+    logger.info("WRITING Data 2 ---------------")
+    name2 = f"{name}_with_apendage"
+    in_meta2 = {"name": name2, "unit": unit, "asset_id": asset}
+    prediction_data2 = PredictionDataSet(meta_data=in_meta2, time_range=time_range, data=data2)
+    out_meta2 = prediction_storage_provider.put_predictions(prediction_data=prediction_data2)
+    logger.info(pprint.pformat(out_meta2))
+    logger.info("")
+    logger.info("READING ---------------")
+    sensor_data_provider = TimeSeriesAPISensorDataProvider(config)
+    sensor_data = sensor_data_provider.get_data_for_range(spec=spec, time_range=time_range)
+
+
+def test_name_lookup_bug():
+    pass

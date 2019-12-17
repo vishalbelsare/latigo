@@ -1,6 +1,10 @@
+executor:
+    instance_count:1
+
 task_queue:
     type: "kafka"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    poll_timeout_sec: 100000
     security.protocol: "SASL_SSL"
     ssl.ca.location: "/etc/ssl/certs/ca-certificates.crt"
     sasl.mechanism: "PLAIN"
@@ -71,6 +75,7 @@ predictor:
     forward_resampled_sensors : false
     ignore_unhealthy_targets: true
     n_retries: 5
+    use_parquet: true
     data_provider:
         debug: true
         n_retries: 5
