@@ -87,8 +87,10 @@ This interface wraps the source of sensor data.
 
 # Development
 
-## Prequisites
+This section will explain how to get up and going with development for Latigo.
 
+## Prequisites
+You will need the following:
 - Git with authentication set up (https://wiki.equinor.com/wiki/index.php/Software:Git_Tutorial_Getting_Setup)
 - Python 3.x
 - Docker and docker-compose installed (https://wiki.equinor.com/wiki/index.php/WIKIHOW:Set_up_Docker_on_a_CentOS_7_server)
@@ -159,10 +161,9 @@ docker-compose up
 
 At this point you should see the services running:
 
-- latigo-executor-2
 - latigo-scheduler
 - latigo-executor-1
-
+- latigo-executor-2
 
 ### Rebuilding services
 

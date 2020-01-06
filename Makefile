@@ -1,20 +1,45 @@
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+LATIGO_VERSION:=$(shell cat VERSION)
 APP_DIR:="${ROOT_DIR}/app"
 TESTS_DIR:="${ROOT_DIR}/tests"
 CODE_QUALITY_DIR:="${ROOT_DIR}/code_quality"
-SHELL := /bin/bash
+SHELL:=/bin/bash
 CLUSTER_NAME:="ioc48jsv"
 CLUSTER_SUBSCRIPTION="019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
 COMPUTED_ENV="${ROOT_DIR}/set_env.py"
+LATIGO_SCHEDULER_IMAGE_NAME:="latigo-scheduler"
+LATIGO_EXECUTOR_IMAGE_NAME:="latigo-executor"
+LATIGO_SCHEDULER_IMAGE_RELEASE_NAME:="${LATIGO_SCHEDULER_IMAGE_NAME}:${LATIGO_VERSION}"
+LATIGO_SCHEDULER_IMAGE_STAGE_NAME:=${LATIGO_SCHEDULER_IMAGE_NAME}:${LATIGO_VERSION}rc
+LATIGO_EXECUTOR_IMAGE_RELEASE_NAME:="${LATIGO_EXECUTOR_IMAGE_NAME}:${LATIGO_VERSION}"
+LATIGO_EXECUTOR_IMAGE_STAGE_NAME:="${LATIGO_EXECUTOR_IMAGE_NAME}:${LATIGO_VERSION}rc"
+LATIGO_PRODUCTION_BRANCH:="master"
+LATIGO_STAGE_BRANCH:="stage"
 
-
-LATIGO_SCHEDULER_IMAGE_NAME="latigo-scheduler"
-LATIGO_EXECUTOR_IMAGE_NAME="latigo-executor"
 
 
 .PHONY: all code-quality tests set-env postgres-permission setup up rebuild-req
 
 all: help
+
+info:
+	@echo "LATIGO_VERSION=${LATIGO_VERSION}"
+	@echo "ROOT_DIR=${ROOT_DIR}"
+	@echo "APP_DIR=${APP_DIR}"
+	@echo "TESTS_DIR=${TESTS_DIR}"
+	@echo "CODE_QUALITY_DIR=${CODE_QUALITY_DIR}"
+	@echo "SHELL=${SHELL}"
+	@echo "LATIGO_PRODUCTION_BRANCH=${LATIGO_PRODUCTION_BRANCH}"
+	@echo "LATIGO_STAGE_BRANCH=${LATIGO_STAGE_BRANCH}"
+	@echo "CLUSTER_NAME=${CLUSTER_NAME}"
+	@echo "CIRCLE_BRANCH=${CIRCLE_BRANCH}"
+	@echo "CIRCLE_TAG=${CIRCLE_TAG}"
+	@echo "LATIGO_SCHEDULER_IMAGE_NAME=${LATIGO_SCHEDULER_IMAGE_NAME}"
+	@echo "LATIGO_EXECUTOR_IMAGE_NAME=${LATIGO_EXECUTOR_IMAGE_NAME}"
+	@echo "LATIGO_SCHEDULER_IMAGE_RELEASE_NAME=${LATIGO_SCHEDULER_IMAGE_RELEASE_NAME}"
+	@echo "LATIGO_SCHEDULER_IMAGE_STAGE_NAME=${LATIGO_SCHEDULER_IMAGE_STAGE_NAME}"
+	@echo "LATIGO_EXECUTOR_IMAGE_RELEASE_NAME=${LATIGO_EXECUTOR_IMAGE_RELEASE_NAME}"
+	@echo "LATIGO_EXECUTOR_IMAGE_STAGE_NAME=${LATIGO_EXECUTOR_IMAGE_STAGE_NAME}"
 
 code-quality:
 	cd "${CODE_QUALITY_DIR}" && make all
@@ -111,11 +136,32 @@ executor: build
 ############### Build docker images ####################
 
 
+build-test:
+	@if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+		echo "IS PRODUCTION BRANCH";\
+	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+		echo "IS STAGE BRANCH";\
+	else\
+		echo "IS UNKNOWN BRANCH";\
+	fi;\
+
 build-scheduler:
-	docker build . -f Dockerfile.scheduler -t $(LATIGO_SCHEDULER_IMAGE_NAME)
+	@if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+		docker build . -f Dockerfile.scheduler -t "$(LATIGO_SCHEDULER_IMAGE_NAME)" -t "$(LATIGO_SCHEDULER_IMAGE_PRODUCTION_NAME)";\
+	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+		docker build . -f Dockerfile.scheduler -t "$(LATIGO_SCHEDULER_IMAGE_NAME)" -t "$(LATIGO_SCHEDULER_IMAGE_STAGE_NAME)" -t "$(LATIGO_SCHEDULER_IMAGE_NAME):tag$(CIRCLE_TAG)";\
+	else\
+		export TAG_NAME="UNKNOWN BRANCH";\
+	fi;\
 
 build-executor:
-	docker build . -f Dockerfile.executor -t $(LATIGO_EXECUTOR_IMAGE_NAME)
+	@if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+		docker build . -f Dockerfile.executor -t "$(LATIGO_EXECUTOR_IMAGE_NAME)" -t "$(LATIGO_EXECUTOR_IMAGE_PRODUCTION_NAME)";\
+	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+		docker build . -f Dockerfile.executor -t "$(LATIGO_EXECUTOR_IMAGE_NAME)" -t "$(LATIGO_EXECUTOR_IMAGE_STAGE_NAME)" -t "$(LATIGO_EXECUTOR_IMAGE_NAME):tag$(CIRCLE_TAG)";\
+	else\
+		export TAG_NAME="UNKNOWN BRANCH";\
+	fi;\
 
 build-images: build-scheduler build-executor
 
