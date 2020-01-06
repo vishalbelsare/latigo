@@ -11,7 +11,6 @@ filename = pwd+"/local_config.yaml"
 local_config = {}
 failure = None
 
-
 if not path.exists(filename):
     # Create a starting point for local config so that user can get quickly up
     # and running

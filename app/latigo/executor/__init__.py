@@ -29,7 +29,7 @@ class PredictionExecutor:
 
     # Inflate executor from config
     def _prepare_executor(self):
-        self.executor_config = self.config.get("executor", None)
+        self.executor_config = self.config.get("executor", {})
         if not self.executor_config:
             raise Exception("No executor config specified")
         self.instance_count = self.executor_config.get("instance_count", 1)
@@ -162,7 +162,7 @@ class PredictionExecutor:
 
     def run(self):
         if self.task_queue:
-            logger.info("Executor started  processing")
+            # logger.info("Executor started  processing")
             done = False
             iteration_number = 0
             error_number = 0
@@ -205,6 +205,6 @@ class PredictionExecutor:
                     logger.error("")
                     logger.error("-----------------------------------")
                     sleep(1)
-            logger.info("Executor stopped processing")
+            # logger.info("Executor stopped processing")
         else:
-            logger.info("No task queue")
+            logger.error("No task queue")

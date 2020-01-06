@@ -76,10 +76,10 @@ def model_info_provider_factory(model_info_provider_config):
     if "gordo" == model_info_provider_type:
         from latigo.gordo import GordoModelInfoProvider
 
-        model_info_provider = GordoModelInfoProvider(model_info_provider_config)
+        model_info_provider = GordoModelInfoProvider(config=model_info_provider_config)
 
     elif "mock" == model_info_provider_type:
-        model_info_provider = MockModelInfoProvider(model_info_provider_config)
+        model_info_provider = MockModelInfoProvider(config=model_info_provider_config)
     else:
-        model_info_provider = DevNullModelInfoProvider(model_info_provider_config)
+        model_info_provider = DevNullModelInfoProvider(config=model_info_provider_config)
     return model_info_provider

@@ -1,3 +1,5 @@
+import sys
+import traceback
 import typing
 import random
 import logging
@@ -6,6 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 import json
+import copy
 from datetime import datetime
 import latigo.utils
 from latigo.prediction_execution import PredictionExecutionProviderInterface
@@ -106,12 +109,17 @@ class LatigoDataProvider(GordoBaseDataProvider):
     """
 
     @capture_args
-    def __init__(self, sensor_data_provider: typing.Optional[SensorDataProviderInterface], config: dict):
+    def __init__(self, config: dict, sensor_data_provider: typing.Optional[SensorDataProviderInterface]):
         super().__init__()
-        self.config = config
-        if not self.config:
+        self.latigo_config = config
+        if self == config:
+            raise Exception("Config was self")
+        if type(config) == type(self):
+            raise Exception(f"Config was same type as self {type(self)}")
+        if not self.latigo_config:
             raise Exception("No data_provider_config specified")
         self.sensor_data_provider = sensor_data_provider
+        # logger.warning("DEBUGGING:")         logger.warning(config)        logger.error("".join(traceback.format_stack()))
 
     def load_series(self, from_ts: datetime, to_ts: datetime, tag_list: typing.List[SensorTag], dry_run: typing.Optional[bool] = False) -> typing.Iterable[pd.Series]:
         if dry_run:
@@ -156,7 +164,7 @@ class LatigoDataProvider(GordoBaseDataProvider):
         return False
 
     def __repr__(self):
-        return f"LatigoDataProvider(config={self.config}, sensor_data_provider={self.sensor_data_provider})"
+        return f"LatigoDataProvider(config={self.latigo_config}, sensor_data_provider={self.sensor_data_provider})"
 
 
 class LatigoPredictionForwarder(PredictionForwarder):
@@ -164,15 +172,19 @@ class LatigoPredictionForwarder(PredictionForwarder):
     A Gordo PredictionForwarder that wraps Latigo spesific prediction forwarders
     """
 
-    def __init__(self, prediction_storage_provider, config):
+    def __init__(self, config: dict, prediction_storage_provider: typing.Optional[PredictionForwarder]):
         super().__init__()
-        self.config = config
-        if not self.config:
+        self.latigo_config = config
+        if self == config:
+            raise Exception("Config was self")
+        if type(config) == type(self):
+            raise Exception(f"Config was same type as self {type(self)}")
+        if not self.latigo_config:
             raise Exception("No prediction_forwarder_config specified")
         self.prediction_storage_provider = prediction_storage_provider
 
     def __repr__(self):
-        return f"LatigoPredictionForwarder(config={self.config}, prediction_storage_provider={self.prediction_storage_provider})"
+        return f"LatigoPredictionForwarder(config_type={type(self.latigo_config)}, prediction_storage_provider_type={type(self.prediction_storage_provider)}, config={self.latigo_config}, prediction_storage_provider={self.prediction_storage_provider})"
 
 
 def gordo_config_hash(config: dict):
@@ -238,17 +250,16 @@ def expand_gordo_connection_string(config: dict):
 
 def expand_gordo_data_provider(config: dict, sensor_data_provider: typing.Optional[SensorDataProviderInterface]):
     data_provider_config = config.get("data_provider", {})
-    config["data_provider"] = LatigoDataProvider(sensor_data_provider, data_provider_config)
+    config["data_provider"] = LatigoDataProvider(config=copy.deepcopy(data_provider_config), sensor_data_provider=sensor_data_provider)
 
 
 def expand_gordo_prediction_forwarder(config: dict, prediction_storage_provider):
     prediction_forwarder_config = config.get("prediction_forwarder", {})
-    config["prediction_forwarder"] = LatigoPredictionForwarder(prediction_storage_provider, prediction_forwarder_config)
+    config["prediction_forwarder"] = LatigoPredictionForwarder(config=copy.deepcopy(prediction_forwarder_config), prediction_storage_provider=prediction_storage_provider)
 
 
 def _get_model_meta(model_data: dict):
     meta = model_data.get("endpoint-metadata", {}).get("metadata", {})
-    # logger.info("MODEL META:"+pprint.pformat(meta))
     return meta
 
 
@@ -294,9 +305,9 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
             raise Exception("No model_info_config specified")
         self._prepare_auth()
         expand_gordo_connection_string(self.config)
-        expand_gordo_data_provider(self.config, sensor_data_provider=None)
-        expand_gordo_prediction_forwarder(self.config, prediction_storage_provider=None)
-        self.gordo_pool = GordoClientPool(self.config)
+        expand_gordo_data_provider(config=self.config, sensor_data_provider=None)
+        expand_gordo_prediction_forwarder(config=self.config, prediction_storage_provider=None)
+        self.gordo_pool = GordoClientPool(raw_config=self.config)
 
     def __str__(self):
         return f"GordoModelInfoProvider()"

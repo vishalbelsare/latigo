@@ -3,6 +3,8 @@
 import sys
 import os
 import pprint
+import threading
+import socket
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.scheduler")
@@ -45,6 +47,9 @@ config = load_config(config_filename, config_overlay)
 if not config:
     logger.error(f"Could not load configuration for scheduler from {config_filename}")
     sys.exit(1)
+
+threading.current_thread().name = config.get("scheduler", {}).get("instance_name", "latigo-scheduler-" + socket.getfqdn())
+
 
 logger.info("Configuring Latigo Scheduler")
 scheduler = Scheduler(config)

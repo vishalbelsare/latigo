@@ -1,5 +1,5 @@
 executor:
-    instance_count:1
+    instance_count: 1
 
 task_queue:
     type: "kafka"
@@ -17,7 +17,6 @@ task_queue:
     topic: "latigo_topic"
     enable.auto.commit: true
     auto.commit.interval.ms: 1000
-
 
 model_info:
     type: "gordo"

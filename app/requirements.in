@@ -16,5 +16,7 @@ typing-extensions~=3.7.4
 confluent-kafka~=1.0.1
 dataclasses-json~=0.3.5
 tonyg-rfc3339
+multiprocessing-logging~=0.3.0
+
 
 
