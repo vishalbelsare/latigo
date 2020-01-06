@@ -139,6 +139,7 @@ marshmallow==3.2.1        # via dataclasses-json, marshmallow-enum
 matplotlib==3.1.1         # via catboost
 msrest==0.6.10            # via azure-applicationinsights, azure-eventgrid, azure-keyvault, azure-loganalytics, azure-mgmt-cdn, azure-mgmt-compute, azure-mgmt-containerinstance, azure-mgmt-containerregistry, azure-mgmt-containerservice, azure-mgmt-dns, azure-mgmt-eventhub, azure-mgmt-keyvault, azure-mgmt-managementpartner, azure-mgmt-media, azure-mgmt-network, azure-mgmt-notificationhubs, azure-mgmt-rdbms, azure-mgmt-resource, azure-mgmt-search, azure-mgmt-servicebus, azure-mgmt-servicefabric, azure-mgmt-signalr, azure-servicefabric, msrestazure
 msrestazure==0.6.0
+multiprocessing-logging==0.3.0
 mypy-extensions==0.4.3    # via typing-inspect
 numexpr==2.7.0            # via gordo-components
 numpy==1.17.2

@@ -13,6 +13,9 @@ def _get_config():
     not_found = "Not found in environment variables"
     # fmt: off
     return {
+        "executor":{
+            "instance_count": 1,
+        },
         "task_queue":{
             "type": "mock",
             "connection_string": "dummy",

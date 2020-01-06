@@ -1,7 +1,9 @@
 import logging
 import pprint
 from os import environ
-from latigo.gordo import GordoModelInfoProvider, LatigoDataProvider, LatigoPredictionForwarder, allocate_gordo_client_instances, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, gordo_client_auth_session, gordo_client_instances_by_hash, gordo_client_instances_by_project, gordo_config_hash, _gordo_to_latigo_tag_list
+from latigo.gordo import GordoModelInfoProvider, LatigoDataProvider, LatigoPredictionForwarder, GordoClientPool, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, _gordo_to_latigo_tag_list, _gordo_to_latigo_tag
+from gordo_components.dataset.sensor_tag import SensorTag
+from latigo.types import LatigoSensorTag
 
 
 def un_test_gordo_config_hash():
@@ -26,6 +28,11 @@ def un_test_gordo_config_hash():
     assert "gordoschemeAhostBport8080projectDtargetEgordo_versionFbatch_sizeGparallelismHforward_resampled_sensorsIignore_unhealthy_targetsJn_retriesK" == hash
 
 
+def un_test_gordo_client_pool():
+    # GordoClientPool
+    pass
+
+
 def test_clean_gordo_client_args():
     # fmt: off
     ok={
@@ -44,6 +51,7 @@ def test_clean_gordo_client_args():
         "data_provider":"M",
         "prediction_forwarder":"N",
         "session":"O",
+        "use_parquet":"P",
     }
     # fmt: on
     clean_ok = clean_gordo_client_args(ok)
@@ -54,15 +62,24 @@ def test_clean_gordo_client_args():
     assert clean_bad != bad
 
 
+def test_gordo_to_latigo_tag():
+    name = "some_name"
+    asset = "some_asset"
+    gordo_tag = SensorTag(name=name, asset=asset)
+    assert isinstance(gordo_tag, SensorTag)
+    latigo_tag = _gordo_to_latigo_tag(gordo_tag)
+    assert isinstance(latigo_tag, LatigoSensorTag)
+    assert type(latigo_tag.name) == type(name)
+    assert type(latigo_tag.asset) == type(asset)
+    assert latigo_tag.name == name
+    assert latigo_tag.asset == asset
+
+
 def test_gordo_to_latigo_tag_list():
     name = "some_name"
     asset = "some_asset"
-    gordo_tag_list = SensorTag(name, asset)
-    assert type(gordo_tag_list) == "SensorTag"
+    gordo_tag_list = [SensorTag(name=name, asset=asset)]
     latigo_tag_list = _gordo_to_latigo_tag_list(gordo_tag_list)
-    assert type(latigo_tag_list) == "LatigoSensorTag"
-    assert type(latigo_tag_list.name) == name
-    assert type(latigo_tag_list.asset) == asset
 
 
 def un_test_expand_gordo_data_provider():
