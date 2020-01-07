@@ -127,8 +127,8 @@ jobs:
       - run:
           name: Push Images
           command: |
-            make push-executor
-            make push-scheduler
+            make V=1 push-executor
+            make V=1 push-scheduler
 
   # Publish to PyPi, only on tagged commits.
   publish-to-pypi:
