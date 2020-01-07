@@ -1,4 +1,4 @@
-name: CI
+name: Latigo CI
 
 on: [push]
 
@@ -11,6 +11,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: List environment info
       run: |
+        make env
         make info
     - name: Build and push images to docker repo
       run: |

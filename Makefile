@@ -48,7 +48,8 @@ test:
 	cd "${TESTS_DIR}" && make all
 
 show-env:
-	env | grep -i latigo
+	#env | grep -i latigo
+	env
 
 pgsql-perm :
 	sudo mkdir "${ROOT_DIR}/volumes/postgres" -p && sudo chown -R lroll:lroll "${ROOT_DIR}/volumes/postgres"
