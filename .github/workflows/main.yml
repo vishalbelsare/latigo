@@ -10,9 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Extract branch name
-          shell: bash
-          run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/tags/})"
-          id: extract_branch
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/tags/})"
+      shell: bash
+      id: extract_branch
     - name: List environment info
       run: |
         export GITHUB_BRANCH=${{ steps.extract_branch.outputs.branch }}
