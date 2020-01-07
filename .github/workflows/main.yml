@@ -13,6 +13,7 @@ env:
   DOCKER_REGISTRY: ${{secrets.DOCKER_REGISTRY}}
   DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
   DOCKER_PASSWORD: ${{secrets. DOCKER_PASSWORD}}
+  DOCKER_REPO: ${{secrets. DOCKER_REPO}}
 
 jobs:
   build:
