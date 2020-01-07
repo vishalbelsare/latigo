@@ -33,7 +33,7 @@
 # PROD_MODE: If false then pushed tags will include a -dev suffix.
 #                  Defaults to false
 
-export tmp_tag=$(date +%Y-%m-%d)
+export tmp_tag="$(date +%Y-%m-%d)"
 
 echo "Expected environment variables with values:"
 echo " + DOCKER_FILE:      ${DOCKER_FILE}"
@@ -72,8 +72,9 @@ if [[ -z "${DOCKER_IMAGE}" ]]; then
         echo "DOCKER_IMAGE or DOCKER_FILE must be provided, exiting"
         exit 1
     fi
-    docker build -t $tmp_tag  -f $DOCKER_FILE .
-    export DOCKER_IMAGE=$tmp_tag
+    echo "building docker image $tmp_tag" 
+    docker build -t "$tmp_tag"  -f $DOCKER_FILE .
+    export DOCKER_IMAGE="$tmp_tag"
 fi
 
 # Ensure we're getting the latest version, including any dirty state of the repo
