@@ -9,7 +9,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Build and push images to docker repo
+    - name: List environment info
       run: |
         make info
-        make env
+    - name: Build and push images to docker repo
+      run: |
+        make push-all
+
