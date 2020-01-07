@@ -160,14 +160,14 @@ build-images: build-scheduler build-executor
 ############### Push docker images ####################
 
 push-scheduler: build-scheduler
-	export DOCKER_NAME=$(LATIGO_SCHEDULER_IMAGE_NAME);\
-	export DOCKER_IMAGE=$(LATIGO_SCHEDULER_IMAGE_NAME);\
+	export DOCKER_NAME=${LATIGO_SCHEDULER_IMAGE_NAME};\
+	export DOCKER_IMAGE=${LATIGO_SCHEDULER_IMAGE_NAME};\
 	
 	bash deploy/docker_push.sh
 
 push-executor: build-executor
-	export DOCKER_NAME=$(LATIGO_EXECUTOR_IMAGE_NAME);\
-	export DOCKER_IMAGE=$(LATIGO_EXECUTOR_IMAGE_NAME);\
+	export DOCKER_NAME=${LATIGO_EXECUTOR_IMAGE_NAME};\
+	export DOCKER_IMAGE=${LATIGO_EXECUTOR_IMAGE_NAME};\
 	bash deploy/docker_push.sh
 
 push-images: push-scheduler push-executor
