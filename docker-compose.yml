@@ -13,7 +13,6 @@ services:
     volumes:
       - ../volumes/latigo/scheduler:/tmp/data:Z
     environment:
-      - LATIGO_INSTANCE_NAME=latigo-scheduler
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - LATIGO_SCHEDULER_CONFIG_FILE=${LATIGO_SCHEDULER_CONFIG_FILE}
       - LATIGO_SCHEDULER_PREDICTION_START_TIME=${LATIGO_SCHEDULER_PREDICTION_START_TIME}
@@ -36,7 +35,6 @@ services:
       context: .
       dockerfile: Dockerfile.executor
     environment:
-      - LATIGO_INSTANCE_NAME=latigo-executor-1
       - LATIGO_EXECUTOR_INSTANCE_COUNT=${LATIGO_EXECUTOR_INSTANCE_COUNT}
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
@@ -62,7 +60,6 @@ services:
       context: .
       dockerfile: Dockerfile.executor
     environment:
-      - LATIGO_INSTANCE_NAME=latigo-executor-2
       - LATIGO_EXECUTOR_INSTANCE_COUNT=${LATIGO_EXECUTOR_INSTANCE_COUNT}
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
       - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
