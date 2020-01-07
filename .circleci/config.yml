@@ -106,15 +106,18 @@ jobs:
           name: Make documentation
           command: make build-docs
 
-  # Make the docker images this project uses.
+  # Build the docker images this project uses.
   build-images:
     machine:
       docker_layer_caching: false
     steps:
       - checkout
       - run:
-          name: Make Images
-          command: make build-images
+          name: Build Images
+          command: |
+            make info
+            make build-executor
+#            make build-scheduler
 
   # Push images, only when on master and/or tagged commits.
   push-images:
@@ -129,7 +132,7 @@ jobs:
           command: |
             make info
             make push-executor
-            make push-scheduler
+#            make push-scheduler
 
   # Publish to PyPi, only on tagged commits.
   publish-to-pypi:
