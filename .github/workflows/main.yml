@@ -9,9 +9,14 @@ on:
     branches:
       - master
       - stage
+env:
+  DOCKER_REGISTRY: ${{secrets.DOCKER_REGISTRY}}
+  DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+  DOCKER_PASSWORD: ${{secrets. DOCKER_PASSWORD}}
 
 jobs:
   build:
+    
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
