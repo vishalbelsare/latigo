@@ -32,8 +32,8 @@ info:
 	@echo "LATIGO_PRODUCTION_BRANCH=${LATIGO_PRODUCTION_BRANCH}"
 	@echo "LATIGO_STAGE_BRANCH=${LATIGO_STAGE_BRANCH}"
 	@echo "CLUSTER_NAME=${CLUSTER_NAME}"
-	@echo "CIRCLE_BRANCH=${CIRCLE_BRANCH}"
-	@echo "CIRCLE_TAG=${CIRCLE_TAG}"
+	@echo "GITHUB_BRANCH=${GITHUB_BRANCH}"
+	@echo "GITHUB_TAG=${GITHUB_TAG}"
 	@echo "LATIGO_SCHEDULER_IMAGE_NAME=${LATIGO_SCHEDULER_IMAGE_NAME}"
 	@echo "LATIGO_EXECUTOR_IMAGE_NAME=${LATIGO_EXECUTOR_IMAGE_NAME}"
 	@echo "LATIGO_SCHEDULER_IMAGE_RELEASE_NAME=${LATIGO_SCHEDULER_IMAGE_RELEASE_NAME}"
@@ -48,8 +48,7 @@ test:
 	cd "${TESTS_DIR}" && make all
 
 show-env:
-	#env | grep -i latigo
-	env
+	env | sort
 
 pgsql-perm :
 	sudo mkdir "${ROOT_DIR}/volumes/postgres" -p && sudo chown -R lroll:lroll "${ROOT_DIR}/volumes/postgres"
@@ -138,19 +137,19 @@ executor: build
 
 
 build-scheduler:
-	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
 		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_RELEASE_NAME}";\
-	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
-		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_STAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_NAME}:tag${CIRCLE_TAG}";\
+	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
+		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_STAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
 		export TAG_NAME="UNKNOWN BRANCH";\
 	fi;\
 
 build-executor:
-	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
+	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
 		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_RELEASE_NAME}";\
-	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
-		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_STAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_NAME}:tag${CIRCLE_TAG}";\
+	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
+		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_STAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
 		export TAG_NAME="UNKNOWN BRANCH";\
 	fi;\
