@@ -2,13 +2,14 @@ name: Latigo CI
 
 on:
   push:
-      branches:
-        - master
-          stage
-    pull_request:
-      branches:
-        - master
-          stage
+    branches:
+      - master
+      - stage
+  pull_request:
+    branches:
+      - master
+      - stage
+
 jobs:
   build:
     runs-on: ubuntu-latest
