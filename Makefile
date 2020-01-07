@@ -138,7 +138,7 @@ executor: build
 
 build-scheduler:
 	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
-		docker build . -f Dockerfile.scheduler -t "$(LATIGO_SCHEDULER_IMAGE_NAME)" -t "$(LATIGO_SCHEDULER_IMAGE_PRODUCTION_NAME)";\
+		docker build . -f Dockerfile.scheduler -t "$(LATIGO_SCHEDULER_IMAGE_NAME)" -t "$(LATIGO_SCHEDULER_IMAGE_RELEASE_NAME)";\
 	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
 		docker build . -f Dockerfile.scheduler -t "$(LATIGO_SCHEDULER_IMAGE_NAME)" -t "$(LATIGO_SCHEDULER_IMAGE_STAGE_NAME)" -t "$(LATIGO_SCHEDULER_IMAGE_NAME):tag$(CIRCLE_TAG)";\
 	else\
@@ -147,7 +147,7 @@ build-scheduler:
 
 build-executor:
 	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
-		docker build . -f Dockerfile.executor -t "$(LATIGO_EXECUTOR_IMAGE_NAME)" -t "$(LATIGO_EXECUTOR_IMAGE_PRODUCTION_NAME)";\
+		docker build . -f Dockerfile.executor -t "$(LATIGO_EXECUTOR_IMAGE_NAME)" -t "$(LATIGO_EXECUTOR_IMAGE_RELEASE_NAME)";\
 	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(CIRCLE_BRANCH)" ]; then\
 		docker build . -f Dockerfile.executor -t "$(LATIGO_EXECUTOR_IMAGE_NAME)" -t "$(LATIGO_EXECUTOR_IMAGE_STAGE_NAME)" -t "$(LATIGO_EXECUTOR_IMAGE_NAME):tag$(CIRCLE_TAG)";\
 	else\
