@@ -1,12 +1,17 @@
 name: Latigo CI
 
-on: [push]
-
+on:
+  push:
+      branches:
+        - master
+        - stage
+    pull_request:
+      branches:
+        - master
+        - stage
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - name: Extract branch/tag name
@@ -24,4 +29,3 @@ jobs:
     - name: Build and push images to docker repo
       run: |
         make push-all
-
