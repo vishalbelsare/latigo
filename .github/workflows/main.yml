@@ -9,13 +9,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Extract branch name
-      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/tags/})"
+    - name: Extract branch/tag name
+      run: |
+        echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
+        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
       shell: bash
-      id: extract_branch
+      id: extract_vars
     - name: List environment info
       run: |
-        export GITHUB_BRANCH=${{ steps.extract_branch.outputs.branch }}
+        export GITHUB_BRANCH=${{ steps.extract_vars.outputs.branch }}
+        export GITHUB_TAG=${{ steps.extract_vars.outputs.tag }}
         make show-env
         make info
     - name: Build and push images to docker repo
