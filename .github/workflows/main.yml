@@ -4,11 +4,11 @@ on:
   push:
       branches:
         - master
-        - stage
+          stage
     pull_request:
       branches:
         - master
-        - stage
+          stage
 jobs:
   build:
     runs-on: ubuntu-latest
