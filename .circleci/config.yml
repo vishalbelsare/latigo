@@ -127,6 +127,7 @@ jobs:
       - run:
           name: Push Images
           command: |
+            make info
             make push-executor
             make push-scheduler
 
