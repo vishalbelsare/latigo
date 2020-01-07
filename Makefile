@@ -154,7 +154,7 @@ build-executor:
 		export TAG_NAME="UNKNOWN BRANCH";\
 	fi;\
 
-build-images: build-scheduler build-executor
+build-all: build-scheduler build-executor
 
 
 ############### Push docker images ####################
@@ -169,7 +169,7 @@ push-executor: build-executor
 	export DOCKER_IMAGE=${LATIGO_EXECUTOR_IMAGE_NAME};\
 	bash deploy/docker_push.sh
 
-push-images: push-scheduler push-executor
+push-all: push-scheduler push-executor
 
 ############### Help ####################
 
@@ -210,9 +210,9 @@ help:
 	@echo ""
 	@echo " + make build-scheduler  Build scheduler docker image"
 	@echo " + make build-executor   Build executor docker image"
-	@echo " + make build-images     Build all docker images"
+	@echo " + make build-all        Build all docker images"
 	@echo " + make push-scheduler   Build and push scheduler docker image"
 	@echo " + make push-executor    Build and push executor docker image"
-	@echo " + make push-images      Build and push all docker images"
+	@echo " + make push-all         Build and push all docker images"
 	@echo ""
 
