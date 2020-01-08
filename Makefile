@@ -137,21 +137,21 @@ executor: build
 
 
 build-scheduler:
-	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
+	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
 		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_RELEASE_NAME}";\
-	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
+	elif [ "$(LATIGO_STAGE_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
 		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_STAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
-		export TAG_NAME="UNKNOWN BRANCH";\
+		echo "Unknown branch!";\
 	fi;\
 
 build-executor:
-	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
+	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
 		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_RELEASE_NAME}";\
-	elif [ "$(LATIGO_STAGE_BRANCH)" == "$(GITHUB_BRANCH)" ]; then\
+	elif [ "$(LATIGO_STAGE_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
 		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_STAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
-		export TAG_NAME="UNKNOWN BRANCH";\
+		echo "Unknown branch!";\
 	fi;\
 
 build-all: build-scheduler build-executor
