@@ -29,6 +29,9 @@ jobs:
         echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
       shell: bash
       id: extract_vars
+    env:
+      GITHUB_BRANCH: ${{ steps.extract_vars.outputs.branch }}
+      GITHUB_TAG: ${{ steps.extract_vars.outputs.tag }}
     - name: List environment info
       run: |
         make show-env
