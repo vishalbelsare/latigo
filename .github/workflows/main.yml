@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - stage
+
 env:
   DOCKER_REGISTRY: ${{secrets.DOCKER_REGISTRY}}
   DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
@@ -33,6 +34,12 @@ jobs:
         export GITHUB_TAG=${{ steps.extract_vars.outputs.tag }}
         make show-env
         make info
-    - name: Build and push images to docker repo
+    - name: Build scheduler image
       run: |
-        make push-all
+        make build-scheduler
+    - name: Build executor image
+      run: |
+        make build-executor
+    - name: Push scheduler image
+      run: |
+        make push-scheduler
