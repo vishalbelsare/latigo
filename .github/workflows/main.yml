@@ -15,8 +15,6 @@ env:
   DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
   DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
   DOCKER_REPO: ${{secrets.DOCKER_REPO}}
-  GITHUB_BRANCH: ${{ steps.extract_vars.outputs.branch }}
-  GITHUB_TAG: ${{ steps.extract_vars.outputs.tag }}
 
 jobs:
   build:
@@ -29,19 +27,24 @@ jobs:
         echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
       shell: bash
       id: extract_vars
-    env:
-      GITHUB_BRANCH: ${{ steps.extract_vars.outputs.branch }}
-      GITHUB_TAG: ${{ steps.extract_vars.outputs.tag }}
     - name: List environment info
       run: |
+        export GITHUB_BRANCH=${{ steps.extract_vars.outputs.branch }}
+        export GITHUB_TAG=${{ steps.extract_vars.outputs.tag }}
         make show-env
         make info
     - name: Build scheduler image
       run: |
+        export GITHUB_BRANCH=${{ steps.extract_vars.outputs.branch }}
+        export GITHUB_TAG=${{ steps.extract_vars.outputs.tag }}
         make build-scheduler
     - name: Build executor image
       run: |
+        export GITHUB_BRANCH=${{ steps.extract_vars.outputs.branch }}
+        export GITHUB_TAG=${{ steps.extract_vars.outputs.tag }}
         make build-executor
     - name: Push scheduler image
       run: |
+        export GITHUB_BRANCH=${{ steps.extract_vars.outputs.branch }}
+        export GITHUB_TAG=${{ steps.extract_vars.outputs.tag }}
         make push-scheduler
