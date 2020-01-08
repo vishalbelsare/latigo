@@ -17,8 +17,6 @@ LATIGO_PRODUCTION_BRANCH:="master"
 LATIGO_STAGE_BRANCH:="stage"
 GITHUB_BRANCH:=$(patsubst refs/heads/%,%,${GITHUB_REF})
 GITHUB_TAG:=$(patsubst refs/tags/%,%,${GITHUB_REF})
-#$(shell echo "$${GITHUB_REF\#refs/heads/}")
-#GITHUB_TAG:=$(shell echo "$${GITHUB_REF}")
 
 .PHONY: all code-quality tests set-env postgres-permission setup up rebuild-req
 
@@ -141,8 +139,10 @@ executor: build
 
 build-scheduler:
 	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
+		echo "Building master branch for scheduler";\
 		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_RELEASE_NAME}";\
 	elif [ "$(LATIGO_STAGE_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
+		echo "Building stage branch for scheduler";\
 		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_STAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
 		echo "Unknown branch!";\
@@ -150,8 +150,10 @@ build-scheduler:
 
 build-executor:
 	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
+		echo "Building master branch for executor";\
 		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_RELEASE_NAME}";\
 	elif [ "$(LATIGO_STAGE_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
+		echo "Building stage branch for executor";\
 		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_STAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
 		echo "Unknown branch!";\

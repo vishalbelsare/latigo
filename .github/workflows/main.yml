@@ -25,12 +25,6 @@ jobs:
       run: |
         make show-env
         make info
-    - name: Build scheduler image
+    - name: Build and push docker images for scheduler and executor
       run: |
-        make build-scheduler
-    - name: Build executor image
-      run: |
-        make build-executor
-    - name: Push scheduler image
-      run: |
-        make push-scheduler
+        make push-all
