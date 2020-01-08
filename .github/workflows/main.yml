@@ -13,12 +13,13 @@ on:
 env:
   DOCKER_REGISTRY: ${{secrets.DOCKER_REGISTRY}}
   DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
-  DOCKER_PASSWORD: ${{secrets. DOCKER_PASSWORD}}
-  DOCKER_REPO: ${{secrets. DOCKER_REPO}}
+  DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+  DOCKER_REPO: ${{secrets.DOCKER_REPO}}
+  GITHUB_BRANCH: ${{ steps.extract_vars.outputs.branch }}
+  GITHUB_TAG: ${{ steps.extract_vars.outputs.tag }}
 
 jobs:
   build:
-    
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -30,8 +31,6 @@ jobs:
       id: extract_vars
     - name: List environment info
       run: |
-        export GITHUB_BRANCH=${{ steps.extract_vars.outputs.branch }}
-        export GITHUB_TAG=${{ steps.extract_vars.outputs.tag }}
         make show-env
         make info
     - name: Build scheduler image
