@@ -88,7 +88,11 @@ fi
 # Ensure we're getting the latest version, including any dirty state of the repo
 # replacing any '+' development identifier with an underscore for docker compatibility
 export version=$(docker run --rm $DOCKER_IMAGE cat ./VERSION | tr + _)
+if [[ -z "${version}" ]]; then
+    export version="0.0.1"
+fi
 
+echo "Using version '$version'"
 
 if [[ -z "${PROD_MODE}" ]]; then
     echo "Skipping pushing of 'latest' image"

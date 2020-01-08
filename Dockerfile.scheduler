@@ -23,4 +23,5 @@ COPY --chown=latigouser:latigouser README.md VERSION LICENSE ./
 COPY --chown=latigouser:latigouser deploy/ ./deploy
 RUN python setup.py install --user
 WORKDIR $HOME/latigo
+COPY --chown=latigouser:latigouser README.md VERSION LICENSE ./
 CMD ["/app/bin/scheduler.py"]
