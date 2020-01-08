@@ -138,7 +138,7 @@ executor: build
 
 
 build-scheduler:
-	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
+	@if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
 		echo "Building master branch for scheduler";\
 		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_RELEASE_NAME}";\
 	elif [ "$(LATIGO_STAGE_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
@@ -149,7 +149,7 @@ build-scheduler:
 	fi;\
 
 build-executor:
-	if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
+	@if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
 		echo "Building master branch for executor";\
 		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_RELEASE_NAME}";\
 	elif [ "$(LATIGO_STAGE_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
@@ -167,11 +167,13 @@ build-all: build-scheduler build-executor
 push-scheduler: build-scheduler
 	export DOCKER_NAME=${LATIGO_SCHEDULER_IMAGE_NAME};\
 	export DOCKER_IMAGE=${LATIGO_SCHEDULER_IMAGE_NAME};\
+	echo "Pushing imge ${DOCKER_NAME}";\
 	bash deploy/docker_push.sh
 
 push-executor: build-executor
 	export DOCKER_NAME=${LATIGO_EXECUTOR_IMAGE_NAME};\
 	export DOCKER_IMAGE=${LATIGO_EXECUTOR_IMAGE_NAME};\
+	echo "Pushing imge ${DOCKER_NAME}";\
 	bash deploy/docker_push.sh
 
 push-all: push-scheduler push-executor
