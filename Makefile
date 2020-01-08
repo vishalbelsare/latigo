@@ -15,8 +15,8 @@ LATIGO_EXECUTOR_IMAGE_RELEASE_NAME:="${LATIGO_EXECUTOR_IMAGE_NAME}:${LATIGO_VERS
 LATIGO_EXECUTOR_IMAGE_STAGE_NAME:="${LATIGO_EXECUTOR_IMAGE_NAME}:${LATIGO_VERSION}rc"
 LATIGO_PRODUCTION_BRANCH:="master"
 LATIGO_STAGE_BRANCH:="stage"
-GITHUB_BRANCH=$(shell echo "${GITHUB_REF\\#refs/heads/}")
-#GITHUB_TAG="${GITHUB_REF#refs/tags/}"
+GITHUB_BRANCH:=$(shell echo "${GITHUB_REF#refs/heads/}")
+GITHUB_TAG:=$(shell echo "${GITHUB_REF}")
 
 .PHONY: all code-quality tests set-env postgres-permission setup up rebuild-req
 
