@@ -111,3 +111,5 @@ app/pyver.py
 junk
 .directory
 
+# QtCreator
+*.autosave

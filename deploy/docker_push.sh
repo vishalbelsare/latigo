@@ -64,7 +64,15 @@ if [[ -z "${DOCKER_USERNAME}" ]]; then
     echo "DOCKER_USERNAME not set: we assume that you are already logged in to the docker registry."
 else
     # Logging in to the docker registry, exiting script if it fails
-    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin $DOCKER_REGISTRY || exit 1
+    echo "Logging in to docker registry ${DOCKER_USERNAME}@${DOCKER_REGISTRY}..."
+    echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin "${DOCKER_REGISTRY}"
+    if [ $? -eq 0 ]
+    then
+        echo "Logging in to docker registry ${DOCKER_USERNAME}@${DOCKER_REGISTRY}: OK"
+    else
+        echo "Logging in to docker registry ${DOCKER_USERNAME}@${DOCKER_REGISTRY}: Failed"
+        exit 1
+    fi
 fi
 
 if [[ -z "${DOCKER_IMAGE}" ]]; then
