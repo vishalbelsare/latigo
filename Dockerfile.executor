@@ -1,16 +1,15 @@
 FROM python:3.7-stretch
 LABEL maintainer="Lennart Rolland <lroll@equinor.com>"
 RUN apt-get update && apt-get install -y debconf-utils locales
-# curl apt-transport-https locales ca-certificates
 RUN locale-gen en_US.UTF-8
 RUN update-locale
 
 ARG HOME=/app
 RUN mkdir -p $HOME
-RUN groupadd -r latigouser
-RUN useradd -r -g latigouser -d $HOME -s /sbin/nologin -c "Latigo user" latigouser
+RUN groupadd -r -g 1337 latigouser
+RUN useradd -r -u 1337 -g latigouser -d $HOME -s /sbin/nologin -c "Latigo user" latigouser
 RUN chown -R latigouser:latigouser $HOME
-USER latigouser
+USER 1337
 ENV HOME ${HOME}
 ENV PATH="$HOME/.local/bin:${PATH}"
 
@@ -22,6 +21,6 @@ COPY --chown=latigouser:latigouser app/ .
 COPY --chown=latigouser:latigouser README.md VERSION LICENSE ./
 COPY --chown=latigouser:latigouser deploy/ ./deploy
 RUN python setup.py install --user
-WORKDIR $HOMEt/latigo
+WORKDIR $HOME/latigo
 COPY --chown=latigouser:latigouser README.md VERSION LICENSE ./
 CMD ["/app/bin/executor.py"]
