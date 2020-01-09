@@ -53,6 +53,11 @@ if not path.exists(filename):
         "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_AUTH_HOST_URL": "The authority host URL for time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_CLIENT_ID": "The client ID of time series api. Used for bearer authentication.",
         "LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_CLIENT_SECRET": "The client secret of time series api. Used for bearer authentication.",
+        
+        "DOCKER_REGISTRY": "The docker registry hostname to use during deployment",
+        "DOCKER_REPO": "The docker repo path to use during deployment",
+        "DOCKER_USERNAME": "The docker registry username",
+        "DOCKER_PASSWORD": "The docker registry password",
 
     }
     # fmt: on

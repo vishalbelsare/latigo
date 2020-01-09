@@ -24,4 +24,3 @@ COPY --chown=$USER_NAME:$USER_NAME deploy/ ./deploy
 RUN python setup.py install --user
 WORKDIR $HOME/latigo
 COPY --chown=$USER_NAME:$USER_NAME README.md VERSION LICENSE ./
-CMD ["/app/bin/scheduler.py"]

@@ -1,0 +1,31 @@
+version: '3.4'
+# Using docker-compose to build images greatly speeds up the process
+services:
+
+# Base image for executor and scheduler
+  latigo-base:
+    image: $DOCKER_REGISTRY/$DOCKER_REPO/latigo-base
+    container_name: latigo-base
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+
+# Scheduler that produces tasks for executors
+  latigo-scheduler:
+    image: $DOCKER_REGISTRY/$DOCKER_REPO/latigo-scheduler
+    container_name: latigo-scheduler
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    depends_on:
+    - latigo-base
+
+# Executor for executing tasks from scheduler
+  latigo-executor:
+    image: $DOCKER_REGISTRY/$DOCKER_REPO/latigo-executor
+    container_name: latigo-executor
+    build:
+      context: .
+      dockerfile: Dockerfile.executor
+    depends_on:
+    - latigo-base

@@ -18,7 +18,7 @@ LATIGO_STAGE_BRANCH:="stage"
 GITHUB_BRANCH:=$(patsubst refs/heads/%,%,${GITHUB_REF})
 GITHUB_TAG:=$(patsubst refs/tags/%,%,${GITHUB_REF})
 
-.PHONY: all code-quality tests set-env postgres-permission setup up rebuild-req
+.PHONY: all code-quality tests set-env setup up rebuild-req
 
 all: help
 
@@ -41,6 +41,10 @@ info:
 	@echo "LATIGO_SCHEDULER_IMAGE_STAGE_NAME=${LATIGO_SCHEDULER_IMAGE_STAGE_NAME}"
 	@echo "LATIGO_EXECUTOR_IMAGE_RELEASE_NAME=${LATIGO_EXECUTOR_IMAGE_RELEASE_NAME}"
 	@echo "LATIGO_EXECUTOR_IMAGE_STAGE_NAME=${LATIGO_EXECUTOR_IMAGE_STAGE_NAME}"
+	@echo "DOCKER_REGISTRY=${DOCKER_REGISTRY}"
+	@echo "DOCKER_REPO=${DOCKER_REPO}"
+	@echo "DOCKER_USERNAME=${DOCKER_USERNAME}"
+	@echo "DOCKER_PASSWORD=NOT SHOWN"
 
 code-quality:
 	cd "${CODE_QUALITY_DIR}" && make all
@@ -87,6 +91,16 @@ login-gordo:
 	kubectl config set-context --current --namespace=kubeflow
 	kubectl get gordos
 
+login-docker:
+	echo "Logging in to docker registry ${DOCKER_USERNAME}@${DOCKER_REGISTRY}...";\
+	echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin "${DOCKER_REGISTRY}";\
+	if [ $$? -eq 0 ]; then\
+		echo "Logging in to docker registry ${DOCKER_USERNAME}@${DOCKER_REGISTRY}: OK";\
+	else\
+		echo "Logging in to docker registry ${DOCKER_USERNAME}@${DOCKER_REGISTRY}: Failed";\
+		exit 1;\
+	fi\
+
 list-gordos:
 	kubectl get gordos
 
@@ -95,8 +109,8 @@ port-forward:
 
 ############### Convenience docker compose ####################
 
-build: postgres-permission setup code-quality tests show-env
-	docker-compose build --parallel --pull --compress
+build: setup code-quality tests show-env login-docker
+	docker-compose -f docker-compose-build.yml build --parallel --pull --compress
 
 up: build
 	# NOTE: The volumes folder must not be inside the context of any docker or the docker builds will fail!
@@ -164,13 +178,13 @@ build-all: build-scheduler build-executor
 
 ############### Push docker images ####################
 
-push-scheduler: build-scheduler
+push-scheduler:
 	export DOCKER_NAME=${LATIGO_SCHEDULER_IMAGE_NAME};\
 	export DOCKER_IMAGE=${LATIGO_SCHEDULER_IMAGE_NAME};\
 	echo "Pushing imge ${DOCKER_NAME}";\
 	bash -x deploy/docker_push.sh
 
-push-executor: build-executor
+push-executor:
 	export DOCKER_NAME=${LATIGO_EXECUTOR_IMAGE_NAME};\
 	export DOCKER_IMAGE=${LATIGO_EXECUTOR_IMAGE_NAME};\
 	echo "Pushing imge ${DOCKER_NAME}";\

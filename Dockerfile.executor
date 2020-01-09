@@ -5,22 +5,23 @@ RUN locale-gen en_US.UTF-8
 RUN update-locale
 
 ARG HOME=/app
+ARG USER_NAME=latigo
 RUN mkdir -p $HOME
-RUN groupadd -r -g 1337 latigouser
-RUN useradd -r -u 1337 -g latigouser -d $HOME -s /sbin/nologin -c "Latigo user" latigouser
-RUN chown -R latigouser:latigouser $HOME
+RUN groupadd -r -g 1337 $USER_NAME
+RUN useradd -r -u 1337 -g $USER_NAME -d $HOME -s /sbin/nologin -c "$USER_NAME" $USER_NAME
+RUN chown -R $USER_NAME:$USER_NAME $HOME
 USER 1337
 ENV HOME ${HOME}
 ENV PATH="$HOME/.local/bin:${PATH}"
 
 WORKDIR $HOME
-COPY --chown=latigouser:latigouser app/requirements.txt ./
+COPY --chown=$USER_NAME:$USER_NAME app/requirements.txt ./
 RUN pip install --user --upgrade pip
 RUN pip install --user -r requirements.txt
-COPY --chown=latigouser:latigouser app/ .
-COPY --chown=latigouser:latigouser README.md VERSION LICENSE ./
-COPY --chown=latigouser:latigouser deploy/ ./deploy
+COPY --chown=$USER_NAME:$USER_NAME app/ .
+COPY --chown=$USER_NAME:$USER_NAME README.md VERSION LICENSE ./
+COPY --chown=$USER_NAME:$USER_NAME deploy/ ./deploy
 RUN python setup.py install --user
 WORKDIR $HOME/latigo
-COPY --chown=latigouser:latigouser README.md VERSION LICENSE ./
+COPY --chown=$USER_NAME:$USER_NAME README.md VERSION LICENSE ./
 CMD ["/app/bin/executor.py"]
