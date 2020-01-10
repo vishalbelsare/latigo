@@ -47,9 +47,11 @@ class PredictionExecutor:
         if not self.restart_interval_sec:
             self._fail("No restart_interval_sec configured")
         if self.good_to_go:
-            logger.info(f"Executor settings:")
-            logger.info("")
-            logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
+            pass
+            # Refraining from excessive logging
+            # logger.info(f"Executor settings:")
+            # logger.info("")
+            # logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
 
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
@@ -185,9 +187,9 @@ class PredictionExecutor:
             logger.error(f"         Will pause for {sleep_time} seconds before terminating.")
             sleep(sleep_time)
             return
-        logger.info("Executor started processing")
         if self.task_queue:
-            # logger.info("Executor started  processing")
+            # Refraining from excessive logging
+            # logger.info("Executor started processing")
             done = False
             iteration_number = 0
             error_number = 0
@@ -196,13 +198,12 @@ class PredictionExecutor:
             while not done:
                 iteration_number += 1
                 try:
-                    logger.info("Fetching task...")
+                    # logger.info("Fetching task...")
                     task_fetch_start = datetime.datetime.now()
                     task = self._fetch_task()
                     if task:
                         task_fetch_interval = datetime.datetime.now() - task_fetch_start
-                        logger.info(f"Got task after {human_delta(task_fetch_interval)}")
-                        logger.info(f"Processing task starting {task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' in '{task.project_name}'")
+                        logger.info(f"Processing task fetched after {human_delta(task_fetch_interval)} starting {task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' in '{task.project_name}'")
                         sensor_data = self._fetch_sensor_data(task)
                         data_fetch_interval = datetime.datetime.now() - task_fetch_start
                         logger.info(f"Got data after {human_delta(data_fetch_interval)}")
