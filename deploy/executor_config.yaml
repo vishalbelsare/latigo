@@ -1,5 +1,6 @@
 executor:
     instance_count: 1
+    restart_interval_sec: 21600
 
 task_queue:
     type: "kafka"
@@ -52,7 +53,6 @@ sensor_data:
         client_id: "not set from env in executor_config.yaml"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"
         scope: ['read', 'write']
-    
 
 prediction_storage:
     type: "time_series_api"

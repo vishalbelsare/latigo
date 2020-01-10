@@ -15,7 +15,6 @@ task_queue:
     enable.auto.commit: true
     auto.commit.interval.ms: 1000
 
-
 scheduler:
     continuous_prediction_start_time: "08:00"
     continuous_prediction_interval: "30m"
@@ -23,7 +22,7 @@ scheduler:
     projects: ['lat-lit']
     back_fill_max_interval: "7d"
     do_async: false
-
+    restart_interval_sec: 604800
 
 model_info:
     type: "gordo"

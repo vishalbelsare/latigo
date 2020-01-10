@@ -121,14 +121,15 @@ def test_time_series_api_get_meta_by_name():
             assert id == found_id
             assert None == err
 
+
 # Test data is in wrong format, disabling this test
 def test_time_series_api_write_read():
     config = _get_config()
     logger.info("")
     logger.info("WRITING ---------------")
     prediction_storage_provider = TimeSeriesAPIPredictionStorageProvider(config)
-    meta_data={'unit':unit, 'asset_id':asset, 'name':name}
-    prediction_data = PredictionDataSet(time_range=time_range, data=data1_wrapped, meta_data=meta_data )
+    meta_data = {"unit": unit, "asset_id": asset, "name": name}
+    prediction_data = PredictionDataSet(time_range=time_range, data=data1_wrapped, meta_data=meta_data)
     meta = prediction_storage_provider.put_predictions(prediction_data=prediction_data)
     logger.info(pprint.pformat(meta))
     logger.info("")
@@ -153,6 +154,7 @@ def test_get_meta_by_name():
     meta = tsac._get_meta_by_name(name=input.get("name"))
     logger.info("GOT: ")
     logger.info(pprint.pformat(meta))
+
 
 # IMS metadata api is not in use so this test is disabled
 def un_test_ims_metadata_api():
@@ -184,5 +186,3 @@ def test_name_lookup_bug1():
     logger.info("READING ---------------")
     sensor_data_provider = TimeSeriesAPISensorDataProvider(config)
     sensor_data = sensor_data_provider.get_data_for_range(spec=spec, time_range=time_range)
-
-

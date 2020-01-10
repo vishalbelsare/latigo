@@ -17,75 +17,91 @@ logger = logging.getLogger(__name__)
 
 
 class PredictionExecutor:
+    def _fail(self, message: str):
+        self.good_to_go = False
+        logger.error(message)
+        logger.warning(f"NOTE: Using config:")
+        logger.warning(f"")
+        for line in str(pprint.pformat(self.executor_config)).split("\n"):
+            logger.warning(line)
+        logger.warning(f"")
 
     # Inflate model info connection from config
     def _prepare_model_info(self):
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
-            raise Exception("No model info config specified")
+            self._fail("No model info config specified")
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
-            raise Exception("No model info configured")
+            self._fail("No model info configured")
 
     # Inflate executor from config
     def _prepare_executor(self):
         self.executor_config = self.config.get("executor", {})
         if not self.executor_config:
-            raise Exception("No executor config specified")
+            self._fail("No executor config specified")
         self.instance_count = self.executor_config.get("instance_count", 1)
         if not self.instance_count:
-            raise Exception("No instance count configured")
+            self._fail("No instance count configured")
+        self.restart_interval_sec = self.executor_config.get("restart_interval_sec", 60 * 60 * 6)
+        if not self.restart_interval_sec:
+            self._fail("No restart_interval_sec configured")
+        if self.good_to_go:
+            logger.info(f"Executor settings:")
+            logger.info("")
+            logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
 
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
         self.task_queue_config = self.config.get("task_queue", None)
         if not self.task_queue_config:
-            raise Exception("No task queue config specified")
+            self._fail("No task queue config specified")
         self.task_queue = task_queue_receiver_factory(self.task_queue_config)
         self.idle_time = datetime.datetime.now()
         self.idle_number = 0
         if not self.task_queue:
-            raise Exception("No task queue configured")
+            self._fail("No task queue configured")
 
     # Inflate sensor data provider from config
     def _prepare_sensor_data_provider(self):
         self.sensor_data_provider_config = self.config.get("sensor_data", None)
         if not self.sensor_data_provider_config:
-            raise Exception("No sensor_data_config specified")
+            self._fail("No sensor_data_config specified")
         self.sensor_data_provider = sensor_data_provider_factory(self.sensor_data_provider_config)
         if not self.sensor_data_provider:
-            raise Exception(f"No sensor data configured: {err}, cannot continue...")
+            self._fail(f"No sensor data configured: {err}, cannot continue...")
 
     # Inflate prediction storage provider from config
     def _prepare_prediction_storage_provider(self):
         self.prediction_storage_provider_config = self.config.get("prediction_storage", None)
         if not self.prediction_storage_provider_config:
-            raise Exception("No prediction_storage_config specified")
+            self._fail("No prediction_storage_config specified")
         self.prediction_storage_provider = prediction_storage_provider_factory(self.prediction_storage_provider_config)
         if not self.prediction_storage_provider:
-            raise Exception(f"No prediction storage configured: {err}, cannot continue...")
+            self._fail(f"No prediction storage configured: {err}, cannot continue...")
 
     # Inflate prediction executor provider from config
     def _prepare_prediction_executor_provider(self):
         self.prediction_executor_provider_config = self.config.get("predictor", None)
         if not self.prediction_executor_provider_config:
-            raise Exception("No prediction_executor_provider_config specified")
+            self._fail("No prediction_executor_provider_config specified")
         prediction_executor_provider_type = self.prediction_executor_provider_config.get("type", None)
         self.prediction_executor_provider = prediction_execution_provider_factory(self.sensor_data_provider, self.prediction_storage_provider, self.prediction_executor_provider_config)
         self.name = self.prediction_executor_provider_config.get("name", "executor")
         if not self.prediction_executor_provider:
-            raise Exception(f"No prediction_executor_provider configured: {err}, cannot continue...")
+            self._fail(f"No prediction_executor_provider configured: {err}, cannot continue...")
 
     def __init__(self, config: dict):
+        self.good_to_go = True
         if not config:
             raise Exception("No config specified")
         self.config = config
-        self._prepare_executor()
         self._prepare_task_queue()
         self._prepare_sensor_data_provider()
         self._prepare_prediction_storage_provider()
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
+        self._prepare_executor()
 
     def _fetch_spec(self, project_name: str, model_name: str):
         return self.model_info_provider.get_spec(project_name=project_name, model_name=model_name)
@@ -161,12 +177,22 @@ class PredictionExecutor:
             self.idle_number += 1
 
     def run(self):
+        if not self.good_to_go:
+            sleep_time = 20
+            logger.error(" ### ### Latigo could not be started!")
+            logger.error("         Please see previous error messages for clues as to why.")
+            logger.error("")
+            logger.error(f"         Will pause for {sleep_time} seconds before terminating.")
+            sleep(sleep_time)
+            return
+        logger.info("Executor started processing")
         if self.task_queue:
             # logger.info("Executor started  processing")
             done = False
             iteration_number = 0
             error_number = 0
             first_sleep: bool = True
+            executor_start = datetime.datetime.now()
             while not done:
                 iteration_number += 1
                 try:
@@ -205,6 +231,10 @@ class PredictionExecutor:
                     logger.error("")
                     logger.error("-----------------------------------")
                     sleep(1)
+            executor_interval = datetime.datetime.now() - executor_start
+            if executor_interval.total_seconds() > self.restart_interval_sec:
+                logger.info("Terminating executor for teraputic restart")
+                done = True
             # logger.info("Executor stopped processing")
         else:
             logger.error("No task queue")

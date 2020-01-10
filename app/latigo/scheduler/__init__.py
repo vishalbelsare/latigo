@@ -52,6 +52,9 @@ class Scheduler:
         if not self.scheduler_config:
             self._fail("No scheduler config specified")
         self.name = self.scheduler_config.get("name", "unnamed_scheduler")
+        self.restart_interval_sec = self.scheduler_config.get("restart_interval_sec", 60 * 60 * 24 * 7)
+        if not self.restart_interval_sec:
+            raise Exception("No restart_interval_sec configured")
         try:
             cpst = self.scheduler_config.get("continuous_prediction_start_time", "08:00")
             self.continuous_prediction_start_time = datetime.datetime.strptime(cpst, "%H:%M").time()
@@ -79,14 +82,16 @@ class Scheduler:
             self._fail("No projects specified")
         if self.good_to_go:
             next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
-            logger.info(f"Schedule settings:")
-            logger.info(f" Run at once : {self.run_at_once}")
-            logger.info(f" Start time :  {self.continuous_prediction_start_time}")
-            logger.info(f" Interval:     {human_delta(self.continuous_prediction_interval)}")
-            logger.info(f" Data delay:   {human_delta(self.continuous_prediction_delay)}")
-            logger.info(f" Backfill max: {human_delta(self.back_fill_max_interval)}")
-            logger.info(f" Next start:   {next_start}")
-            logger.info(f" Projects:     {', '.join(self.projects)}")
+            logger.info(f"Scheduler settings:")
+            logger.info("")
+            logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
+            logger.info(f"  Run at once :     {self.run_at_once}")
+            logger.info(f"  Start time :      {self.continuous_prediction_start_time}")
+            logger.info(f"  Interval:         {human_delta(self.continuous_prediction_interval)}")
+            logger.info(f"  Data delay:       {human_delta(self.continuous_prediction_delay)}")
+            logger.info(f"  Backfill max:     {human_delta(self.back_fill_max_interval)}")
+            logger.info(f"  Next start:       {next_start}")
+            logger.info(f"  Projects:         {', '.join(self.projects)}")
 
     def __init__(self, config: dict):
         self.good_to_go = True
@@ -183,5 +188,9 @@ class Scheduler:
             logger.info(f"Next prediction will occur at {self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})")
             if self.continuous_prediction_timer.wait_for_trigger(now=start):
                 self.on_time()
+            scheduler_interval = datetime.datetime.now() - start
+            if scheduler_interval.total_seconds() > self.restart_interval_sec:
+                logger.info("Terminating scheduler for teraputic restart")
+                done = True
         interval = datetime.datetime.now() - start
         logger.info(f"Scheduler stopped processing after {human_delta(interval)}")
