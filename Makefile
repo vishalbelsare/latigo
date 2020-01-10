@@ -110,14 +110,14 @@ port-forward:
 ############### Convenience docker compose ####################
 
 build: setup code-quality tests show-env login-docker
-	docker-compose -f docker-compose-build.yml build --parallel --pull --compress
+	docker-compose -f docker-compose.yml build --parallel --pull --compress
 
 up: build
 	# NOTE: The volumes folder must not be inside the context of any docker or the docker builds will fail!
 	sudo mkdir -p ../volumes/latigo/influxdb/data
 	sudo mkdir -p ../volumes/latigo/grafana/data
 	sudo chown 472:472 ../volumes/latigo/grafana/data
-	eval $(./set_env.py) && docker-compose up --remove-orphans --quiet-pull --no-build
+	eval $(./set_env.py) && docker-compose up --remove-orphans --quiet-pull --no-build --force-recreate
 	docker ps -a
 
 down:
