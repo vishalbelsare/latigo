@@ -19,7 +19,7 @@ not_found=None #"environemnt variable not found"
 
 config_overlay = {
     "scheduler": {
-        "projects": os.environ.get("LATIGO_SCHEDULER_PROJECTS", "ioc-1130, ioc-1125"),
+        "projects": os.environ.get("LATIGO_SCHEDULER_PROJECTS", "lat-lit"),
         "continuous_prediction_start_time": os.environ.get("LATIGO_SCHEDULER_PREDICTION_START_TIME", "08:00"),
         "continuous_prediction_interval": os.environ.get("LATIGO_SCHEDULER_PREDICTION_INTERVAL", "90m"),
         "continuous_prediction_delay": os.environ.get("LATIGO_SCHEDULER_PREDICTION_DELAY", "1d"),

@@ -178,9 +178,9 @@ def _get_items(datas: dict) -> typing.List:
     return data.get("items", [])
 
 
-def _get_auth_session(auth_config: dict):
+def _get_auth_session(auth_config: dict, force: bool = False):
     global timeseries_client_auth_session
-    if not timeseries_client_auth_session:
+    if not timeseries_client_auth_session or force:
         # logger.info("CREATING SESSION:")
         timeseries_client_auth_session = create_auth_session(auth_config)
     return timeseries_client_auth_session
@@ -278,26 +278,29 @@ class TimeSeriesAPIClient:
     def _parse_base_url(self):
         self.base_url = self.config.get("base_url", None)
         if not self.base_url:
-            return self.fail("No base_url found in config")
+            return self._fail("No base_url found in config")
         # logger.info(f"Using base_url: '{self.base_url}'")
+
+    def _create_session(self, force: bool = False):
+        self.session = _get_auth_session(self.auth_config, force)
+        if not self.session:
+            return self._fail(f"Could not create session with force={force}")
 
     def _parse_auth_config(self):
         self.auth_config = self.config.get("auth", dict())
         if not self.auth_config:
-            return self.fail("No auth_config found in config")
-        self.session = _get_auth_session(self.auth_config)
-        if not self.session:
-            return self.fail("Could not create session")
+            return self._fail("No auth_config found in config")
+        self._create_session(force=False)
 
     def _prepare_ims_meta_client(self):
         self.ims_meta = IMSMetadataAPIClient(self.conf)
         if not self.ims_meta:
-            return self.fail("Could not create ims_meta")
+            return self._fail("Could not create ims_meta")
 
     def _prepare_ims_subscription_client(self):
         self.ims_subscription = IMSSubscriptionAPIClient(self.conf)
         if not self.ims_subscription:
-            return self.fail("Could not create ims_subscription")
+            return self._fail("Could not create ims_subscription")
 
     def __init__(self, config: dict):
         self.good_to_go = True
@@ -322,10 +325,30 @@ class TimeSeriesAPIClient:
         # TODO: Implement cache
         return self.get_timeseries_id_for_tag_name(tag_name=tag_name)
 
+    def _get(self, *args, **kwargs):
+        res = None
+        try:
+            res = self.session.get(*args, **kwargs)
+        except oauthlib.oauth2.rfc6749.errors.MissingTokenError:
+            logger.info("Token expired, retrying GET after recreating session")
+            self._create_session(force=True)
+            res = self.session.get(*args, **kwargs)
+        return res
+
+    def _post(self, *args, **kwargs):
+        res = None
+        try:
+            res = self.session.post(*args, **kwargs)
+        except oauthlib.oauth2.rfc6749.errors.MissingTokenError:
+            logger.info("Token expired, retrying POST after recreating session")
+            self._create_session(force=True)
+            res = self.session.post(*args, **kwargs)
+        return res
+
     def _fetch_data_for_id(self, id: str, time_range: TimeRange) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         url = f"{self.base_url}/{id}/data"
         params = {"startTime": time_range.rfc3339_from(), "endTime": time_range.rfc3339_to(), "limit": 100000, "includeOutsidePoints": True}
-        res = self.session.get(url, params=params)
+        res = self._get(url=url, params=params)
         return _parse_request_json(res)
 
     def _get_meta_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
@@ -339,13 +362,13 @@ class TimeSeriesAPIClient:
             # body["assetId"] = asset_id
             pass
         # logger.info(f"Getting {pprint.pformat(body)} from {self.base_url}")
-        res = self.session.get(self.base_url, params=body)
+        res = self._get(self.base_url, params=body)
         return _parse_request_json(res)
 
     def _create_id(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
         body = {"name": name, "description": description, "step": True, "unit": unit, "assetId": asset_id, "externalId": external_id}
         # logger.info(f"Posting {pprint.pformat(body)} from {self.base_url}")
-        res = self.session.post(self.base_url, json=body, params=None)
+        res = self._post(self.base_url, json=body, params=None)
         return _parse_request_json(res)
 
     def _create_id_if_not_exists(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
@@ -357,7 +380,7 @@ class TimeSeriesAPIClient:
     def _store_data_for_id(self, id: str, datapoints: typing.List[typing.Dict[str, str]]):
         body = {"datapoints": datapoints}
         url = f"{self.base_url}/{id}/data"
-        res = self.session.post(url, json=body, params=None)
+        res = self._post(url, json=body, params=None)
         return _parse_request_json(res)
 
 

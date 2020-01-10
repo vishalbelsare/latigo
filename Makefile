@@ -148,6 +148,12 @@ executor: build
 	eval $(./set_env.py) && docker-compose up --build -d latigo-executor-1
 	docker-compose logs -f latigo-executor-1
 
+
+set-secrets:
+	az keyvault secret set --name "latigo-executor-config-yaml" --vault-name "gordo-vault" --file ./executor_secret.yml  --encoding utf-8
+	az keyvault secret set --name "latigo-scheduler-config-yaml" --vault-name "gordo-vault" --file ./scheduler_secret.yml  --encoding utf-8
+
+
 ############### Build docker images ####################
 
 

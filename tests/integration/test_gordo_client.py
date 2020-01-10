@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 import logging
 import pprint
 from os import environ
-from latigo.gordo import GordoModelInfoProvider, GordoPredictionExecutionProvider, LatigoDataProvider, LatigoPredictionForwarder, allocate_gordo_client_instances, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, gordo_client_auth_session, gordo_client_instances_by_hash, gordo_client_instances_by_project, gordo_config_hash
+from latigo.gordo import GordoModelInfoProvider, GordoPredictionExecutionProvider, LatigoDataProvider, LatigoPredictionForwarder, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder
 from latigo.sensor_data import MockSensorDataProvider, sensor_data_provider_factory
 from latigo.prediction_storage import MockPredictionStorageProvider, prediction_storage_provider_factory
-from latigo.types import TimeRange, SensorData
+from latigo.types import TimeRange, SensorDataSet
 from latigo.utils import rfc3339_from_datetime, datetime_from_rfc3339
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def _get_config():
     # fmt: on
 
 
-def un_test_client_instances():
+def test_gordo_config_expansion():
     config = _get_config()
     # Augment config with expanded gordo connection string
     expand_gordo_connection_string(config)
@@ -58,10 +58,12 @@ def un_test_client_instances():
     expand_gordo_data_provider(config, dummy_provider)
     # Augment config with the latigo prediction forwarder
     expand_gordo_prediction_forwarder(config, dummy_prediction_forwarder)
-    allocate_gordo_client_instances(config)
-    # logger.info(pprint.pformat(gordo_client_instances_by_hash))
-    # logger.info(pprint.pformat(gordo_client_instances_by_project))
-    # logger.info(pprint.pformat(gordo_client_auth_session))
+
+
+def un_test_gordo_client_pool():
+    config = _get_config()
+    # GordoClientPool
+    pass
 
 
 def test_model_info():

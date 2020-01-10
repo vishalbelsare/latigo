@@ -67,7 +67,7 @@ def token_saver(token):
     pass
 
 
-def create_auth_session(auth_config: dict):
+def create_auth_session_old(auth_config: dict):
     client_id = auth_config.get("client_id")
     client_secret = auth_config.get("client_secret")
     authority_host_url = auth_config.get("authority_host_url")
@@ -80,6 +80,31 @@ def create_auth_session(auth_config: dict):
     if token:
         try:
             session = OAuth2Session(auth_config.get("client_id"), token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
+            # logger.info(f"Authenticated successfully with token:")
+            # logger.info(token)
+            # logger.info(f"Authenticated successfully with session:")
+            # logger.info(session)
+        except Exception as e:
+            logger.error(f"Error creating OAuth2Session: {e}")
+    return session
+
+
+def create_auth_session(auth_config: dict):
+    client_id = auth_config.get("client_id")
+    client_secret = auth_config.get("client_secret")
+    authority_host_url = auth_config.get("authority_host_url")
+    tenant = auth_config.get("tenant")
+    scope = auth_config.get("scope", ["read", "write"])
+    token_url = f"{authority_host_url}/{tenant}"
+    extra = {"client_id": client_id, "client_secret": client_secret}
+    refresh_url = "https://login.microsoftonline.com"
+    session = None
+    token = fetch_access_token(auth_config)
+    # client = BackendApplicationClient(client_id=client_id, scope=scope, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver, scope=scope)
+    if token:
+        try:
+            # session = OAuth2Session(client=client)
+            session = OAuth2Session(client_id=client_id, scope=scope, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
             # logger.info(f"Authenticated successfully with token:")
             # logger.info(token)
             # logger.info(f"Authenticated successfully with session:")

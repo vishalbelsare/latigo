@@ -66,6 +66,7 @@ im1 = IntermediateFormat()
 data1 = [{'tag':name, 'value':datapoint_1, 'time':time_1},
         {'tag':name, 'value':datapoint_2, 'time':time_2},
         {'tag':name, 'value':datapoint_3, 'time':time_3}]
+data1_wrapped={"data": {"items": data1}}
 # fmt: on
 im1.from_time_series_api(data1)
 
@@ -74,6 +75,7 @@ im2 = IntermediateFormat()
 data2 = [{'tag':name2, 'value':datapoint_1, 'time':time_1},
         {'tag':name2, 'value':datapoint_2, 'time':time_2},
         {'tag':name2, 'value':datapoint_3, 'time':time_3}]
+data2_wrapped={"data": {"items": data2}}
 # fmt: on
 im2.from_time_series_api(data2)
 
@@ -106,7 +108,7 @@ actual_spec: SensorDataSpec = SensorDataSpec(tag_list=actual_tag_list)
 # , ("GRA-HIC -13-0035.PV", "1755-gra")]
 
 
-def disabled_test_time_series_api_get_meta_by_name():
+def test_time_series_api_get_meta_by_name():
     items = {"latigo_integration_name_test": "92e41ea1-b2eb-43d1-b629-4d547cd29a45", "latigo_integration_name_test_not_exist": None}
     tsac = TimeSeriesAPIClient(config=_get_config())
     for name, id in items.items():
@@ -119,13 +121,14 @@ def disabled_test_time_series_api_get_meta_by_name():
             assert id == found_id
             assert None == err
 
-
-def disabled_test_time_series_api_write_read():
+# Test data is in wrong format, disabling this test
+def test_time_series_api_write_read():
     config = _get_config()
     logger.info("")
     logger.info("WRITING ---------------")
     prediction_storage_provider = TimeSeriesAPIPredictionStorageProvider(config)
-    prediction_data = PredictionDataSet(name=name, time_range=time_range, unit=unit, asset_id=asset, data=data)
+    meta_data={'unit':unit, 'asset_id':asset, 'name':name}
+    prediction_data = PredictionDataSet(time_range=time_range, data=data1_wrapped, meta_data=meta_data )
     meta = prediction_storage_provider.put_predictions(prediction_data=prediction_data)
     logger.info(pprint.pformat(meta))
     logger.info("")
@@ -134,46 +137,47 @@ def disabled_test_time_series_api_write_read():
     sensor_data = sensor_data_provider.get_data_for_range(spec=spec, time_range=time_range)
 
 
-def disabled_test_time_series_api_actual_read():
+def test_time_series_api_actual_read():
     sensor_data_provider = TimeSeriesAPISensorDataProvider(_get_config())
     sensor_data = sensor_data_provider.get_data_for_range(spec=actual_spec, time_range=time_range)
     logger.info(pprint.pformat(sensor_data))
 
 
-def disabled_test_get_id_by_name():
+def test_get_meta_by_name():
     tsac = TimeSeriesAPIClient(config=_get_config())
     # input = {"name": "GRA-TIT -23-0615.PV", "asset_id": "1755-gra"}
     input = {"name": "PT-13005/MeasA/PRIM", "asset_id": "1101-sfb"}
     logger.info("WITH: ")
     logger.info(pprint.pformat(input))
     # res = tsac._get_id_by_name(name=input.get("name"), asset_id=input.get("asset_id"))
-    res = tsac._get_id_by_name(name=input.get("name"))
+    meta = tsac._get_meta_by_name(name=input.get("name"))
     logger.info("GOT: ")
-    logger.info(pprint.pformat(res))
+    logger.info(pprint.pformat(meta))
 
-
-def disabled_test_ims_metadata_api():
+# IMS metadata api is not in use so this test is disabled
+def un_test_ims_metadata_api():
     ims_meta = IMSMetadataAPIClient(_get_config())
     tag_name = "GRA-STAT-20-1310_G01.ST"
     system_code = ims_meta._get_system_code_by_tag_name(tag_name=tag_name)
     logger.info(f"System code for tag '{tag_name}' is '{system_code}'")
 
 
-def disabled_test_name_lookup_bug1():
+# Test data is in wrong format, disabling this test
+def test_name_lookup_bug1():
     config = _get_config()
     logger.info("")
     logger.info("WRITING Data 1 ---------------")
     prediction_storage_provider = TimeSeriesAPIPredictionStorageProvider(config)
     name = "an inconspicuous tag name"
     in_meta = {"name": name, "unit": unit, "asset_id": asset}
-    prediction_data = PredictionDataSet(meta_data=in_meta, time_range=time_range, data=data1)
-    out_meta = prediction_storage_provider.put_predictions(prediction_data=prediction_data)
-    logger.info(pprint.pformat(out_meta))
+    prediction_data = PredictionDataSet(meta_data=in_meta, time_range=time_range, data=data1_wrapped)
+    out_meta1 = prediction_storage_provider.put_predictions(prediction_data=prediction_data)
+    logger.info(pprint.pformat(out_meta1))
     logger.info("")
     logger.info("WRITING Data 2 ---------------")
     name2 = f"{name}_with_apendage"
     in_meta2 = {"name": name2, "unit": unit, "asset_id": asset}
-    prediction_data2 = PredictionDataSet(meta_data=in_meta2, time_range=time_range, data=data2)
+    prediction_data2 = PredictionDataSet(meta_data=in_meta2, time_range=time_range, data=data2_wrapped)
     out_meta2 = prediction_storage_provider.put_predictions(prediction_data=prediction_data2)
     logger.info(pprint.pformat(out_meta2))
     logger.info("")
@@ -182,5 +186,3 @@ def disabled_test_name_lookup_bug1():
     sensor_data = sensor_data_provider.get_data_for_range(spec=spec, time_range=time_range)
 
 
-def test_name_lookup_bug():
-    pass

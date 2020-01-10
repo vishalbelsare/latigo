@@ -51,6 +51,7 @@ sensor_data:
         authority_host_url: "not set from env in executor_config.yaml"
         client_id: "not set from env in executor_config.yaml"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+        scope: ['read', 'write']
     
 
 prediction_storage:
@@ -63,6 +64,7 @@ prediction_storage:
         authority_host_url: "not set from env in executor_config.yaml"
         client_id: "not set from env in executor_config.yaml"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+        scope: ['read', 'write']
 
 predictor:
     type: "gordo"
