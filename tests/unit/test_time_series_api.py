@@ -1,7 +1,7 @@
 import logging
 import pprint
 import typing
-from latigo.time_series_api import _x_in_data, _itemes_present, _id_in_data, _x_in_data, transform_from_timeseries_to_gordo, _get_items
+from latigo.time_series_api import _x_in_data, _itemes_present, _id_in_data, _x_in_data, transform_from_timeseries_to_gordo, _get_items, MetaDataCache
 
 logger = logging.getLogger(__name__)
 
@@ -70,3 +70,18 @@ def test_transform_from_timeseries_to_gordo():
     # logger.info(pprint.pformat(gordo_data))
     expected_gordo_data = {"X": [[69.69, 42], [42.69, 420], [1337.69, 420]]}
     assert gordo_data == expected_gordo_data
+
+
+def test_meta_data_cache():
+    meta_data_cache = MetaDataCache()
+    name = "my_name"
+    asset_id = "my_asset_id"
+    meta = meta_data_cache.get_meta(name=name, asset_id=asset_id)
+    assert meta == None
+    inserted_meta = {"blob": "glob"}
+    meta_data_cache.set_meta(name=name, asset_id=asset_id, meta=inserted_meta)
+    extracted_meta = meta_data_cache.get_meta(name=name, asset_id=asset_id)
+    assert inserted_meta == extracted_meta
+    meta_data_cache.set_meta(name=name, asset_id=asset_id, meta=None)
+    extracted_meta = meta_data_cache.get_meta(name=name, asset_id=asset_id)
+    assert None == extracted_meta

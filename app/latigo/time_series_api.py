@@ -49,6 +49,25 @@ Time series format:
 """
 
 
+class MetaDataCache:
+    def __init__(self):
+        self._data = {}
+
+    def _key(self, name: str, asset_id: typing.Optional[str]):
+        return f"{name}-|#-{asset_id}"
+
+    def get_meta(self, name: str, asset_id: typing.Optional[str]) -> typing.Optional[typing.Dict]:
+        key = self._key(name, asset_id)
+        return self._data.get(key, None)
+
+    def set_meta(self, name: str, asset_id: typing.Optional[str], meta: typing.Optional[typing.Dict]):
+        key = self._key(name, asset_id)
+        if not meta:
+            del self._data[key]
+        else:
+            self._data[key] = meta
+
+
 def transform_from_timeseries_to_gordo(items: typing.List):
     if not items:
         return None
@@ -308,6 +327,7 @@ class TimeSeriesAPIClient:
         self.config = config
         if not self.config:
             raise Exception("No config specified")
+        self.meta_data_cache = MetaDataCache()
         self._parse_auth_config()
         self._parse_base_url()
         self.do_async = self.config.get("async", False)
@@ -316,15 +336,11 @@ class TimeSeriesAPIClient:
         if not self.good_to_go:
             raise Exception("TimeSeriesAPIClient failed. Please see previous errors for clues as to why")
 
-    def get_timeseries_id_for_tag_name(self, tag_name: str):
-        system_code = self.ims_meta.get_system_code_by_tag_name(tag_name=tag_name)
-        if not system_code:
-            return None
-        return self.ims_subscription.get_time_series_id_for_system_code(system_code=system_code)
-
-    def get_timeseries_id_for_tag_name_cached(self, tag_name: str):
-        # TODO: Implement cache
-        return self.get_timeseries_id_for_tag_name(tag_name=tag_name)
+    #    def get_timeseries_id_for_tag_name(self, tag_name: str):
+    #        system_code = self.ims_meta.get_system_code_by_tag_name(tag_name=tag_name)
+    #        if not system_code:
+    #            return None
+    #        return self.ims_subscription.get_time_series_id_for_system_code(system_code=system_code)
 
     def _get(self, *args, **kwargs):
         res = None
@@ -352,7 +368,7 @@ class TimeSeriesAPIClient:
         res = self._get(url=url, params=params)
         return _parse_request_json(res)
 
-    def _get_meta_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def _get_meta_by_name_raw(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         body = {"name": name}
         if name is None:
             return None, "No name specified"
@@ -365,6 +381,16 @@ class TimeSeriesAPIClient:
         # logger.info(f"Getting {pprint.pformat(body)} from {self.base_url}")
         res = self._get(self.base_url, params=body)
         return _parse_request_json(res)
+
+    def _get_meta_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+        if self.meta_data_cache:
+            meta = self.meta_data_cache.get_meta(name, asset_id)
+            if meta:
+                return meta, None
+        meta, msg = self._get_meta_by_name_raw(name, asset_id)
+        if meta:
+            self.meta_data_cache.set_meta(name, asset_id, meta)
+        return meta, msg
 
     def _create_id(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
         body = {"name": name, "description": description, "step": True, "unit": unit, "assetId": asset_id, "externalId": external_id}
