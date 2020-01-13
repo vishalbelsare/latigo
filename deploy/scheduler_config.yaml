@@ -14,6 +14,7 @@ task_queue:
     topic: "latigo_topic"
     enable.auto.commit: true
     auto.commit.interval.ms: 1000
+    max.poll.interval.ms: 86400000
 
 scheduler:
     continuous_prediction_start_time: "08:00"

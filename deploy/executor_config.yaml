@@ -18,6 +18,7 @@ task_queue:
     topic: "latigo_topic"
     enable.auto.commit: true
     auto.commit.interval.ms: 1000
+    max.poll.interval.ms: 86400000
 
 model_info:
     type: "gordo"
