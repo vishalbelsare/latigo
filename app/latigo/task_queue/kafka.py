@@ -54,7 +54,7 @@ def prepare_kafka_config(config: typing.Dict[str, typing.Any]) -> dict:
         "session.timeout.ms": config.get("session.timeout.ms"),
         "enable.auto.commit": config.get("enable.auto.commit"),
         "auto.commit.interval.ms": config.get("auto.commit.interval.ms"),
-        "max.poll.interval.ms":config.get("max.poll.interval.ms"),
+        "max.poll.interval.ms": config.get("max.poll.interval.ms"),
         "default.topic.config": config.get("default.topic.config"),
         "debug": config.get("debug"),
         "logger": logger_confluent,
