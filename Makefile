@@ -241,5 +241,6 @@ help:
 	@echo " + make push-scheduler   Build and push scheduler docker image"
 	@echo " + make push-executor    Build and push executor docker image"
 	@echo " + make push-all         Build and push all docker images"
+	@echo " + make set-secrets      Set new secrets (ADVANCED)"
 	@echo ""
 

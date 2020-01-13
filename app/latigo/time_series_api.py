@@ -8,6 +8,7 @@ import pprint
 from requests.exceptions import HTTPError
 import pandas as pd
 import urllib.parse
+from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 
 from latigo.types import Task, SensorDataSpec, SensorDataSet, TimeRange, PredictionDataSet, LatigoSensorTag
 from latigo.intermediate import IntermediateFormat
@@ -329,7 +330,7 @@ class TimeSeriesAPIClient:
         res = None
         try:
             res = self.session.get(*args, **kwargs)
-        except oauthlib.oauth2.rfc6749.errors.MissingTokenError:
+        except MissingTokenError:
             logger.info("Token expired, retrying GET after recreating session")
             self._create_session(force=True)
             res = self.session.get(*args, **kwargs)
@@ -339,7 +340,7 @@ class TimeSeriesAPIClient:
         res = None
         try:
             res = self.session.post(*args, **kwargs)
-        except oauthlib.oauth2.rfc6749.errors.MissingTokenError:
+        except MissingTokenError:
             logger.info("Token expired, retrying POST after recreating session")
             self._create_session(force=True)
             res = self.session.post(*args, **kwargs)
