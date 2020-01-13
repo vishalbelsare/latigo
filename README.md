@@ -163,6 +163,19 @@ A service to produce predictions.
 | async | False | Wether or not to use async calls to time_series_api. Currently only False is tested. |
 | auth | [see the auth section](#auth) | The authentication for accessing time_series_api. |
 
+### Scheduling algorithm
+
+The idea is that tasks are scheduled at a predictable clock time, so you know that for example "Every day at 09:30 a new prediction will be performed".
+
+The scheduler operates using the following algorithm:
+
+1. Get the current time of day into **NOW**
+2. Get value of **continuous_prediction_start_time** into **X**
+3. Add value of **continuous_prediction_interval** to **X** until **X** > **NOW**
+4. Set **Y** = **X** - **NOW**
+5. Wait until **Y** time passes
+6. Queue up tasks for each project in the interval  **continuous_prediction_interval**, going back **continuous_prediction_delay** in time.
+7. Repeat
 
 ## Architecture
 
