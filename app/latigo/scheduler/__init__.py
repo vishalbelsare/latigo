@@ -53,8 +53,6 @@ class Scheduler:
             self._fail("No scheduler config specified")
         self.name = self.scheduler_config.get("name", "unnamed_scheduler")
         self.restart_interval_sec = self.scheduler_config.get("restart_interval_sec", 60 * 60 * 24 * 7)
-        if not self.restart_interval_sec:
-            raise Exception("No restart_interval_sec configured")
         try:
             cpst = self.scheduler_config.get("continuous_prediction_start_time", "08:00")
             self.continuous_prediction_start_time = datetime.datetime.strptime(cpst, "%H:%M").time()
@@ -189,7 +187,7 @@ class Scheduler:
             if self.continuous_prediction_timer.wait_for_trigger(now=start):
                 self.on_time()
             scheduler_interval = datetime.datetime.now() - start
-            if scheduler_interval.total_seconds() > self.restart_interval_sec:
+            if self.restart_interval_sec>0 and scheduler_interval.total_seconds() > self.restart_interval_sec:
                 logger.info("Terminating scheduler for teraputic restart")
                 done = True
         interval = datetime.datetime.now() - start

@@ -44,8 +44,6 @@ class PredictionExecutor:
         if not self.instance_count:
             self._fail("No instance count configured")
         self.restart_interval_sec = self.executor_config.get("restart_interval_sec", 60 * 60 * 6)
-        if not self.restart_interval_sec:
-            self._fail("No restart_interval_sec configured")
         if self.good_to_go:
             pass
             # Refraining from excessive logging
@@ -233,7 +231,7 @@ class PredictionExecutor:
                     logger.error("-----------------------------------")
                     sleep(1)
             executor_interval = datetime.datetime.now() - executor_start
-            if executor_interval.total_seconds() > self.restart_interval_sec:
+            if self.restart_interval_sec>0 and executor_interval.total_seconds() > self.restart_interval_sec:
                 logger.info("Terminating executor for teraputic restart")
                 done = True
             # logger.info("Executor stopped processing")
