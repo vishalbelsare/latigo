@@ -1,5 +1,14 @@
 # Latigo - Continuous Prediction Service
 
+## Table of content
+
+- [About](#about)
+- [License](#license)
+- [User manual](#user-manual)
+- [Architecture](#architecture)
+- [Development](#development)
+- [Deployment](#deployment)
+
 ## About
 
 Latigo is a service that is responsible for continuously running machine learning algorithms on a set of input sensor data to predict the next datapoint in sensor data. This is useful to do predictive maintenance for industrial equipment.
@@ -21,7 +30,7 @@ Please see [LICENSE](LICENSE) file for details. Latigo has G-Faps and is license
 
 ## User manual
 
-> NOTE: If you are a developer, you should look at the [Architecture](#architecture) and [Development](#development) sections.
+> NOTE: If you are a developer, you should look at the [Architecture](#architecture) and [Development](#development) sections.If you want to deploy, please see [Deployment](#deployment) section.
 
 Once latigo is in production, this section will guide you to how you can manage it.
 
@@ -125,18 +134,18 @@ A source of information about models.
 |      ---: | :-----: | :---------- |
 | type | "gordo" | Currently only gordo is supported. |
 | connection_string | "DO NOT PUT SECRETS IN THIS FILE" | The connection string by which the program will reach the gordo instance. Parsed and used with gordo client. |
-| target | null | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| metadata | null | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| batch_size | 1000 | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| parallelism | 10 | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| forward_resampled_sensors | false | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| ignore_unhealthy_targets | true | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| n_retries | 5 | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| use_parquet | true | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| data_provider -> debug | true | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| data_provider -> n_retries | 5 | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| prediction_forwarder -> debug | false | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
-| prediction_forwarder -> n_retries | 5 | Gordo client spesific. See [gordo client documentation](https://github.com/equinor/gordo/blob/master/gordo/client/client.py). |
+| target | null | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| metadata | null | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| batch_size | 1000 | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| parallelism | 10 | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| forward_resampled_sensors | false | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| ignore_unhealthy_targets | true | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| n_retries | 5 | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| use_parquet | true | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| data_provider -> debug | true | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| data_provider -> n_retries | 5 | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| prediction_forwarder -> debug | false | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
+| prediction_forwarder -> n_retries | 5 | Gordo client spesific. See [gordo client documentation](/equinor/gordo/blob/master/gordo/client/client.py). |
 | auth | [see the auth section](#auth) | The authentication for accessing gordo |
 
 #### predictor
@@ -449,7 +458,7 @@ xdg-open http://localhost:8080/gordo/v0/ioc-1130/
 
 🍰 Now you should see a browser full of metadata in json format signaling that you are now ready to connect to cluster from code!
 
-## Requirement pinning
+### Requirement pinning
 
 We use **requirements.in** and **requirements.txt** files to keep track of dependencies. requirements.in is the version ranges we want. We use make file to convert this into requirements.txt which are the exactly pinned requirements.
 
@@ -459,4 +468,8 @@ make req
 ```
 
 >NOTE: Both requirements.in and requirements.txt are kept in git
+
+## Deployment
+
+Deployment is handled by the [latigo Kustomize project](W/equinor/latigo-k8s).
 
