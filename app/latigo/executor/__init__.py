@@ -231,7 +231,7 @@ class PredictionExecutor:
                     logger.error("-----------------------------------")
                     sleep(1)
             executor_interval = datetime.datetime.now() - executor_start
-            if self.restart_interval_sec>0 and executor_interval.total_seconds() > self.restart_interval_sec:
+            if self.restart_interval_sec > 0 and executor_interval.total_seconds() > self.restart_interval_sec:
                 logger.info("Terminating executor for teraputic restart")
                 done = True
             # logger.info("Executor stopped processing")

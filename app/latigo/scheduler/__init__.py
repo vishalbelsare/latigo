@@ -187,7 +187,7 @@ class Scheduler:
             if self.continuous_prediction_timer.wait_for_trigger(now=start):
                 self.on_time()
             scheduler_interval = datetime.datetime.now() - start
-            if self.restart_interval_sec>0 and scheduler_interval.total_seconds() > self.restart_interval_sec:
+            if self.restart_interval_sec > 0 and scheduler_interval.total_seconds() > self.restart_interval_sec:
                 logger.info("Terminating scheduler for teraputic restart")
                 done = True
         interval = datetime.datetime.now() - start
