@@ -33,9 +33,10 @@ Please see [LICENSE](LICENSE) file for details. Latigo has G-Faps and is license
 Once latigo is in production, this section will guide you to how you can manage it.
 
 > NOTE: If you are a developer, maybe you will find the [Architecture](#architecture) and [Development](#development) sections of interest.
+
 > NOTE: If you want to deploy, please see [Deployment](#deployment) section.
 
-Latigo is largely data-driven both in configuration as well as operations. All parameters of the application can be ajusted via parameters in the configuration. This seciton outlines how you go about changing the parameters and what each parameter means.
+Latigo is largely data-driven both in configuration as well as during operations. All parameters of the application can be adjusted via parameters in the configuration. This seciton outlines how you go about changing the parameters and what each parameter means.
 
 ### Change parameters
 
@@ -52,6 +53,8 @@ First an "overlay" yaml file can be named that will change the default values. T
 In production, this is set to use azure vault. Go to azure vault and edit the configurations for *scheduler* and *executor* respectively:
 1. **latigo-scheduler-config-yaml**
 2. **latigo-executor-config-yaml**
+
+> TIP: You can use make set-secrets to propegate changes to secrets quickly. See the Makefile tagets for how this works.
 
 #### Extending with environment variables
 
@@ -259,9 +262,9 @@ This section will explain how to get up and going with development for Latigo.
 
 ### Prequisites
 You will need the following:
-- Git with authentication set up (https://wiki.equinor.com/wiki/index.php/Software:Git_Tutorial_Getting_Setup)
+- Git with authentication set up (see [equinor wiki](https://wiki.equinor.com/wiki/index.php/Software:Git_Tutorial_Getting_Setup))
 - Python 3.x
-- Docker and docker-compose installed (https://wiki.equinor.com/wiki/index.php/WIKIHOW:Set_up_Docker_on_a_CentOS_7_server)
+- Docker and docker-compose installed (see [equinor wiki](https://wiki.equinor.com/wiki/index.php/WIKIHOW:Set_up_Docker_on_a_CentOS_7_server))
 - Connection string to Azure Event Hub and both read/write permission to it (documentation on how to obtrain this follows)
 - Connection string to Time Series API (Possibility of using local influx has been planned but is not complete at this time)
 
@@ -287,7 +290,7 @@ ls -halt | grep local
 
 Ensure that a new file called "local_config.yaml" was created.
 
-IMPORTANT: You must open this file and fill in the correct values. Some of the settings you need will be explained in the next sections, but you must ensure all are set up OK.
+> IMPORTANT: You must open this file and fill in the correct values. Some of the settings you need will be explained in the next sections, but you must ensure all are set up OK.
 
 #### Set up event hub
 
@@ -315,8 +318,9 @@ eval $(./set_env.py)
 env | grep LATIGO
 ```
 
-
 Now your environment is set up and docker-compose will pass this environment on to the nodes to let them function correctly
+
+> NOTE: If you want to know what the configuration options mean, please see the [available parameter sections](#available-parameter-sections)
 
 #### Start docker compose
 
@@ -361,7 +365,7 @@ docker-compose logs --follow latigo-scheduler
 
 #### Makefile
 
-There is a makefile in the project that is meant as a convenience to save time, and also as a reference for commands. To see the commands, simply open it in a text editor. The Makefile is selfdocumenting, to see what it contains, simply invoke it without a target like so:
+There is a makefile in the project that is meant as a convenience to save time, and also as a reference for commands. To see the commands, simply open it in a text editor. The Makefile is made to be self-documenting, to see what it contains, simply invoke it without a target like so:
 
 ```bash
 make
@@ -377,10 +381,10 @@ There are some things you need to know about Gordo up front:
 - Gordo is in active development
 - At the time of writing (2019-10-17) there currently exists no Gordo in "production", however many candidate clusters are running. You will have to communicate with Gordo team to find out which of their test/dev clusters are the best to be using while testing. Some are more stable than others.
 - If you need to access Gordo directly during development for debugging purposes you can use port forwarding. This is documented below.
-- Latigo will connect to Gordo and Time Series API using (Equinor API Gateway)[https://api.equinor.com/] and wil use a so called "bearer token" for authentication.
+- Latigo will connect to Gordo and Time Series API using [Equinor API Gateway](https://api.equinor.com/) and wil use a so called "bearer token" for authentication.
 
 #### Disable proxy
-Before you can have portforwarding set up successfully, you need to disable proxy settings (Gordo is available via external network). For more information about proxy setup in Equinor please see [this link](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
+Before you can have portforwarding set up successfully, you need to disable proxy settings (Gordo is available via external network). For more information about proxy setup in Equinor please see [equinor wiki](https://wiki.equinor.com/wiki/index.php/ITSUPPORT:Linux_desktop_in_Statoil#Proxy_settings).
 
 ```bash
 # Disable proxy (NOTE: if you don't have unset proxy, read the documentation as described above)
