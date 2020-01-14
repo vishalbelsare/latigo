@@ -30,9 +30,10 @@ Please see [LICENSE](LICENSE) file for details. Latigo has G-Faps and is license
 
 ## User manual
 
-> NOTE: If you are a developer, you should look at the [Architecture](#architecture) and [Development](#development) sections.If you want to deploy, please see [Deployment](#deployment) section.
-
 Once latigo is in production, this section will guide you to how you can manage it.
+
+> NOTE: If you are a developer, maybe you will find the [Architecture](#architecture) and [Development](#development) sections of interest.
+> NOTE: If you want to deploy, please see [Deployment](#deployment) section.
 
 Latigo is largely data-driven both in configuration as well as operations. All parameters of the application can be ajusted via parameters in the configuration. This seciton outlines how you go about changing the parameters and what each parameter means.
 

@@ -55,6 +55,8 @@ i_time_series:
 i_event_hub:
 	py.test -vv integration/test_event_hub.py
 
+i_auth:
+	py.test -vv integration/test_auth.py
 
 
 ############### Help ####################
@@ -89,6 +91,7 @@ help:
 	@echo " + make i_gordo         Run gordo integration tests"
 	@echo " + make i_time_series   Run time series API integration tests"
 	@echo " + make i_event_hub     Run event hub integration tests"
+	@echo " + make i_auth          Run auth integration tests"
 	@echo ""
 	@echo "Component targets:"
 	@echo ""

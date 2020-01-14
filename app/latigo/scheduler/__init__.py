@@ -10,6 +10,7 @@ from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.clock import OnTheClockTimer
 from latigo.utils import human_delta, sleep
+from latigo.auth import AuthVerifier
 from latigo.gordo import GordoModelInfoProvider
 
 
@@ -45,6 +46,24 @@ class Scheduler:
         self.idle_number = 0
         if not self.task_queue:
             self._fail("No task queue configured")
+
+    # Perform a basic authentication test up front to fail early with clear error output
+    def _perform_auth_check(self):
+        # fmt: off
+        verifiers = [
+            (self.model_info_config.get('connection_string','no_connection_string'), AuthVerifier(config=self.model_info_config.get("auth", {}))),
+            ]
+        # fmt: on
+        error_count = 0
+        for url, verifier in verifiers:
+            res, message = verifier.test_auth(url=url)
+            if not res:
+                logger.error(f"Auth test for '{url}' failed with: '{message}'")
+                error_count += 1
+        if error_count > 0:
+            self._fail(f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details.")
+        else:
+            logger.info(f"Auth test succeedded for {len(verifiers)} configurations.")
 
     # Inflate scheduler from config
     def _prepare_scheduler(self):
@@ -91,6 +110,7 @@ class Scheduler:
             logger.info(f"  Backfill max:     {human_delta(self.back_fill_max_interval)}")
             logger.info(f"  Next start:       {next_start}")
             logger.info(f"  Projects:         {', '.join(self.projects)}")
+            logger.info("")
 
     def __init__(self, config: dict):
         self.good_to_go = True
@@ -99,6 +119,7 @@ class Scheduler:
         self.config = config
         self._prepare_task_queue()
         self._prepare_model_info()
+        self._perform_auth_check()
         self._prepare_scheduler()
         self.task_serial = 0
 

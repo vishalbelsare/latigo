@@ -1,3 +1,4 @@
+import typing
 import json
 import os
 import random
@@ -112,3 +113,17 @@ def create_auth_session(auth_config: dict):
         except Exception as e:
             logger.error(f"Error creating OAuth2Session: {e}")
     return session
+
+
+class AuthVerifier:
+    def __init__(self, config: typing.Dict):
+        self.config = config
+
+    def test_auth(self, url: str) -> typing.Tuple[bool, typing.Optional[str]]:
+        try:
+            res = fetch_access_token(auth_config=self.config)
+        except Exception as e:
+            # Failure
+            return False, f"{e}"
+        # Success
+        return True, None

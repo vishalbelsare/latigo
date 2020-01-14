@@ -12,6 +12,7 @@ from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.utils import sleep, human_delta
+from latigo.auth import AuthVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -34,22 +35,6 @@ class PredictionExecutor:
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
             self._fail("No model info configured")
-
-    # Inflate executor from config
-    def _prepare_executor(self):
-        self.executor_config = self.config.get("executor", {})
-        if not self.executor_config:
-            self._fail("No executor config specified")
-        self.instance_count = self.executor_config.get("instance_count", 1)
-        if not self.instance_count:
-            self._fail("No instance count configured")
-        self.restart_interval_sec = self.executor_config.get("restart_interval_sec", 60 * 60 * 6)
-        if self.good_to_go:
-            pass
-            # Refraining from excessive logging
-            # logger.info(f"Executor settings:")
-            # logger.info("")
-            # logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
 
     # Inflate task queue connection from config
     def _prepare_task_queue(self):
@@ -91,6 +76,43 @@ class PredictionExecutor:
         if not self.prediction_executor_provider:
             self._fail(f"No prediction_executor_provider configured: {err}, cannot continue...")
 
+    # Perform a basic authentication test up front to fail early with clear error output
+    def _perform_auth_check(self):
+        # fmt: off
+        verifiers = [
+            (self.model_info_config.get('connection_string','no_connection_string'), AuthVerifier(config=self.model_info_config.get("auth", {}))),
+            (self.sensor_data_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.sensor_data_provider_config.get("auth", {}))),
+            (self.prediction_storage_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.prediction_storage_provider_config.get("auth", {}))),
+            (self.prediction_executor_provider_config.get('connection_string','no_connection_string'), AuthVerifier(config=self.prediction_executor_provider_config.get("auth", {}))),
+            ]
+        # fmt: on
+        error_count = 0
+        for url, verifier in verifiers:
+            res, message = verifier.test_auth(url=url)
+            if not res:
+                logger.error(f"Auth test for '{url}' failed with: '{message}'")
+                error_count += 1
+        if error_count > 0:
+            self._fail(f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details.")
+        else:
+            logger.info(f"Auth test succeedded for {len(verifiers)} configurations.")
+
+    # Inflate executor from config
+    def _prepare_executor(self):
+        self.executor_config = self.config.get("executor", {})
+        if not self.executor_config:
+            self._fail("No executor config specified")
+        self.instance_count = self.executor_config.get("instance_count", 1)
+        if not self.instance_count:
+            self._fail("No instance count configured")
+        self.restart_interval_sec = self.executor_config.get("restart_interval_sec", 60 * 60 * 6)
+        if self.good_to_go:
+            pass
+            # Refraining from excessive logging
+            # logger.info(f"Executor settings:")
+            # logger.info("")
+            # logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
+
     def __init__(self, config: dict):
         self.good_to_go = True
         if not config:
@@ -101,6 +123,7 @@ class PredictionExecutor:
         self._prepare_prediction_storage_provider()
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
+        self._perform_auth_check()
         self._prepare_executor()
 
     def _fetch_spec(self, project_name: str, model_name: str):
