@@ -80,9 +80,10 @@ class Scheduler:
             self._fail("No projects specified")
         if self.good_to_go:
             next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
+            restart_interval_desc = human_delta(datetime.timedelta(seconds=self.restart_interval_sec)) if self.restart_interval_sec > 0 else "Disabled"
             logger.info(f"Scheduler settings:")
             logger.info("")
-            logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
+            logger.info(f"  Restart interval: {restart_interval_desc} (safety)")
             logger.info(f"  Run at once :     {self.run_at_once}")
             logger.info(f"  Start time :      {self.continuous_prediction_start_time}")
             logger.info(f"  Interval:         {human_delta(self.continuous_prediction_interval)}")
