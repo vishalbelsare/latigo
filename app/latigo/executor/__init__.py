@@ -4,7 +4,14 @@ import traceback
 import typing
 import logging
 import pprint
-from latigo.types import Task, SensorDataSpec, SensorDataSet, TimeRange, PredictionDataSet, LatigoSensorTag
+from latigo.types import (
+    Task,
+    SensorDataSpec,
+    SensorDataSet,
+    TimeRange,
+    PredictionDataSet,
+    LatigoSensorTag,
+)
 from latigo.sensor_data import sensor_data_provider_factory
 
 from latigo.prediction_execution import prediction_execution_provider_factory
@@ -56,16 +63,22 @@ class PredictionExecutor:
         self.sensor_data_provider_config = self.config.get("sensor_data", None)
         if not self.sensor_data_provider_config:
             self._fail("No sensor_data_config specified")
-        self.sensor_data_provider = sensor_data_provider_factory(self.sensor_data_provider_config)
+        self.sensor_data_provider = sensor_data_provider_factory(
+            self.sensor_data_provider_config
+        )
         if not self.sensor_data_provider:
             self._fail(f"No sensor data configured: {err}, cannot continue...")
 
     # Inflate prediction storage provider from config
     def _prepare_prediction_storage_provider(self):
-        self.prediction_storage_provider_config = self.config.get("prediction_storage", None)
+        self.prediction_storage_provider_config = self.config.get(
+            "prediction_storage", None
+        )
         if not self.prediction_storage_provider_config:
             self._fail("No prediction_storage_config specified")
-        self.prediction_storage_provider = prediction_storage_provider_factory(self.prediction_storage_provider_config)
+        self.prediction_storage_provider = prediction_storage_provider_factory(
+            self.prediction_storage_provider_config
+        )
         if not self.prediction_storage_provider:
             self._fail(f"No prediction storage configured: {err}, cannot continue...")
 
@@ -81,7 +94,9 @@ class PredictionExecutor:
         self.prediction_executor_provider = prediction_execution_provider_factory(self.sensor_data_provider, self.prediction_storage_provider, self.prediction_executor_provider_config)
         self.name = self.prediction_executor_provider_config.get("name", "executor")
         if not self.prediction_executor_provider:
-            self._fail(f"No prediction_executor_provider configured: {err}, cannot continue...")
+            self._fail(
+                f"No prediction_executor_provider configured: {err}, cannot continue..."
+            )
 
     # Perform a basic authentication test up front to fail early with clear error output
     def _perform_auth_check(self):
@@ -100,7 +115,9 @@ class PredictionExecutor:
                 logger.error(f"Auth test for '{url}' failed with: '{message}'")
                 error_count += 1
         if error_count > 0:
-            self._fail(f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details.")
+            self._fail(
+                f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details."
+            )
         else:
             logger.info(f"Auth test succeedded for {len(verifiers)} configurations.")
 
@@ -112,7 +129,9 @@ class PredictionExecutor:
         self.instance_count = self.executor_config.get("instance_count", 1)
         if not self.instance_count:
             self._fail("No instance count configured")
-        self.restart_interval_sec = self.executor_config.get("restart_interval_sec", 60 * 60 * 6)
+        self.restart_interval_sec = self.executor_config.get(
+            "restart_interval_sec", 60 * 60 * 6
+        )
         if self.good_to_go:
             pass
             # Refraining from excessive logging
@@ -134,7 +153,9 @@ class PredictionExecutor:
         self._prepare_executor()
 
     def _fetch_spec(self, project_name: str, model_name: str):
-        return self.model_info_provider.get_spec(project_name=project_name, model_name=model_name)
+        return self.model_info_provider.get_spec(
+            project_name=project_name, model_name=model_name
+        )
 
     def _fetch_task(self) -> typing.Optional[Task]:
         """
@@ -162,27 +183,41 @@ class PredictionExecutor:
             model_name: str = task.model_name
             spec: SensorDataSpec = self._fetch_spec(project_name, model_name)
             if spec:
-                sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
+                sensor_data, err = self.sensor_data_provider.get_data_for_range(
+                    spec, time_range
+                )
                 if not sensor_data:
                     logger.warning(f"Error getting sensor data: {err}")
                 elif not sensor_data.ok():
                     logger.warning(f"Sensor data '{sensor_data}' was not ok")
             else:
-                logger.warning(f"Error getting spec for project={project_name} and model={model_name}")
+                logger.warning(
+                    f"Error getting spec for project={project_name} and model={model_name}"
+                )
         except Exception as e:
-            logger.error(f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}")
+            logger.error(
+                f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}"
+            )
             traceback.print_exc()
         return sensor_data
 
-    def _execute_prediction(self, task: Task, sensor_data: SensorDataSet) -> typing.Optional[PredictionDataSet]:
+    def _execute_prediction(
+        self, task: Task, sensor_data: SensorDataSet
+    ) -> typing.Optional[PredictionDataSet]:
         """
         This internal helper executes prediction on one bulk of data
         """
         prediction_data = None
         try:
-            prediction_data = self.prediction_executor_provider.execute_prediction(project_name=task.project_name, model_name=task.model_name, sensor_data=sensor_data)
+            prediction_data = self.prediction_executor_provider.execute_prediction(
+                project_name=task.project_name,
+                model_name=task.model_name,
+                sensor_data=sensor_data,
+            )
         except Exception as e:
-            logger.error(f"Could not execute prediction for task '{task.project_name}.{task.model_name}': {e}")
+            logger.error(
+                f"Could not execute prediction for task '{task.project_name}.{task.model_name}': {e}"
+            )
             raise e
             # traceback.print_exc()
         return prediction_data
@@ -194,13 +229,17 @@ class PredictionExecutor:
         try:
             self.prediction_storage_provider.put_predictions(prediction_data)
         except Exception as e:
-            logger.error(f"Could not store prediction data for task '{task.project_name}.{task.model_name}': {e}")
+            logger.error(
+                f"Could not store prediction data for task '{task.project_name}.{task.model_name}': {e}"
+            )
             raise e
             # traceback.print_exc()
 
     def idle_count(self, has_task):
         if self.idle_number > 0:
-            logger.info(f"Idle for {self.idle_number} cycles ({human_delta(datetime.datetime.now()-self.idle_time)})")
+            logger.info(
+                f"Idle for {self.idle_number} cycles ({human_delta(datetime.datetime.now()-self.idle_time)})"
+            )
             self.idle_number = 0
             self.idle_time = datetime.datetime.now()
         else:
@@ -232,23 +271,41 @@ class PredictionExecutor:
                     task = self._fetch_task()
                     if task:
                         task_fetch_interval = datetime.datetime.now() - task_fetch_start
-                        logger.info(f"Processing task fetched after {human_delta(task_fetch_interval)} starting {task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' in '{task.project_name}'")
+                        logger.info(
+                            f"Processing task fetched after {human_delta(task_fetch_interval)} starting {task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' in '{task.project_name}'"
+                        )
                         sensor_data = self._fetch_sensor_data(task)
                         data_fetch_interval = datetime.datetime.now() - task_fetch_start
-                        logger.info(f"Got data after {human_delta(data_fetch_interval)}")
+                        logger.info(
+                            f"Got data after {human_delta(data_fetch_interval)}"
+                        )
                         if sensor_data and sensor_data.ok():
-                            prediction_data = self._execute_prediction(task, sensor_data)
-                            prediction_execution_interval = datetime.datetime.now() - task_fetch_start
-                            logger.info(f"Prediction completed after {human_delta(prediction_execution_interval)}")
+                            prediction_data = self._execute_prediction(
+                                task, sensor_data
+                            )
+                            prediction_execution_interval = (
+                                datetime.datetime.now() - task_fetch_start
+                            )
+                            logger.info(
+                                f"Prediction completed after {human_delta(prediction_execution_interval)}"
+                            )
                             if prediction_data and prediction_data.ok():
                                 self._store_prediction_data(task, prediction_data)
-                                prediction_storage_interval = datetime.datetime.now() - task_fetch_start
-                                logger.info(f"Prediction stored after {human_delta(prediction_storage_interval)}")
+                                prediction_storage_interval = (
+                                    datetime.datetime.now() - task_fetch_start
+                                )
+                                logger.info(
+                                    f"Prediction stored after {human_delta(prediction_storage_interval)}"
+                                )
                                 self.idle_count(True)
                             else:
-                                logger.warning(f"Skipping store due to bad prediction: {prediction_data.data}")
+                                logger.warning(
+                                    f"Skipping store due to bad prediction: {prediction_data.data}"
+                                )
                         else:
-                            logger.warning(f"Skipping prediciton due to bad data: {sensor_data}")
+                            logger.warning(
+                                f"Skipping prediciton due to bad data: {sensor_data}"
+                            )
                     else:
                         logger.warning(f"No task")
                         self.idle_count(False)
@@ -262,7 +319,10 @@ class PredictionExecutor:
                     logger.error("-----------------------------------")
                     sleep(1)
             executor_interval = datetime.datetime.now() - executor_start
-            if self.restart_interval_sec > 0 and executor_interval.total_seconds() > self.restart_interval_sec:
+            if (
+                self.restart_interval_sec > 0
+                and executor_interval.total_seconds() > self.restart_interval_sec
+            ):
                 logger.info("Terminating executor for teraputic restart")
                 done = True
             # logger.info("Executor stopped processing")

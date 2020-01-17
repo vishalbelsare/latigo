@@ -14,7 +14,13 @@ class Model:
     Wrap model in 'neutral' class
     """
 
-    def __init__(self, model_name: str, project_name: str, tag_list: typing.List[LatigoSensorTag], target_tag_list: typing.List[LatigoSensorTag]):
+    def __init__(
+        self,
+        model_name: str,
+        project_name: str,
+        tag_list: typing.List[LatigoSensorTag],
+        target_tag_list: typing.List[LatigoSensorTag],
+    ):
         self.model_name = model_name
         self.project_name = project_name
         self.tag_list = tag_list
@@ -34,7 +40,9 @@ class ModelInfoProviderInterface:
     def get_model_by_key(self, project_name: str, model_name: str):
         pass
 
-    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
+    def get_spec(
+        self, project_name: str, model_name: str
+    ) -> typing.Optional[SensorDataSpec]:
         """
         Return a sensor data spec for given project name and model name
         """
@@ -51,7 +59,9 @@ class MockModelInfoProvider(ModelInfoProviderInterface):
     def get_model_by_key(self, project_name: str, model_name: str):
         return None
 
-    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
+    def get_spec(
+        self, project_name: str, model_name: str
+    ) -> typing.Optional[SensorDataSpec]:
         return None
 
 
@@ -65,7 +75,9 @@ class DevNullModelInfoProvider(ModelInfoProviderInterface):
     def get_model_by_key(self, project_name: str, model_name: str):
         return None
 
-    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
+    def get_spec(
+        self, project_name: str, model_name: str
+    ) -> typing.Optional[SensorDataSpec]:
         return None
 
 
@@ -81,5 +93,7 @@ def model_info_provider_factory(model_info_provider_config):
     elif "mock" == model_info_provider_type:
         model_info_provider = MockModelInfoProvider(config=model_info_provider_config)
     else:
-        model_info_provider = DevNullModelInfoProvider(config=model_info_provider_config)
+        model_info_provider = DevNullModelInfoProvider(
+            config=model_info_provider_config
+        )
     return model_info_provider

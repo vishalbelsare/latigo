@@ -21,7 +21,9 @@ class OnTheClockTimer:
         self.interval = interval
         # raise Exception("BALLS")
 
-    def closest_start_time(self, now: datetime.datetime = datetime.datetime.now()) -> datetime.datetime:
+    def closest_start_time(
+        self, now: datetime.datetime = datetime.datetime.now()
+    ) -> datetime.datetime:
         time_of_day = now.time()
         common_date = datetime.date(2019, 1, 1)
         p1 = datetime.datetime.combine(common_date, time_of_day)
@@ -32,7 +34,9 @@ class OnTheClockTimer:
         # logger.info(f"DATE: {now.date()}, TIME:{now.time()}, from_start:{from_start}, interval_count:{interval_count}, last_time={last_time}, next_time={next_time}")
         return datetime.datetime.combine(now.date(), self.start_time) + next_time
 
-    def time_left(self, now: datetime.datetime = datetime.datetime.now()) -> datetime.timedelta:
+    def time_left(
+        self, now: datetime.datetime = datetime.datetime.now()
+    ) -> datetime.timedelta:
         return self.closest_start_time(now=now) - now
 
     def wait_for_trigger(self, now: datetime.datetime = datetime.datetime.now()):
@@ -44,4 +48,6 @@ class OnTheClockTimer:
         return True
 
     def __str__(self):
-        return f"OnTheClockTimer(start_time={self.start_time}, interval={self.interval})"
+        return (
+            f"OnTheClockTimer(start_time={self.start_time}, interval={self.interval})"
+        )

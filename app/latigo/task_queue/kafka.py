@@ -9,7 +9,12 @@ import typing
 from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 from confluent_kafka.admin import AdminClient, NewTopic
 from latigo.utils import parse_event_hub_connection_string, sleep
-from latigo.task_queue import deserialize_task, serialize_task, TaskQueueSenderInterface, TaskQueueReceiverInterface
+from latigo.task_queue import (
+    deserialize_task,
+    serialize_task,
+    TaskQueueSenderInterface,
+    TaskQueueReceiverInterface,
+)
 from latigo.types import Task
 
 logger = logging.getLogger(__name__)
@@ -23,7 +28,9 @@ def stats_callback(stats_json_str):
 
 def delivery_callback(err, msg):
     if err:
-        logger.warning(f"Message failed delivery: {err} ({msg.topic()} [{msg.partition()}] @ {msg.offset()})")
+        logger.warning(
+            f"Message failed delivery: {err} ({msg.topic()} [{msg.partition()}] @ {msg.offset()})"
+        )
     else:
         pass
         # logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] @ {msg.offset()}")
@@ -69,7 +76,12 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         # Create Admin instance
         self.admin = AdminClient(self.config)
         # Create topics
-        fs = self.admin.create_topics([NewTopic(topic, num_partitions=3, replication_factor=1) for topic in [self.topic]])
+        fs = self.admin.create_topics(
+            [
+                NewTopic(topic, num_partitions=3, replication_factor=1)
+                for topic in [self.topic]
+            ]
+        )
         # Wait for topic creation to complete
         for topic, f in fs.items():
             try:
@@ -112,7 +124,9 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         try:
             self.producer.produce(self.topic, msg, callback=delivery_callback)
         except BufferError as e:
-            logger.info(f"Local producer queue is full ({len(self.producer)} messages awaiting delivery): try again")
+            logger.info(
+                f"Local producer queue is full ({len(self.producer)} messages awaiting delivery): try again"
+            )
         # self.producer.poll(0)
 
     def put_task(self, task: Task):
@@ -170,7 +184,9 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
             # Error or event
             if msg.error().code() == KafkaError._PARTITION_EOF:
                 # End of partition event
-                logger.info(f"{msg.topic()} [msg.partition()] reached end at offset {msg.offset()}")
+                logger.info(
+                    f"{msg.topic()} [msg.partition()] reached end at offset {msg.offset()}"
+                )
             else:
                 # Error
                 ke = KafkaException(msg.error())
@@ -181,7 +197,9 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
             # Proper message
             return msg.value()
 
-    def receive_event_with_backoff(self, timeout=100, backoff=1000) -> typing.Optional[Task]:
+    def receive_event_with_backoff(
+        self, timeout=100, backoff=1000
+    ) -> typing.Optional[Task]:
         task_bytes = self.receive_event(timeout=timeout)
         task: typing.Optional[Task] = None
         if not task_bytes:

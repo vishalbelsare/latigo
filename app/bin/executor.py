@@ -81,7 +81,9 @@ if not config:
 
 
 instance_count = int(config.get("executor", {}).get("instance_count", 1))
-instance_name = config.get("executor", {}).get("instance_name", "latigo-executor-" + socket.getfqdn())
+instance_name = config.get("executor", {}).get(
+    "instance_name", "latigo-executor-" + socket.getfqdn()
+)
 threading.current_thread().name = instance_name
 
 
@@ -96,7 +98,11 @@ if __name__ == "__main__":
         # logger.info(f"Configuring Latigo Executor {instance_index+1}/{instance_count}")
         # process = multiprocessing.Process(target=wrap_executor, args=(config,))
         executor = PredictionExecutor(config=copy.deepcopy(config))
-        process = threading.Thread(target=wrap_executor, name=f"{instance_name}-thread-{instance_index+1}", args=(executor,))
+        process = threading.Thread(
+            target=wrap_executor,
+            name=f"{instance_name}-thread-{instance_index+1}",
+            args=(executor,),
+        )
         instances.append(process)
     logger.info(f"Configured {instance_index+1}/{instance_count} Latigo Executor(s)")
     for instance_index in range(instance_count):

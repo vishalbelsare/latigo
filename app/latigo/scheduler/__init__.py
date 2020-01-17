@@ -65,7 +65,9 @@ class Scheduler:
                 logger.error(f"Auth test for '{url}' failed with: '{message}'")
                 error_count += 1
         if error_count > 0:
-            self._fail(f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details.")
+            self._fail(
+                f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details."
+            )
         else:
             logger.info(f"Auth test succeedded for {len(verifiers)} configurations.")
 
@@ -75,43 +77,68 @@ class Scheduler:
         if not self.scheduler_config:
             self._fail("No scheduler config specified")
         self.name = self.scheduler_config.get("name", "unnamed_scheduler")
-        self.restart_interval_sec = self.scheduler_config.get("restart_interval_sec", 60 * 60 * 24 * 7)
+        self.restart_interval_sec = self.scheduler_config.get(
+            "restart_interval_sec", 60 * 60 * 24 * 7
+        )
         try:
-            cpst = self.scheduler_config.get("continuous_prediction_start_time", "08:00")
-            self.continuous_prediction_start_time = datetime.datetime.strptime(cpst, "%H:%M").time()
+            cpst = self.scheduler_config.get(
+                "continuous_prediction_start_time", "08:00"
+            )
+            self.continuous_prediction_start_time = datetime.datetime.strptime(
+                cpst, "%H:%M"
+            ).time()
         except Exception as e:
-            self._fail(f"Could not parse '{cpst}' into continuous_prediction_start_time: {e}")
+            self._fail(
+                f"Could not parse '{cpst}' into continuous_prediction_start_time: {e}"
+            )
         try:
             cpsc = self.scheduler_config.get("continuous_prediction_interval", "30m")
             self.continuous_prediction_interval = pd.to_timedelta(cpsc)
         except Exception as e:
-            self._fail(f"Could not parse '{cpsc}' into continuous_prediction_interval: {e}")
+            self._fail(
+                f"Could not parse '{cpsc}' into continuous_prediction_interval: {e}"
+            )
         try:
             cpd = self.scheduler_config.get("continuous_prediction_delay", "1d")
             self.continuous_prediction_delay = pd.to_timedelta(cpd)
         except Exception as e:
             self._fail(f"Could not parse '{cpd}' into continuous_prediction_delay: {e}")
-        self.continuous_prediction_timer = OnTheClockTimer(start_time=self.continuous_prediction_start_time, interval=self.continuous_prediction_interval)
+        self.continuous_prediction_timer = OnTheClockTimer(
+            start_time=self.continuous_prediction_start_time,
+            interval=self.continuous_prediction_interval,
+        )
         try:
             p = self.scheduler_config.get("projects", "")
             self.projects = [x.strip(" ") for x in p.split(",")]
         except Exception as e:
             self._fail(f"Could not parse '{p}' into projects: {e}")
         self.run_at_once = self.scheduler_config.get("run_at_once", True)
-        self.back_fill_max_interval = pd.to_timedelta(self.scheduler_config.get("back_fill_max_interval", "1d"))
+        self.back_fill_max_interval = pd.to_timedelta(
+            self.scheduler_config.get("back_fill_max_interval", "1d")
+        )
         if not self.projects:
             self._fail("No projects specified")
         if self.good_to_go:
             next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
-            restart_interval_desc = human_delta(datetime.timedelta(seconds=self.restart_interval_sec)) if self.restart_interval_sec > 0 else "Disabled"
+            restart_interval_desc = (
+                human_delta(datetime.timedelta(seconds=self.restart_interval_sec))
+                if self.restart_interval_sec > 0
+                else "Disabled"
+            )
             logger.info(f"Scheduler settings:")
             logger.info("")
             logger.info(f"  Restart interval: {restart_interval_desc} (safety)")
             logger.info(f"  Run at once :     {self.run_at_once}")
             logger.info(f"  Start time :      {self.continuous_prediction_start_time}")
-            logger.info(f"  Interval:         {human_delta(self.continuous_prediction_interval)}")
-            logger.info(f"  Data delay:       {human_delta(self.continuous_prediction_delay)}")
-            logger.info(f"  Backfill max:     {human_delta(self.back_fill_max_interval)}")
+            logger.info(
+                f"  Interval:         {human_delta(self.continuous_prediction_interval)}"
+            )
+            logger.info(
+                f"  Data delay:       {human_delta(self.continuous_prediction_delay)}"
+            )
+            logger.info(
+                f"  Backfill max:     {human_delta(self.back_fill_max_interval)}"
+            )
             logger.info(f"  Next start:       {next_start}")
             logger.info(f"  Projects:         {', '.join(self.projects)}")
             logger.info("")
@@ -136,7 +163,9 @@ class Scheduler:
             logger.warning("No models found")
         else:
             stats_interval = datetime.datetime.now() - stats_start_time
-            logger.info(f"Found {len(self.models)} models in {human_delta(stats_interval)}")
+            logger.info(
+                f"Found {len(self.models)} models in {human_delta(stats_interval)}"
+            )
 
     def perform_prediction_step(self):
         stats_projects_ok = {}
@@ -144,8 +173,12 @@ class Scheduler:
         stats_projects_bad = {}
         stats_models_bad = {}
         stats_start_time = datetime.datetime.now()
-        prediction_start_time = datetime.datetime.now() - self.continuous_prediction_delay
-        prediction_end_time = prediction_start_time + self.continuous_prediction_interval
+        prediction_start_time = (
+            datetime.datetime.now() - self.continuous_prediction_delay
+        )
+        prediction_end_time = (
+            prediction_start_time + self.continuous_prediction_interval
+        )
         for model in self.models:
             project_name = model.project_name
             if not project_name:
@@ -153,25 +186,42 @@ class Scheduler:
                 continue
             model_name = model.model_name
             if not model_name:
-                logger.warning(f"No model name found for model in project {project_name}, skipping model")
+                logger.warning(
+                    f"No model name found for model in project {project_name}, skipping model"
+                )
                 continue
-            task = Task(project_name=project_name, model_name=model_name, from_time=prediction_start_time, to_time=prediction_end_time)
+            task = Task(
+                project_name=project_name,
+                model_name=model_name,
+                from_time=prediction_start_time,
+                to_time=prediction_end_time,
+            )
             try:
                 self.task_queue.put_task(task)
                 self.task_serial += 1
                 # logger.info(f"Enqueued '{model_name}' in '{project_name}'")
-                stats_projects_ok[project_name] = stats_projects_ok.get(project_name, 0) + 1
+                stats_projects_ok[project_name] = (
+                    stats_projects_ok.get(project_name, 0) + 1
+                )
                 stats_models_ok[model_name] = stats_models_ok.get(model_name, 0) + 1
             except Exception as e:
                 # logger.error(f"Could not send task: {e}")
                 # traceback.print_exc()
-                stats_projects_bad[project_name] = stats_projects_bad.get(project_name, "") + f", {e}"
-                stats_models_bad[model_name] = stats_models_bad.get(model_name, "") + f", {e}"
+                stats_projects_bad[project_name] = (
+                    stats_projects_bad.get(project_name, "") + f", {e}"
+                )
+                stats_models_bad[model_name] = (
+                    stats_models_bad.get(model_name, "") + f", {e}"
+                )
                 raise e
         stats_interval = datetime.datetime.now() - stats_start_time
-        logger.info(f"Scheduled {len(stats_models_ok)} models over {len(stats_projects_ok)} projects in {human_delta(stats_interval)}")
+        logger.info(
+            f"Scheduled {len(stats_models_ok)} models over {len(stats_projects_ok)} projects in {human_delta(stats_interval)}"
+        )
         if len(stats_models_bad) > 0 or len(stats_projects_bad) > 0:
-            logger.error(f"          {len(stats_models_bad)} models in {len(stats_projects_bad)} projects failed")
+            logger.error(
+                f"          {len(stats_models_bad)} models in {len(stats_projects_bad)} projects failed"
+            )
             for name in stats_models_bad:
                 logger.error(f"          + {name}({stats_models_bad[name]})")
 
@@ -210,11 +260,16 @@ class Scheduler:
         if self.run_at_once:
             self.on_time()
         while not done:
-            logger.info(f"Next prediction will occur at {self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})")
+            logger.info(
+                f"Next prediction will occur at {self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
+            )
             if self.continuous_prediction_timer.wait_for_trigger(now=start):
                 self.on_time()
             scheduler_interval = datetime.datetime.now() - start
-            if self.restart_interval_sec > 0 and scheduler_interval.total_seconds() > self.restart_interval_sec:
+            if (
+                self.restart_interval_sec > 0
+                and scheduler_interval.total_seconds() > self.restart_interval_sec
+            ):
                 logger.info("Terminating scheduler for teraputic restart")
                 done = True
         interval = datetime.datetime.now() - start

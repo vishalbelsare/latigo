@@ -119,12 +119,16 @@ class IntermediateFormat:
         gordo_data_y: typing.List[SensorTag] = []
         return {"X": gordo_data_x, "Y": gordo_data_y}
 
-    def to_gordo(self, tags: typing.List[SensorTag], target_tags: typing.List[SensorTag]) -> typing.Dict:
+    def to_gordo(
+        self, tags: typing.List[SensorTag], target_tags: typing.List[SensorTag]
+    ) -> typing.Dict:
         gordo_data_x = self._select_gordo_tags(tags)
         gordo_data_y = self._select_gordo_tags(target_tags)
         return {"X": gordo_data_x, "Y": gordo_data_y}
 
-    def to_gordo_dataframe(self, tags: typing.List[SensorTag], target_tags: typing.List[SensorTag]) -> typing.Iterable[pd.Series]:
+    def to_gordo_dataframe(
+        self, tags: typing.List[SensorTag], target_tags: typing.List[SensorTag]
+    ) -> typing.Iterable[pd.Series]:
         out: typing.List = []
         series_len = len(self.data_frame_data["value"])
         for tag in tags:

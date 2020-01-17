@@ -18,7 +18,9 @@ class SensorDataProviderInterface:
     def supports_tag(self, tag: LatigoSensorTag) -> bool:
         pass
 
-    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
+    def get_data_for_range(
+        self, spec: SensorDataSpec, time_range: TimeRange
+    ) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """
@@ -32,7 +34,9 @@ class MockSensorDataProvider(SensorDataProviderInterface):
     def supports_tag(self, tag: LatigoSensorTag) -> bool:
         return True
 
-    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
+    def get_data_for_range(
+        self, spec: SensorDataSpec, time_range: TimeRange
+    ) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """
@@ -52,7 +56,9 @@ class DevNullSensorDataProvider(SensorDataProviderInterface):
     def __init__(self, config: dict):
         self.config = config
 
-    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
+    def get_data_for_range(
+        self, spec: SensorDataSpec, time_range: TimeRange
+    ) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """
@@ -66,7 +72,9 @@ def sensor_data_provider_factory(sensor_data_provider_config):
     if "time_series_api" == sensor_data_provider_type:
         from latigo.time_series_api import TimeSeriesAPISensorDataProvider
 
-        sensor_data_provider = TimeSeriesAPISensorDataProvider(sensor_data_provider_config)
+        sensor_data_provider = TimeSeriesAPISensorDataProvider(
+            sensor_data_provider_config
+        )
     elif "mock" == sensor_data_provider_type:
         sensor_data_provider = MockSensorDataProvider(sensor_data_provider_config)
     else:

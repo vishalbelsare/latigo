@@ -55,7 +55,11 @@ class TestSensorInformationProvider(SensorInformationProviderInterface):
     Test implementation of SensorInformationProviderInterface
     """
 
-    sensor_information = [SensorInformation("SENSOR_A"), SensorInformation("SENSOR_B"), SensorInformation("SENSOR_C")]
+    sensor_information = [
+        SensorInformation("SENSOR_A"),
+        SensorInformation("SENSOR_B"),
+        SensorInformation("SENSOR_C"),
+    ]
 
     def get_all_sensor(self) -> List[SensorInformation]:
         """Enumerate all available sensors"""

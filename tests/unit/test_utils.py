@@ -1,7 +1,13 @@
 import pprint
 import logging
 import os
-from latigo.utils import merge, load_config, load_yaml, save_yaml, parse_event_hub_connection_string
+from latigo.utils import (
+    merge,
+    load_config,
+    load_yaml,
+    save_yaml,
+    parse_event_hub_connection_string,
+)
 
 logger = logging.getLogger("latigo.utils")
 
@@ -120,5 +126,10 @@ def test_parse_event_hub_connection_string():
     output = parse_event_hub_connection_string(input)
     # logger.info("RESULT:")
     # logger.info(pprint.pformat(output))
-    output_expected = {"endpoint": "some.test.domain.com", "entity_path": "some-topic", "shared_access_key": "SomeKindOfKey2345=", "shared_access_key_name": "some-key-name"}
+    output_expected = {
+        "endpoint": "some.test.domain.com",
+        "entity_path": "some-topic",
+        "shared_access_key": "SomeKindOfKey2345=",
+        "shared_access_key_name": "some-key-name",
+    }
     assert output == output_expected

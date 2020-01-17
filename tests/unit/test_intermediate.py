@@ -108,6 +108,9 @@ def test_from_timeseries_to_gordo():
     assert info.tag_names == expected_intermediate_tag_names
     assert info.tag_names_map == expected_intermediate_tag_map
     assert info.tag_names_data == expected_intermediate_tag_data
-    gordo_data = info.to_gordo(tags=[SensorTag(name="tag_1", asset="asset_1")], target_tags=[SensorTag(name="tag_2", asset="asset_2")])
+    gordo_data = info.to_gordo(
+        tags=[SensorTag(name="tag_1", asset="asset_1")],
+        target_tags=[SensorTag(name="tag_2", asset="asset_2")],
+    )
     # logger.info(f"gordo_data: {gordo_data}")
     assert gordo_data == expected_gordo_data

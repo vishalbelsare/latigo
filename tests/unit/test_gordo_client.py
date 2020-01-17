@@ -1,7 +1,18 @@
 import logging
 import pprint
 from os import environ
-from latigo.gordo import GordoModelInfoProvider, LatigoDataProvider, LatigoPredictionForwarder, GordoClientPool, clean_gordo_client_args, expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder, _gordo_to_latigo_tag_list, _gordo_to_latigo_tag
+from latigo.gordo import (
+    GordoModelInfoProvider,
+    LatigoDataProvider,
+    LatigoPredictionForwarder,
+    GordoClientPool,
+    clean_gordo_client_args,
+    expand_gordo_connection_string,
+    expand_gordo_data_provider,
+    expand_gordo_prediction_forwarder,
+    _gordo_to_latigo_tag_list,
+    _gordo_to_latigo_tag,
+)
 from gordo_components.dataset.sensor_tag import SensorTag
 from latigo.types import LatigoSensorTag
 
@@ -25,7 +36,10 @@ def un_test_gordo_config_hash():
         # fmt: on
     )
     # logger.info(hash)
-    assert "gordoschemeAhostBport8080projectDtargetEgordo_versionFbatch_sizeGparallelismHforward_resampled_sensorsIignore_unhealthy_targetsJn_retriesK" == hash
+    assert (
+        "gordoschemeAhostBport8080projectDtargetEgordo_versionFbatch_sizeGparallelismHforward_resampled_sensorsIignore_unhealthy_targetsJn_retriesK"
+        == hash
+    )
 
 
 def un_test_gordo_client_pool():
@@ -91,4 +105,6 @@ def un_test_expand_gordo_data_provider():
 def un_test_expand_gordo_prediction_forwarder():
     config = {"prediction_forwarder": {"debug": True, "n_retries": 5}}
     expand_gordo_prediction_forwarder(config, "OK")
-    assert isinstance(config.get("prediction_forwarder", None), LatigoPredictionForwarder)
+    assert isinstance(
+        config.get("prediction_forwarder", None), LatigoPredictionForwarder
+    )

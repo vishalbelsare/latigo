@@ -41,14 +41,18 @@ config_overlay = {
 }
 # fmt: on
 
-config_filename = os.environ.get("LATIGO_SCHEDULER_CONFIG_FILE", "scheduler_config.yaml")
+config_filename = os.environ.get(
+    "LATIGO_SCHEDULER_CONFIG_FILE", "scheduler_config.yaml"
+)
 
 config = load_config(config_filename, config_overlay)
 if not config:
     logger.error(f"Could not load configuration for scheduler from {config_filename}")
     sys.exit(1)
 
-threading.current_thread().name = config.get("scheduler", {}).get("instance_name", "latigo-scheduler-" + socket.getfqdn())
+threading.current_thread().name = config.get("scheduler", {}).get(
+    "instance_name", "latigo-scheduler-" + socket.getfqdn()
+)
 
 
 logger.info("Configuring Latigo Scheduler")

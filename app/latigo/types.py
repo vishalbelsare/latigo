@@ -93,7 +93,12 @@ class PredictionDataSeries:
         return f"PredictionData({self.time_range}, name={self.name}, unit={self.unit}, asset_id={self.asset_id}, data={len(self.data)})"
 
     def ok(self):
-        return bool(self.time_range) and bool(self.data) and bool(self.name) and bool(self.asset_id)
+        return (
+            bool(self.time_range)
+            and bool(self.data)
+            and bool(self.name)
+            and bool(self.asset_id)
+        )
 
 
 @dataclass
