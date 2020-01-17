@@ -30,7 +30,7 @@ def setup_logging(filename, log_level=logging.INFO):
         ]:
             logging.getLogger(key).setLevel(logging.WARNING)
 
-        logging.getLogger("gordo_components.client").setLevel(logging.DEBUG)
+        logging.getLogger("gordo.client").setLevel(logging.DEBUG)
         try:
             from colorlog import ColoredFormatter
 

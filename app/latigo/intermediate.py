@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 
 from latigo.utils import rfc3339_from_datetime
-from gordo_components.dataset.sensor_tag import SensorTag
+from gordo.machine.dataset.sensor_tag import SensorTag
 
 logger = logging.getLogger(__name__)
 

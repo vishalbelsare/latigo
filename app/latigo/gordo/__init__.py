@@ -21,11 +21,11 @@ from latigo.model_info import ModelInfoProviderInterface, Model
 from latigo.auth import create_auth_session
 
 # from latigo.gordo.client import Client
-from gordo_components.client.client import Client
+from gordo.client.client import Client
 
-from gordo_components.data_provider.base import GordoBaseDataProvider, capture_args
-from gordo_components.client.utils import EndpointMetadata
-from gordo_components.dataset.sensor_tag import SensorTag
+from gordo.machine.client.utils import EndpointMetadata
+from gordo.machine.dataset.data_provider.base import GordoBaseDataProvider, capture_args
+from gordo.machine.dataset.sensor_tag import SensorTag
 
 
 logger = logging.getLogger(__name__)
