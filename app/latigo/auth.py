@@ -80,7 +80,7 @@ def create_auth_session_old(auth_config: dict):
     token = fetch_access_token(auth_config)
     if token:
         try:
-            session = OAuth2Session(auth_config.get("client_id"), token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
+            session = OAuth2Session(client_id=client_id, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
             # logger.info(f"Authenticated successfully with token:")
             # logger.info(token)
             # logger.info(f"Authenticated successfully with session:")
@@ -112,6 +112,7 @@ def create_auth_session(auth_config: dict):
             # logger.info(session)
         except Exception as e:
             logger.error(f"Error creating OAuth2Session: {e}")
+            raise e
     return session
 
 
@@ -121,7 +122,11 @@ class AuthVerifier:
 
     def test_auth(self, url: str) -> typing.Tuple[bool, typing.Optional[str]]:
         try:
-            res = fetch_access_token(auth_config=self.config)
+            self.auth_session = create_auth_session(auth_config=self.config)
+            res = self.auth_session.get(url)
+            # logger.info(pprint.pformat(res))
+            if not res:
+                res.raise_for_status()
         except Exception as e:
             # Failure
             return False, f"{e}"
