@@ -20,7 +20,6 @@ from latigo.sensor_data import SensorDataProviderInterface
 from latigo.model_info import ModelInfoProviderInterface, Model
 from latigo.auth import create_auth_session
 
-# from latigo.gordo.client import Client
 from gordo.client.client import Client
 
 from gordo.machine.client.utils import EndpointMetadata
@@ -110,7 +109,7 @@ class PredictionForwarder:
         self,
         *,
         predictions: pd.DataFrame = None,
-        endpoint: EndpointMetadata = None,
+        machine_metadata: dict = dict(),
         metadata: dict = dict(),
         resampled_sensor_data: pd.DataFrame = None,
     ) -> typing.Awaitable[None]:
