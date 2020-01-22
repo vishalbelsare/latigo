@@ -25,6 +25,17 @@ logger = logging.getLogger(__name__)
 
 
 class PredictionExecutor:
+    def __init__(self, config: dict):
+        self.good_to_go = True
+        self.config = config
+        self._prepare_task_queue()
+        self._prepare_sensor_data_provider()
+        self._prepare_prediction_storage_provider()
+        self._prepare_model_info()
+        self._prepare_prediction_executor_provider()
+        self._prepare_executor()
+        self._perform_auth_check()
+
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
@@ -138,19 +149,6 @@ class PredictionExecutor:
             # logger.info(f"Executor settings:")
             # logger.info("")
             # logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
-
-    def __init__(self, config: dict):
-        self.good_to_go = True
-        if not config:
-            raise Exception("No config specified")
-        self.config = config
-        self._prepare_task_queue()
-        self._prepare_sensor_data_provider()
-        self._prepare_prediction_storage_provider()
-        self._prepare_model_info()
-        self._prepare_prediction_executor_provider()
-        self._perform_auth_check()
-        self._prepare_executor()
 
     def _fetch_spec(self, project_name: str, model_name: str):
         return self.model_info_provider.get_spec(
