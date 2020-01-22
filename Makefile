@@ -112,19 +112,17 @@ port-forward:
 build: setup code-quality tests show-env login-docker
 	docker-compose -f docker-compose.yml build --parallel --pull --compress
 
-up: build
+prep-data:
 	# NOTE: The volumes folder must not be inside the context of any docker or the docker builds will fail!
 	sudo mkdir -p ../volumes/latigo/influxdb/data
 	sudo mkdir -p ../volumes/latigo/grafana/data
 	sudo chown 472:472 ../volumes/latigo/grafana/data
+
+up: build prep-data
 	eval $(./set_env.py) && docker-compose up --remove-orphans --quiet-pull --no-build --force-recreate
 	docker ps -a
 
-dup:
-	# NOTE: The volumes folder must not be inside the context of any docker or the docker builds will fail!
-	sudo mkdir -p ../volumes/latigo/influxdb/data
-	sudo mkdir -p ../volumes/latigo/grafana/data
-	sudo chown 472:472 ../volumes/latigo/grafana/data
+dup: prep-data
 	eval $(./set_env.py) && docker-compose up --remove-orphans
 	docker ps -a
 
@@ -233,6 +231,7 @@ help:
 	@echo ""
 	@echo " + make help             Show this help"
 	@echo " + make up               Build incrementally, test and run all from scratch"
+	@echo " + make dup              Same as up but faster (for development)"
 	@echo " + make down             Shutdown docker images"
 	@echo " + make influxdb         Rebuild and restart influx image separately, attaching to log"
 	@echo " + make grafana          Rebuild and restart grafana image separately, attaching to log"
