@@ -6,13 +6,14 @@ import sys
 import pandas as pd
 import pytest
 
+from .mock_classes import MockSensorDataProvider
+
 latigo_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../app/"))
 
 
 sys.path.insert(0, latigo_path)
 sys.path.insert(0, "/private/lroll/Desktop/ioc_client/latigo/app/latigo")
 sys.path.insert(0, "/private/lroll/Desktop/ioc_client/latigo/app")
-
 
 @pytest.fixture
 def auth_config():
@@ -89,3 +90,13 @@ def config(auth_config):
             "auth": auth_config,
         },
     }
+
+
+@pytest.fixture
+def sensor_data_provider(config):
+    return MockSensorDataProvider(config.get("sensor_data"))
+
+
+@pytest.fixture
+def prediction_forwarder(MockPredictionStorageProvider):
+    return MockPredictionStorageProvider(config.get("prediction_storage"))

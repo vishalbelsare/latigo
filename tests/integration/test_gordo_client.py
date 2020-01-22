@@ -15,7 +15,6 @@ from latigo.gordo import (
     expand_gordo_data_provider,
     expand_gordo_prediction_forwarder,
 )
-from latigo.sensor_data import MockSensorDataProvider, sensor_data_provider_factory
 from latigo.prediction_storage import (
     MockPredictionStorageProvider,
     prediction_storage_provider_factory,
@@ -28,9 +27,6 @@ logger = logging.getLogger(__name__)
 # Turn down noiselevel from gordo
 logging.getLogger("gordo_components").setLevel(logging.WARNING)
 
-dummy_provider = MockSensorDataProvider(
-    {"mock_data": [pd.Series(data=[1, 2, 3, 4, 5])]}
-)
 dummy_prediction_forwarder = MockPredictionStorageProvider(
     {"mock_data": [pd.Series(data=[1, 2, 3, 4, 5])]}
 )
@@ -66,12 +62,12 @@ def _get_config():
     # fmt: on
 
 
-def test_gordo_config_expansion():
+def test_gordo_config_expansion(sensor_data_provider):
     config = _get_config()
     # Augment config with expanded gordo connection string
     expand_gordo_connection_string(config)
     # Augment config with the latigo data provider
-    expand_gordo_data_provider(config, dummy_provider)
+    expand_gordo_data_provider(config, sensor_data_provider)
     # Augment config with the latigo prediction forwarder
     expand_gordo_prediction_forwarder(config, dummy_prediction_forwarder)
 
