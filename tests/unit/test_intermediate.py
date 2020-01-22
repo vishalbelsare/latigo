@@ -2,7 +2,7 @@ import logging
 import pprint
 import typing
 from latigo.intermediate import IntermediateFormat
-from gordo_components.dataset.sensor_tag import SensorTag
+from gordo.machine.dataset.sensor_tag import SensorTag
 
 logger = logging.getLogger(__name__)
 

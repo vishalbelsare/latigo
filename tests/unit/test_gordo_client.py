@@ -13,7 +13,7 @@ from latigo.gordo import (
     _gordo_to_latigo_tag_list,
     _gordo_to_latigo_tag,
 )
-from gordo_components.dataset.sensor_tag import SensorTag
+from gordo.machine.dataset.sensor_tag import SensorTag
 from latigo.types import LatigoSensorTag
 
 
@@ -49,23 +49,23 @@ def un_test_gordo_client_pool():
 
 def test_clean_gordo_client_args():
     # fmt: off
+
     ok={
-        "scheme":"A",
-        "host":"B",
-        "port":8080,
-        "project":"D",
-        "target":"E",
-        "gordo_version":"F",
-        "batch_size":"G",
-        "parallelism":"H",
-        "forward_resampled_sensors":"I",
-        "ignore_unhealthy_targets":"J",
-        "n_retries":5,
-        "metadata":"L",
-        "data_provider":"M",
-        "prediction_forwarder":"N",
-        "session":"O",
-        "use_parquet":"P",
+        'scheme': 'A',
+        'host': 'B',
+        'port': 8080,
+        'project': 'D',
+        'target': 'E',
+        'gordo_version': 'F',
+        'batch_size': 'G',
+        'parallelism': 'H',
+        'forward_resampled_sensors': 'I',
+        'n_retries': 5,
+        'metadata': 'L',
+        'data_provider': 'M',
+        'prediction_forwarder': 'N',
+        'session': 'O',
+        'use_parquet': 'P'
     }
     # fmt: on
     clean_ok = clean_gordo_client_args(ok)
