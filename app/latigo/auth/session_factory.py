@@ -26,6 +26,9 @@ from azure.mgmt.datalake.analytics.job.models import JobInformation, JobState, U
 ## Other required imports
 import adal, uuid, time
 
+from .session import *
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,28 +71,6 @@ def token_saver(token):
     pass
 
 
-def create_auth_session_old(auth_config: dict):
-    client_id = auth_config.get("client_id")
-    client_secret = auth_config.get("client_secret")
-    authority_host_url = auth_config.get("authority_host_url")
-    tenant = auth_config.get("tenant")
-    token_url = f"{authority_host_url}/{tenant}"
-    extra = {"client_id": client_id, "client_secret": client_secret}
-    refresh_url = "https://login.microsoftonline.com"
-    session = None
-    token = fetch_access_token(auth_config)
-    if token:
-        try:
-            session = OAuth2Session(client_id=client_id, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
-            # logger.info(f"Authenticated successfully with token:")
-            # logger.info(token)
-            # logger.info(f"Authenticated successfully with session:")
-            # logger.info(session)
-        except Exception as e:
-            logger.error(f"Error creating OAuth2Session: {e}")
-    return session
-
-
 def create_auth_session(auth_config: dict):
     client_id = auth_config.get("client_id")
     client_secret = auth_config.get("client_secret")
@@ -105,30 +86,12 @@ def create_auth_session(auth_config: dict):
     if token:
         try:
             # session = OAuth2Session(client=client)
-            session = OAuth2Session(client_id=client_id, scope=scope, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
+            session = LatigoAuthSession(client_id=client_id, scope=scope, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
             # logger.info(f"Authenticated successfully with token:")
             # logger.info(token)
             # logger.info(f"Authenticated successfully with session:")
             # logger.info(session)
         except Exception as e:
-            logger.error(f"Error creating OAuth2Session: {e}")
+            logger.error(f"Error creating LatigoAuthSession: {e}")
             raise e
     return session
-
-
-class AuthVerifier:
-    def __init__(self, config: typing.Dict):
-        self.config = config
-
-    def test_auth(self, url: str) -> typing.Tuple[bool, typing.Optional[str]]:
-        try:
-            self.auth_session = create_auth_session(auth_config=self.config)
-            res = self.auth_session.get(url)
-            # logger.info(pprint.pformat(res))
-            if not res:
-                res.raise_for_status()
-        except Exception as e:
-            # Failure
-            return False, f"{e}"
-        # Success
-        return True, None

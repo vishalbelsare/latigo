@@ -33,9 +33,9 @@ class PredictionExecutor:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
-        # NOTE: This is a hack. We need a project appended to the URL for it to be valid, but there is no guarantee that the project has been set up with lat-lit project
-        self.model_info_connection_string += "/lat-lit/"
+        self.model_info_verification_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
+        verification_project = self.model_info_config.get("verification_project", "lat-lit")
+        self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
             self._fail("No model info configured")
@@ -75,9 +75,9 @@ class PredictionExecutor:
         if not self.prediction_executor_provider_config:
             self._fail("No prediction_executor_provider_config specified")
         prediction_executor_provider_type = self.prediction_executor_provider_config.get("type", None)
-        self.prediction_executor_provider_connection_string = self.prediction_executor_provider_config.get("connection_string", "no connection string set for prediction execution prvider")
-        # NOTE: This is a hack. We need a project appended to the URL for it to be valid, but there is no guarantee that the project has been set up with lat-lit project
-        self.prediction_executor_provider_connection_string += "/lat-lit/"
+        self.prediction_executor_provider_verification_connection_string = self.prediction_executor_provider_config.get("connection_string", "no connection string set for prediction execution prvider")
+        verification_project = self.prediction_executor_provider_config.get("verification_project", "lat-lit")
+        self.prediction_executor_provider_verification_connection_string += f"/{verification_project}/"
         self.prediction_executor_provider = prediction_execution_provider_factory(self.sensor_data_provider, self.prediction_storage_provider, self.prediction_executor_provider_config)
         self.name = self.prediction_executor_provider_config.get("name", "executor")
         if not self.prediction_executor_provider:
@@ -87,10 +87,10 @@ class PredictionExecutor:
     def _perform_auth_check(self):
         # fmt: off
         verifiers = [
-            (self.model_info_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))),
+            (self.model_info_verification_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))),
             (self.sensor_data_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.sensor_data_provider_config.get("auth", {}))),
             (self.prediction_storage_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.prediction_storage_provider_config.get("auth", {}))),
-            (self.prediction_executor_provider_connection_string, AuthVerifier(config=self.prediction_executor_provider_config.get("auth", {}))),
+            (self.prediction_executor_provider_verification_connection_string, AuthVerifier(config=self.prediction_executor_provider_config.get("auth", {}))),
             ]
         # fmt: on
         error_count = 0

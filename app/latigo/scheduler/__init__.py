@@ -33,9 +33,9 @@ class Scheduler:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
-        # NOTE: This is a hack. We need a project appended to the URL for it to be valid, but there is no guarantee that the project has been set up with lat-lit project
-        self.model_info_connection_string += "/lat-lit/"
+        self.model_info_verification_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
+        verification_project = self.model_info_config.get("verification_project", "lat-lit")
+        self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
             self._fail("No model info configured")
@@ -55,7 +55,7 @@ class Scheduler:
     def _perform_auth_check(self):
         # fmt: off
         verifiers = [
-            (self.model_info_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))),
+            (self.model_info_verification_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))),
             ]
         # fmt: on
         error_count = 0
