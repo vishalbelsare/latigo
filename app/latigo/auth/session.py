@@ -36,7 +36,6 @@ class LatigoAuthSession(OAuth2Session):
             logger.error(f"Could not connect (method={method}, url='{url}'): {nce}")
         except Exception as e:
             logger.error(f"Could not perform request(method={method}, url='{url}'): {e}")
-        #            raise e
         return None
 
     def send(self, request, **kwargs):
