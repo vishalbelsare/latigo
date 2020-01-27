@@ -37,7 +37,27 @@ class Client:
     _mutex = Lock()
     endpoints: List[EndpointMetadata] = []
 
-    def __init__(self, project: str, target: typing.Optional[str] = None, host: str = "localhost", port: int = 443, scheme: str = "https", gordo_version: str = "v0", metadata: typing.Optional[dict] = None, data_provider: typing.Optional[GordoBaseDataProvider] = None, prediction_forwarder: typing.Optional[Callable[[pd.DataFrame, EndpointMetadata, dict, pd.DataFrame], None]] = None, batch_size: int = 100000, parallelism: int = 10, forward_resampled_sensors: bool = False, ignore_unhealthy_targets: bool = False, n_retries: int = 5, use_parquet: bool = False, session: requests.Session = requests.Session()):
+    def __init__(
+        self,
+        project: str,
+        target: typing.Optional[str] = None,
+        host: str = "localhost",
+        port: int = 443,
+        scheme: str = "https",
+        gordo_version: str = "v0",
+        metadata: typing.Optional[dict] = None,
+        data_provider: typing.Optional[GordoBaseDataProvider] = None,
+        prediction_forwarder: typing.Optional[
+            Callable[[pd.DataFrame, EndpointMetadata, dict, pd.DataFrame], None]
+        ] = None,
+        batch_size: int = 100000,
+        parallelism: int = 10,
+        forward_resampled_sensors: bool = False,
+        ignore_unhealthy_targets: bool = False,
+        n_retries: int = 5,
+        use_parquet: bool = False,
+        session: requests.Session = requests.Session(),
+    ):
         """
         Parameters
         ----------
@@ -109,10 +129,18 @@ class Client:
         # Thread safe single access and updating of endpoints.
         with self._mutex:
             endpoints = self._endpoints_from_watchman(self.watchman_endpoint)
-            return self._filter_endpoints(endpoints=endpoints, target=self.target, ignore_unhealthy_targets=self.ignore_unhealthy_targets)
+            return self._filter_endpoints(
+                endpoints=endpoints,
+                target=self.target,
+                ignore_unhealthy_targets=self.ignore_unhealthy_targets,
+            )
 
     @staticmethod
-    def _filter_endpoints(endpoints: typing.List[EndpointMetadata], target: typing.Optional[str] = None, ignore_unhealthy_targets: typing.Optional[bool] = False) -> typing.List[EndpointMetadata]:
+    def _filter_endpoints(
+        endpoints: typing.List[EndpointMetadata],
+        target: typing.Optional[str] = None,
+        ignore_unhealthy_targets: typing.Optional[bool] = False,
+    ) -> typing.List[EndpointMetadata]:
         """
         Based on the current configuration, filter out endpoints which the client
         should not care about.
@@ -134,8 +162,15 @@ class Client:
 
         # Raise an error if we got some unhealty endpoints and weren't suppose to ignore them.
         # otherwise filter out any unhealthy endpoints
-        if not target and not ignore_unhealthy_targets and not all(e.healthy for e in endpoints):
-            raise ValueError(f"Flag 'ignore_unhealthy_targets' is set to False and we encountered some " f"unhealthy ones: {[ep for ep in endpoints if ep.healthy is False]}")
+        if (
+            not target
+            and not ignore_unhealthy_targets
+            and not all(e.healthy for e in endpoints)
+        ):
+            raise ValueError(
+                f"Flag 'ignore_unhealthy_targets' is set to False and we encountered some "
+                f"unhealthy ones: {[ep for ep in endpoints if ep.healthy is False]}"
+            )
         else:
             endpoints = [ep for ep in endpoints if ep.healthy]
 
@@ -145,13 +180,20 @@ class Client:
 
             # And check for single result and that it's healthy
             if len(endpoints) != 1:
-                raise ValueError(f"Found {'multiple' if len(endpoints) else 'no'} endpoints matching " f"target name '{target}' in {original_endpoints}")
+                raise ValueError(
+                    f"Found {'multiple' if len(endpoints) else 'no'} endpoints matching "
+                    f"target name '{target}' in {original_endpoints}"
+                )
             if not endpoints[0].healthy:
-                raise ValueError(f"The targeted endpoint: '{endpoints[0]}' is unhealthy")
+                raise ValueError(
+                    f"The targeted endpoint: '{endpoints[0]}' is unhealthy"
+                )
 
         # finally, raise an error if all this left us without any endpoints
         if not endpoints:
-            raise ValueError(f"Found no endpoints out of supplied endpoints: {original_endpoints} after filtering")
+            raise ValueError(
+                f"Found no endpoints out of supplied endpoints: {original_endpoints} after filtering"
+            )
         return endpoints
 
     def _endpoints_from_watchman(self, endpoint: str) -> typing.List[EndpointMetadata]:
@@ -174,7 +216,9 @@ class Client:
         """
         models = dict()
         for endpoint in self.endpoints:
-            resp = self.session.get(f"{self.base_url + endpoint.endpoint}/download-model")
+            resp = self.session.get(
+                f"{self.base_url + endpoint.endpoint}/download-model"
+            )
             if resp.ok:
                 models[endpoint.name] = serializer.loads(resp.content)
             else:
@@ -198,10 +242,18 @@ class Client:
 
         if force_refresh:
             self.endpoints = self.get_endpoints()  # Forced refresh if
-        self.metadata_: Dict[str, dict] = {ep.name: ep.raw_metadata() for ep in self.endpoints}
+        self.metadata_: Dict[str, dict] = {
+            ep.name: ep.raw_metadata() for ep in self.endpoints
+        }
         return self.metadata_.copy()
 
-    def predict(self, start: datetime, end: datetime, refresh_endpoints: bool = False, endpoint_names: Optional[List[str]] = None) -> typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]]:
+    def predict(
+        self,
+        start: datetime,
+        end: datetime,
+        refresh_endpoints: bool = False,
+        endpoint_names: Optional[List[str]] = None,
+    ) -> typing.Iterable[typing.Tuple[str, pd.DataFrame, typing.List[str]]]:
         """
         Start the prediction process.
         Parameters
@@ -232,10 +284,14 @@ class Client:
 
         # For every endpoint, start making predictions for the time range
         with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
-            jobs = executor.map(lambda ep: self.predict_single_endpoint(ep, start, end), endpoints)
+            jobs = executor.map(
+                lambda ep: self.predict_single_endpoint(ep, start, end), endpoints
+            )
             return [(j.name, j.predictions, j.error_messages) for j in jobs]
 
-    def predict_single_endpoint(self, endpoint: EndpointMetadata, start: datetime, end: datetime) -> PredictionResult:
+    def predict_single_endpoint(
+        self, endpoint: EndpointMetadata, start: datetime, end: datetime
+    ) -> PredictionResult:
         """
         Get predictions based on the /prediction POST endpoint of Gordo ML Servers
         Parameters
@@ -261,7 +317,21 @@ class Client:
 
         # Start making batch predictions
         with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
-            jobs = executor.map(lambda i: self._send_prediction_request(X, y, chunk=slice(i, i + self.batch_size), endpoint=endpoint, start=X.index[i], end=X.index[i + self.batch_size if i + self.batch_size <= max_indx else max_indx]), range(0, X.shape[0], self.batch_size))
+            jobs = executor.map(
+                lambda i: self._send_prediction_request(
+                    X,
+                    y,
+                    chunk=slice(i, i + self.batch_size),
+                    endpoint=endpoint,
+                    start=X.index[i],
+                    end=X.index[
+                        i + self.batch_size
+                        if i + self.batch_size <= max_indx
+                        else max_indx
+                    ],
+                ),
+                range(0, X.shape[0], self.batch_size),
+            )
 
             # Accumulate the batched predictions
             prediction_dfs = list()
@@ -271,10 +341,24 @@ class Client:
                     prediction_dfs.append(prediction_result.predictions)
                 error_messages.extend(prediction_result.error_messages)
 
-            predictions = pd.concat(prediction_dfs).sort_index() if prediction_dfs else pd.DataFrame()
-        return PredictionResult(name=endpoint.name, predictions=predictions, error_messages=error_messages)
+            predictions = (
+                pd.concat(prediction_dfs).sort_index()
+                if prediction_dfs
+                else pd.DataFrame()
+            )
+        return PredictionResult(
+            name=endpoint.name, predictions=predictions, error_messages=error_messages
+        )
 
-    def _send_prediction_request(self, X: pd.DataFrame, y: typing.Optional[pd.DataFrame], chunk: slice, endpoint: EndpointMetadata, start: datetime, end: datetime):
+    def _send_prediction_request(
+        self,
+        X: pd.DataFrame,
+        y: typing.Optional[pd.DataFrame],
+        chunk: slice,
+        endpoint: EndpointMetadata,
+        start: datetime,
+        end: datetime,
+    ):
         """
         Post a slice of data to the endpoint
         Parameters
@@ -294,13 +378,25 @@ class Client:
         PredictionResult
         """
 
-        kwargs: Dict[str, Any] = dict(url=f"{self.base_url + endpoint.endpoint}{self.prediction_path}{self.query}")
+        kwargs: Dict[str, Any] = dict(
+            url=f"{self.base_url + endpoint.endpoint}{self.prediction_path}{self.query}"
+        )
 
         # We're going to serialize the data as either JSON or Arrow
         if self.use_parquet:
-            kwargs["files"] = {"X": server_utils.dataframe_into_parquet_bytes(X.iloc[chunk]), "y": server_utils.dataframe_into_parquet_bytes(y.iloc[chunk]) if y is not None else None}
+            kwargs["files"] = {
+                "X": server_utils.dataframe_into_parquet_bytes(X.iloc[chunk]),
+                "y": server_utils.dataframe_into_parquet_bytes(y.iloc[chunk])
+                if y is not None
+                else None,
+            }
         else:
-            kwargs["json"] = {"X": server_utils.dataframe_to_dict(X.iloc[chunk]), "y": server_utils.dataframe_to_dict(y.iloc[chunk]) if y is not None else None}
+            kwargs["json"] = {
+                "X": server_utils.dataframe_to_dict(X.iloc[chunk]),
+                "y": server_utils.dataframe_to_dict(y.iloc[chunk])
+                if y is not None
+                else None,
+            }
 
         # Start attempting to get predictions for this batch
         for current_attempt in itertools.count(start=1):
@@ -309,26 +405,46 @@ class Client:
                     resp = _handle_response(self.session.post(**kwargs))
                 except HttpUnprocessableEntity:
                     self.prediction_path = "/prediction"
-                    kwargs["url"] = f"{self.base_url + endpoint.endpoint}{self.prediction_path}{self.query}"
+                    kwargs[
+                        "url"
+                    ] = f"{self.base_url + endpoint.endpoint}{self.prediction_path}{self.query}"
                     resp = _handle_response(self.session.post(**kwargs))
             # If it was an IO or TimeoutError, we can retry
-            except (IOError, TimeoutError, BadRequest, requests.ConnectionError, requests.HTTPError) as exc:
+            except (
+                IOError,
+                TimeoutError,
+                BadRequest,
+                requests.ConnectionError,
+                requests.HTTPError,
+            ) as exc:
                 if current_attempt <= self.n_retries:
                     time_to_sleep = min(2 ** (current_attempt + 2), 300)
-                    logger.warning(f"Failed to get response on attempt {current_attempt} out of {self.n_retries} attempts.")
+                    logger.warning(
+                        f"Failed to get response on attempt {current_attempt} out of {self.n_retries} attempts."
+                    )
                     sleep(time_to_sleep)
                     continue
                 else:
-                    msg = f"Failed to get predictions for dates {start} -> {end} " f"for target: '{endpoint.name}' Error: {exc}"
+                    msg = (
+                        f"Failed to get predictions for dates {start} -> {end} "
+                        f"for target: '{endpoint.name}' Error: {exc}"
+                    )
                     logger.error(msg)
 
-                    return PredictionResult(name=endpoint.name, predictions=None, error_messages=[msg])
+                    return PredictionResult(
+                        name=endpoint.name, predictions=None, error_messages=[msg]
+                    )
 
             # No point in retrying a BadRequest
             except BadRequest as exc:
-                msg = f"Failed with BadRequest error for dates {start} -> {end} " f"for target: '{endpoint.name}' Error: {exc}"
+                msg = (
+                    f"Failed with BadRequest error for dates {start} -> {end} "
+                    f"for target: '{endpoint.name}' Error: {exc}"
+                )
                 logger.error(msg)
-                return PredictionResult(name=endpoint.name, predictions=None, error_messages=[msg])
+                return PredictionResult(
+                    name=endpoint.name, predictions=None, error_messages=[msg]
+                )
 
             # Process response and return if no exception
             else:
@@ -338,11 +454,17 @@ class Client:
                 # Forward predictions to any other consumer if registered.
                 if self.prediction_forwarder is not None:
                     self.prediction_forwarder(  # type: ignore
-                        predictions=predictions, endpoint=endpoint, metadata=self.metadata
+                        predictions=predictions,
+                        endpoint=endpoint,
+                        metadata=self.metadata,
                     )
-                return PredictionResult(name=endpoint.name, predictions=predictions, error_messages=[])
+                return PredictionResult(
+                    name=endpoint.name, predictions=predictions, error_messages=[]
+                )
 
-    def _raw_data(self, endpoint: EndpointMetadata, start: datetime, end: datetime) -> pd.DataFrame:
+    def _raw_data(
+        self, endpoint: EndpointMetadata, start: datetime, end: datetime
+    ) -> pd.DataFrame:
         """
         Fetch the required raw data in this time range which would
         satisfy this endpoint's /prediction POST
@@ -361,7 +483,11 @@ class Client:
         # We want to adjust for any model offset. If the model outputs less than it got in, it requires
         # extra data than what we're being asked to get predictions for.
         # just to give us some buffer zone.
-        start = self._adjust_for_offset(dt=start, resolution=endpoint.resolution, n_intervals=endpoint.model_offset + 5)
+        start = self._adjust_for_offset(
+            dt=start,
+            resolution=endpoint.resolution,
+            n_intervals=endpoint.model_offset + 5,
+        )
         dataset = TimeSeriesDataset(
             data_provider=self.data_provider,  # type: ignore
             from_ts=start,
@@ -420,7 +546,9 @@ class Client:
         return predictions
 
 
-def make_date_ranges(start: datetime, end: datetime, max_interval_days: int, freq: str = "H"):
+def make_date_ranges(
+    start: datetime, end: datetime, max_interval_days: int, freq: str = "H"
+):
     """
     Split start and end datetimes into a list of datetime intervals.
     If the interval between start and end is less than ``max_interval_days`` then
@@ -441,6 +569,8 @@ def make_date_ranges(start: datetime, end: datetime, max_interval_days: int, fre
     if (end - start).days >= max_interval_days:
         # Split into 1hr data ranges
         date_range = pd.date_range(start, end, freq=freq)
-        return [(date_range[i], date_range[i + 1]) for i in range(0, len(date_range) - 1)]
+        return [
+            (date_range[i], date_range[i + 1]) for i in range(0, len(date_range) - 1)
+        ]
     else:
         return [(start, end)]

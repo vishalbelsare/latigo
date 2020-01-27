@@ -10,7 +10,14 @@ import pandas as pd
 import urllib.parse
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 
-from latigo.types import Task, SensorDataSpec, SensorDataSet, TimeRange, PredictionDataSet, LatigoSensorTag
+from latigo.types import (
+    Task,
+    SensorDataSpec,
+    SensorDataSet,
+    TimeRange,
+    PredictionDataSet,
+    LatigoSensorTag,
+)
 from latigo.intermediate import IntermediateFormat
 from latigo.sensor_data import SensorDataProviderInterface
 from latigo.prediction_storage import PredictionStorageProviderInterface
@@ -56,11 +63,18 @@ class MetaDataCache:
     def _key(self, name: str, asset_id: typing.Optional[str]):
         return f"{name}-|#-{asset_id}"
 
-    def get_meta(self, name: str, asset_id: typing.Optional[str]) -> typing.Optional[typing.Dict]:
+    def get_meta(
+        self, name: str, asset_id: typing.Optional[str]
+    ) -> typing.Optional[typing.Dict]:
         key = self._key(name, asset_id)
         return self._data.get(key, None)
 
-    def set_meta(self, name: str, asset_id: typing.Optional[str], meta: typing.Optional[typing.Dict]):
+    def set_meta(
+        self,
+        name: str,
+        asset_id: typing.Optional[str],
+        meta: typing.Optional[typing.Dict],
+    ):
         key = self._key(name, asset_id)
         if not meta:
             del self._data[key]
@@ -121,7 +135,9 @@ def transform_from_timeseries_to_gordo(items: typing.List):
             tag_name = tag_names[j]
             line.append(tag_names_data[tag_name][i])
         gordo_data.append(line)
-    logger.info(f"tagnames: {tag_names} tagmap {tag_names_map} tagdata {tag_names_data}")
+    logger.info(
+        f"tagnames: {tag_names} tagmap {tag_names_map} tagdata {tag_names_data}"
+    )
     return {"X": gordo_data}
 
 
@@ -206,7 +222,9 @@ def _get_auth_session(auth_config: dict, force: bool = False):
     return timeseries_client_auth_session
 
 
-def _parse_request_json(res) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+def _parse_request_json(
+    res
+) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
     try:
         res.raise_for_status()
         ret = res.json()
@@ -334,7 +352,9 @@ class TimeSeriesAPIClient:
         # self._prepare_ims_meta_client();
         # self._prepare_ims_subscription_client();
         if not self.good_to_go:
-            raise Exception("TimeSeriesAPIClient failed. Please see previous errors for clues as to why")
+            raise Exception(
+                "TimeSeriesAPIClient failed. Please see previous errors for clues as to why"
+            )
 
     #    def get_timeseries_id_for_tag_name(self, tag_name: str):
     #        system_code = self.ims_meta.get_system_code_by_tag_name(tag_name=tag_name)
@@ -362,13 +382,22 @@ class TimeSeriesAPIClient:
             res = self.session.post(*args, **kwargs)
         return res
 
-    def _fetch_data_for_id(self, id: str, time_range: TimeRange) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def _fetch_data_for_id(
+        self, id: str, time_range: TimeRange
+    ) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         url = f"{self.base_url}/{id}/data"
-        params = {"startTime": time_range.rfc3339_from(), "endTime": time_range.rfc3339_to(), "limit": 100000, "includeOutsidePoints": True}
+        params = {
+            "startTime": time_range.rfc3339_from(),
+            "endTime": time_range.rfc3339_to(),
+            "limit": 100000,
+            "includeOutsidePoints": True,
+        }
         res = self._get(url=url, params=params)
         return _parse_request_json(res)
 
-    def _get_meta_by_name_raw(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def _get_meta_by_name_raw(
+        self, name: str, asset_id: typing.Optional[str] = None
+    ) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         body = {"name": name}
         if name is None:
             return None, "No name specified"
@@ -382,7 +411,9 @@ class TimeSeriesAPIClient:
         res = self._get(self.base_url, params=body)
         return _parse_request_json(res)
 
-    def _get_meta_by_name(self, name: str, asset_id: typing.Optional[str] = None) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def _get_meta_by_name(
+        self, name: str, asset_id: typing.Optional[str] = None
+    ) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
         if self.meta_data_cache:
             meta = self.meta_data_cache.get_meta(name, asset_id)
             if meta:
@@ -392,19 +423,42 @@ class TimeSeriesAPIClient:
             self.meta_data_cache.set_meta(name, asset_id, meta)
         return meta, msg
 
-    def _create_id(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
-        body = {"name": name, "description": description, "step": True, "unit": unit, "assetId": asset_id, "externalId": external_id}
+    def _create_id(
+        self,
+        name: str,
+        description: str = "",
+        unit: str = "",
+        asset_id: str = "",
+        external_id: str = "",
+    ):
+        body = {
+            "name": name,
+            "description": description,
+            "step": True,
+            "unit": unit,
+            "assetId": asset_id,
+            "externalId": external_id,
+        }
         # logger.info(f"Posting {pprint.pformat(body)} from {self.base_url}")
         res = self._post(self.base_url, json=body, params=None)
         return _parse_request_json(res)
 
-    def _create_id_if_not_exists(self, name: str, description: str = "", unit: str = "", asset_id: str = "", external_id: str = ""):
+    def _create_id_if_not_exists(
+        self,
+        name: str,
+        description: str = "",
+        unit: str = "",
+        asset_id: str = "",
+        external_id: str = "",
+    ):
         meta, err = self._get_meta_by_name(name=name, asset_id=asset_id)
         if meta and _itemes_present(meta):
             return meta, err
         return self._create_id(name, description, unit, asset_id, external_id)
 
-    def _store_data_for_id(self, id: str, datapoints: typing.List[typing.Dict[str, str]]):
+    def _store_data_for_id(
+        self, id: str, datapoints: typing.List[typing.Dict[str, str]]
+    ):
         body = {"datapoints": datapoints}
         url = f"{self.base_url}/{id}/data"
         res = self._post(url, json=body, params=None)
@@ -430,7 +484,9 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             return True
         return False
 
-    def get_data_for_range(self, spec: SensorDataSpec, time_range: TimeRange) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
+    def get_data_for_range(
+        self, spec: SensorDataSpec, time_range: TimeRange
+    ) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
         """
         return the actual data as per the range specified
         """
@@ -467,7 +523,9 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
                 id = item.get("id", None)
             if not id:
                 missing_id += 1
-                logger.warning(f"Time series not found for requested tag '{tag}', skipping")
+                logger.warning(
+                    f"Time series not found for requested tag '{tag}', skipping"
+                )
                 # logger.warning(pprint.pformat(meta))
                 if fail_on_missing:
                     break
@@ -508,7 +566,14 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
 invalid_operations = ["start", "end", "model-input"]
 
 
-def prediction_data_naming_convention(operation: str, model_name: str, tag_name: str, separator: str = "|", global_tag_name: str = "INDICATOR", global_model_name: str = "UNKNOWN_MODEL"):
+def prediction_data_naming_convention(
+    operation: str,
+    model_name: str,
+    tag_name: str,
+    separator: str = "|",
+    global_tag_name: str = "INDICATOR",
+    global_model_name: str = "UNKNOWN_MODEL",
+):
     if operation in invalid_operations:
         return None
     if not tag_name:
@@ -523,7 +588,9 @@ def prediction_data_naming_convention(operation: str, model_name: str, tag_name:
     return f"{tag_name}{separator}{model_name}{separator}{operation}"
 
 
-class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStorageProviderInterface):
+class TimeSeriesAPIPredictionStorageProvider(
+    TimeSeriesAPIClient, PredictionStorageProviderInterface
+):
     def __init__(self, config: dict):
         super().__init__(config)
 
@@ -549,7 +616,9 @@ class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStor
         df = row[1]
         model_name = prediction_data.meta_data.get("model_name", "")
         for col in df.columns:
-            output_tag_name = prediction_data_naming_convention(operation=col[0], model_name=model_name, tag_name=col[1])
+            output_tag_name = prediction_data_naming_convention(
+                operation=col[0], model_name=model_name, tag_name=col[1]
+            )
             if not output_tag_name:
                 # logger. info("Skipping invalid output tag name: {output_tag_name}")
                 continue
@@ -559,11 +628,18 @@ class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStor
             unit = ""
             # TODO: Should we generate some external_id?
             external_id = ""
-            meta, err = self._create_id_if_not_exists(name=output_tag_name, description=description, unit=unit, external_id=external_id)
+            meta, err = self._create_id_if_not_exists(
+                name=output_tag_name,
+                description=description,
+                unit=unit,
+                external_id=external_id,
+            )
             if not meta and not err:
                 err = "Meta mising with no error"
             if err:
-                logger.error(f"Could not create/find id for name {output_tag_name}: {err}")
+                logger.error(
+                    f"Could not create/find id for name {output_tag_name}: {err}"
+                )
                 continue
             id = _id_in_data(meta)
             if not id:
@@ -590,14 +666,18 @@ class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStor
                     # logger.info(f"Skipping NaN value for {key} @ {time}")
                     skipped_values += 1
                     continue
-                datapoints.append({"time": rfc3339_from_datetime(time), "value": value, "status": "0"})
+                datapoints.append(
+                    {"time": rfc3339_from_datetime(time), "value": value, "status": "0"}
+                )
             res, err = self._store_data_for_id(id=id, datapoints=datapoints)
             if not res or err:
                 logger.error(f" Could not store data: {err}")
                 failed_tags += 1
             else:
                 stored_tags += 1
-        logger.info(f"  {stored_values} values stored, {skipped_values} NaNs skipped. {stored_tags} tags stored, {failed_tags} tags failed")
+        logger.info(
+            f"  {stored_values} values stored, {skipped_values} NaNs skipped. {stored_tags} tags stored, {failed_tags} tags failed"
+        )
         # with pd.option_context("display.max_rows", None, "display.max_columns", None):
         #    logger.info("")
         #    logger.info(f"  Item({item})")

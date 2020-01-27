@@ -16,14 +16,38 @@ def setup_logging(filename, log_level=logging.INFO):
         datefmt = "%Y-%m-%d %H:%M:%S"
 
         # Suppress overly verbose output that isn't helpful from some libraries we depend on
-        for key in ["requests", "tensorboard", "urllib3", "aiohttp.access", "uamqp", "sqlalchemy", "sqlalchemy.engine.base", "adal-python", "matplotlib.font_manager", "gordo_components"]:
+        for key in [
+            "requests",
+            "tensorboard",
+            "urllib3",
+            "aiohttp.access",
+            "uamqp",
+            "sqlalchemy",
+            "sqlalchemy.engine.base",
+            "adal-python",
+            "matplotlib.font_manager",
+            "gordo",
+        ]:
             logging.getLogger(key).setLevel(logging.WARNING)
 
         logging.getLogger("gordo_components.client").setLevel(logging.DEBUG)
         try:
             from colorlog import ColoredFormatter
 
-            logging.getLogger().handlers[0].setFormatter(ColoredFormatter(colorfmt, datefmt=datefmt, reset=True, log_colors={"DEBUG": "cyan", "INFO": "green", "WARNING": "yellow", "ERROR": "red", "CRITICAL": "red"}))
+            logging.getLogger().handlers[0].setFormatter(
+                ColoredFormatter(
+                    colorfmt,
+                    datefmt=datefmt,
+                    reset=True,
+                    log_colors={
+                        "DEBUG": "cyan",
+                        "INFO": "green",
+                        "WARNING": "yellow",
+                        "ERROR": "red",
+                        "CRITICAL": "red",
+                    },
+                )
+            )
         except ImportError:
             pass
 

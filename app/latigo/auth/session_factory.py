@@ -21,7 +21,11 @@ from msrestazure.azure_active_directory import AADTokenCredentials
 
 ## Required for Azure Data Lake Analytics job management
 from azure.mgmt.datalake.analytics.job import DataLakeAnalyticsJobManagementClient
-from azure.mgmt.datalake.analytics.job.models import JobInformation, JobState, USqlJobProperties
+from azure.mgmt.datalake.analytics.job.models import (
+    JobInformation,
+    JobState,
+    USqlJobProperties,
+)
 
 ## Other required imports
 import adal, uuid, time
@@ -37,19 +41,35 @@ def fetch_access_token(auth_config: dict):
     client_secret = auth_config.get("client_secret")
     tenant = auth_config.get("tenant", "adfs")
     validate_authority = tenant != "adfs"
-    authority_host_url = auth_config.get("authority_host_url", "https://login.microsoftonline.com")
+    authority_host_url = auth_config.get(
+        "authority_host_url", "https://login.microsoftonline.com"
+    )
     authority_uri = f"{authority_host_url}/{tenant}"
     resource_uri = auth_config.get("resource", "https://management.core.windows.net/")
     token = None
     oathlib_token = None
     try:
-        context = adal.AuthenticationContext(authority=authority_uri, validate_authority=validate_authority, api_version=None)
-        token = context.acquire_token_with_client_credentials(resource_uri, client_id, client_secret) or {}
+        context = adal.AuthenticationContext(
+            authority=authority_uri,
+            validate_authority=validate_authority,
+            api_version=None,
+        )
+        token = (
+            context.acquire_token_with_client_credentials(
+                resource_uri, client_id, client_secret
+            )
+            or {}
+        )
         if token:
             # print("Got auth token:")
             # print(json.dumps(token, indent=2))
             # logger.info("fetch_access_token:")
-            oathlib_token = {"access_token": token.get("accessToken", ""), "refresh_token": token.get("refreshToken", ""), "token_type": token.get("tokenType", "Bearer"), "expires_in": token.get("expiresIn", 0)}
+            oathlib_token = {
+                "access_token": token.get("accessToken", ""),
+                "refresh_token": token.get("refreshToken", ""),
+                "token_type": token.get("tokenType", "Bearer"),
+                "expires_in": token.get("expiresIn", 0),
+            }
             # logger.info(pprint.pformat(token))
         else:
             logger.error(f"Could not get token for client {authority_uri}")

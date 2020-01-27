@@ -80,7 +80,20 @@ import datetime, time, calendar
 import re
 
 
-__all__ = ["tzinfo", "UTC_TZ", "parse_date", "parse_datetime", "parse_time", "now", "utcfromtimestamp", "utctotimestamp", "datetimetostr", "timestamptostr", "strtotimestamp", "timetostr"]
+__all__ = [
+    "tzinfo",
+    "UTC_TZ",
+    "parse_date",
+    "parse_datetime",
+    "parse_time",
+    "now",
+    "utcfromtimestamp",
+    "utctotimestamp",
+    "datetimetostr",
+    "timestamptostr",
+    "strtotimestamp",
+    "timetostr",
+]
 
 
 ZERO = datetime.timedelta(0)
@@ -224,7 +237,9 @@ def _parse_time_components(s, hour, min, sec, frac_sec, wholetz, tzsign, tzhour,
         if offset == 0:
             tz = UTC_TZ
         else:
-            if tzhour > 24 or tzmin > 60 or offset > 1439:  ## see tzinfo docs for the 1439 part
+            if (
+                tzhour > 24 or tzmin > 60 or offset > 1439
+            ):  ## see tzinfo docs for the 1439 part
                 raise ValueError("Invalid timezone offset", s, wholetz)
 
             if tzsign == "-":
@@ -266,9 +281,22 @@ def parse_time(s):
     """
     m = time_re.match(s)
     if m:
-        (hour, min, sec, ignore1, frac_sec, wholetz, ignore2, tzsign, tzhour, tzmin) = m.groups()
+        (
+            hour,
+            min,
+            sec,
+            ignore1,
+            frac_sec,
+            wholetz,
+            ignore2,
+            tzsign,
+            tzhour,
+            tzmin,
+        ) = m.groups()
 
-        hour, min, sec, microsec, tz = _parse_time_components(s, hour, min, sec, frac_sec, wholetz, tzsign, tzhour, tzmin)
+        hour, min, sec, microsec, tz = _parse_time_components(
+            s, hour, min, sec, frac_sec, wholetz, tzsign, tzhour, tzmin
+        )
 
         return datetime.time(hour, min, sec, microsec, tz)
     else:
@@ -345,9 +373,25 @@ def parse_datetime(s):
     """
     m = datetime_re.match(s)
     if m:
-        (y, m, d, hour, min, sec, ignore1, frac_sec, wholetz, ignore2, tzsign, tzhour, tzmin) = m.groups()
+        (
+            y,
+            m,
+            d,
+            hour,
+            min,
+            sec,
+            ignore1,
+            frac_sec,
+            wholetz,
+            ignore2,
+            tzsign,
+            tzhour,
+            tzmin,
+        ) = m.groups()
 
-        hour, min, sec, microsec, tz = _parse_time_components(s, hour, min, sec, frac_sec, wholetz, tzsign, tzhour, tzmin)
+        hour, min, sec, microsec, tz = _parse_time_components(
+            s, hour, min, sec, frac_sec, wholetz, tzsign, tzhour, tzmin
+        )
 
         return datetime.datetime(int(y), int(m), int(d), hour, min, sec, microsec, tz)
     else:

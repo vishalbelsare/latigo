@@ -55,6 +55,9 @@ except Exception:
 log_level = os.getenv("LOG_LEVEL", "DEBUG").upper()
 azure_log_level = os.getenv("AZURE_DATALAKE_LOG_LEVEL", "INFO").upper()
 
-logging.basicConfig(level=getattr(logging, log_level), format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s")
+logging.basicConfig(
+    level=getattr(logging, log_level),
+    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
+)
 
 logging.getLogger("azure.datalake").setLevel(azure_log_level)

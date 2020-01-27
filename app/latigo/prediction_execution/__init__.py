@@ -10,7 +10,9 @@ from latigo.types import SensorDataSet, PredictionDataSet
 
 
 class PredictionExecutionProviderInterface:
-    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorDataSet) -> PredictionDataSet:
+    def execute_prediction(
+        self, project_name: str, model_name: str, sensor_data: SensorDataSet
+    ) -> PredictionDataSet:
         """
         Train and/or run data through a given model
         """
@@ -20,7 +22,9 @@ class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
     def __init__(self, sensor_data, prediction_storage, config: dict):
         self.config = config
 
-    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorDataSet) -> PredictionDataSet:
+    def execute_prediction(
+        self, project_name: str, model_name: str, sensor_data: SensorDataSet
+    ) -> PredictionDataSet:
         """
         Testing mock prediction execution provider
         """
@@ -34,7 +38,9 @@ class DevNullPredictionExecutionProvider(PredictionExecutionProviderInterface):
     def __init__(self, sensor_data, prediction_storage, config: dict):
         self.config = config
 
-    def execute_prediction(self, project_name: str, model_name: str, sensor_data: SensorDataSet) -> PredictionDataSet:
+    def execute_prediction(
+        self, project_name: str, model_name: str, sensor_data: SensorDataSet
+    ) -> PredictionDataSet:
         """
         Dummy no-op prediction execution provider
         """
@@ -44,15 +50,29 @@ class DevNullPredictionExecutionProvider(PredictionExecutionProviderInterface):
         return None
 
 
-def prediction_execution_provider_factory(sensor_data_provider, prediction_storage_provider, prediction_execution_config):
+def prediction_execution_provider_factory(
+    sensor_data_provider, prediction_storage_provider, prediction_execution_config
+):
     prediction_execution_type = prediction_execution_config.get("type", None)
     prediction_execution = None
     if "gordo" == prediction_execution_type:
         from latigo.gordo import GordoPredictionExecutionProvider
 
-        prediction_execution = GordoPredictionExecutionProvider(sensor_data_provider, prediction_storage_provider, prediction_execution_config)
+        prediction_execution = GordoPredictionExecutionProvider(
+            sensor_data_provider,
+            prediction_storage_provider,
+            prediction_execution_config,
+        )
     elif "mock" == prediction_execution_type:
-        prediction_execution = MockPredictionExecutionProvider(sensor_data_provider, prediction_storage_provider, prediction_execution_config)
+        prediction_execution = MockPredictionExecutionProvider(
+            sensor_data_provider,
+            prediction_storage_provider,
+            prediction_execution_config,
+        )
     else:
-        prediction_execution = DevNullPredictionExecutionProvider(sensor_data_provider, prediction_storage_provider, prediction_execution_config)
+        prediction_execution = DevNullPredictionExecutionProvider(
+            sensor_data_provider,
+            prediction_storage_provider,
+            prediction_execution_config,
+        )
     return prediction_execution
