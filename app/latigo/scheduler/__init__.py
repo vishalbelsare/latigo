@@ -21,10 +21,11 @@ class Scheduler:
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
-        logger.warning(f"NOTE: Using config:")
-        logger.warning(f"")
-        for line in str(pprint.pformat(self.scheduler_config)).split("\n"):
-            logger.warning(line)
+        if False:
+            logger.warning(f"NOTE: Using config:")
+            logger.warning(f"")
+            for line in str(pprint.pformat(self.config)).split("\n"):
+                logger.warning(line)
         logger.warning(f"")
 
     # Inflate model info connection from config
@@ -32,6 +33,9 @@ class Scheduler:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
+        self.model_info_verification_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
+        verification_project = self.model_info_config.get("verification_project", "lat-lit")
+        self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
             self._fail("No model info configured")
@@ -51,7 +55,7 @@ class Scheduler:
     def _perform_auth_check(self):
         # fmt: off
         verifiers = [
-            (self.model_info_config.get('connection_string','no_connection_string'), AuthVerifier(config=self.model_info_config.get("auth", {}))),
+            (self.model_info_verification_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))),
             ]
         # fmt: on
         error_count = 0
@@ -193,10 +197,11 @@ class Scheduler:
     def run(self):
         if not self.good_to_go:
             sleep_time = 20
-            logger.error(" ### ### Latigo could not be started!")
-            logger.error("         Please see previous error messages for clues as to why.")
             logger.error("")
+            logger.error(" ### ### Latigo could not be started!")
             logger.error(f"         Will pause for {sleep_time} seconds before terminating.")
+            logger.error("         Please see previous error messages for clues.")
+            logger.error("")
             sleep(sleep_time)
             return
         logger.info("Scheduler started processing")

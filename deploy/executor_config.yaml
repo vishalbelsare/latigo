@@ -23,6 +23,7 @@ task_queue:
 model_info:
     type: "gordo"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    verification_project: "ioc-1901"
     target: null
     metadata: null
     batch_size: 1000
@@ -70,6 +71,7 @@ prediction_storage:
 predictor:
     type: "gordo"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    verification_project: "ioc-1901"
     target: null
     metadata: null
     batch_size: 1000
