@@ -43,6 +43,7 @@ model_info:
         authority_host_url: "set from env"
         client_id: "set from env"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+    enable_auth: True
 
 sensor_data:
     type: "time_series_api"
@@ -92,3 +93,5 @@ predictor:
         authority_host_url: "not set from env in executor_config.yaml"
         client_id: "not set from env in executor_config.yaml"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+
+enable_auth_verification: True

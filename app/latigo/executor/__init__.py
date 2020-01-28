@@ -1,5 +1,4 @@
 import datetime
-import time
 import traceback
 import typing
 import logging
@@ -10,7 +9,6 @@ from latigo.types import (
     SensorDataSet,
     TimeRange,
     PredictionDataSet,
-    LatigoSensorTag,
 )
 from latigo.sensor_data import sensor_data_provider_factory
 
@@ -34,7 +32,9 @@ class PredictionExecutor:
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
         self._prepare_executor()
-        self._perform_auth_check()
+        # Patch to allow disabling authentication verification when developing locally
+        if self.config.get("enable_auth_verification", True):
+            self._perform_auth_check()
 
     def _fail(self, message: str):
         self.good_to_go = False
@@ -78,7 +78,7 @@ class PredictionExecutor:
             self.sensor_data_provider_config
         )
         if not self.sensor_data_provider:
-            self._fail(f"No sensor data configured: {err}, cannot continue...")
+            self._fail(f"No sensor data configured, cannot continue...")
 
     # Inflate prediction storage provider from config
     def _prepare_prediction_storage_provider(self):
@@ -91,39 +91,22 @@ class PredictionExecutor:
             self.prediction_storage_provider_config
         )
         if not self.prediction_storage_provider:
-            self._fail(f"No prediction storage configured: {err}, cannot continue...")
+            self._fail(f"No prediction storage configured, cannot continue...")
 
     # Inflate prediction executor provider from config
     def _prepare_prediction_executor_provider(self):
         self.prediction_executor_provider_config = self.config.get("predictor", None)
         if not self.prediction_executor_provider_config:
             self._fail("No prediction_executor_provider_config specified")
-<<<<<<< HEAD
         prediction_executor_provider_type = self.prediction_executor_provider_config.get("type", None)
         self.prediction_executor_provider_verification_connection_string = self.prediction_executor_provider_config.get("connection_string", "no connection string set for prediction execution prvider")
         verification_project = self.prediction_executor_provider_config.get("verification_project", "lat-lit")
         self.prediction_executor_provider_verification_connection_string += f"/{verification_project}/"
         self.prediction_executor_provider = prediction_execution_provider_factory(self.sensor_data_provider, self.prediction_storage_provider, self.prediction_executor_provider_config)
-=======
-        prediction_executor_provider_type = self.prediction_executor_provider_config.get(
-            "type", None
-        )
-        self.prediction_executor_provider_connection_string = self.prediction_executor_provider_config.get(
-            "connection_string",
-            "no connection string set for prediction execution prvider",
-        )
-        # NOTE: This is a hack. We need a project appended to the URL for it to be valid, but there is no guarantee that the project has been set up with lat-lit project
-        self.prediction_executor_provider_connection_string += "/lat-lit/"
-        self.prediction_executor_provider = prediction_execution_provider_factory(
-            self.sensor_data_provider,
-            self.prediction_storage_provider,
-            self.prediction_executor_provider_config,
-        )
->>>>>>> da0cde9c2cfa326a0b1e305d2047a9617da63f9e
         self.name = self.prediction_executor_provider_config.get("name", "executor")
         if not self.prediction_executor_provider:
             self._fail(
-                f"No prediction_executor_provider configured: {err}, cannot continue..."
+                f"No prediction_executor_provider configured, cannot continue..."
             )
 
     # Perform a basic authentication test up front to fail early with clear error output
@@ -161,11 +144,11 @@ class PredictionExecutor:
             "restart_interval_sec", 60 * 60 * 6
         )
         if self.good_to_go:
-            pass
-            # Refraining from excessive logging
-            # logger.info(f"Executor settings:")
-            # logger.info("")
-            # logger.info(f"  Restart interval: {self.restart_interval_sec} (safety)")
+            logger.info(
+                f"Executor settings:\n"
+                f"  Restart interval: {self.restart_interval_sec} (safety)\n\n"
+                f"  ENABLE_AUTH_VERIFICATION: {self.config.get('enable_auth_verification')}\n"
+            )
 
     def _fetch_spec(self, project_name: str, model_name: str):
         return self.model_info_provider.get_spec(
@@ -278,7 +261,6 @@ class PredictionExecutor:
             done = False
             iteration_number = 0
             error_number = 0
-            first_sleep: bool = True
             executor_start = datetime.datetime.now()
             while not done:
                 iteration_number += 1

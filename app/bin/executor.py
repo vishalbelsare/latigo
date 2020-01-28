@@ -6,7 +6,9 @@ import multiprocessing
 import threading
 import socket
 import copy
+import distutils.util
 import os
+import typing
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.executor")
@@ -18,10 +20,16 @@ multiprocessing_logging.install_mp_handler()
 from latigo.utils import load_config, sleep
 from latigo.executor import PredictionExecutor
 
+
 # Augment loaded config with variables from environment
 # fmt: off
 # NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
 not_found=None #"environemnt variable not found"
+
+verify_auth = bool(distutils.util.strtobool(os.environ.get("LATIGO_ENABLE_AUTH_VERIFICATION", "True")))
+if not verify_auth:
+    logger.warning("Authentication verification disbled! Enable for production.")
+
 config_overlay = {
     "executor": {
         "instance_count": os.environ.get("LATIGO_EXECUTOR_INSTANCE_COUNT", not_found),
@@ -39,6 +47,7 @@ config_overlay = {
             "client_id" : os.environ.get("LATIGO_GORDO_CLIENT_ID", not_found),
             "client_secret" : os.environ.get("LATIGO_GORDO_CLIENT_SECRET", not_found),
         },
+        "enable_auth": verify_auth,
     },
     "sensor_data": {
         "base_url": os.environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
@@ -70,15 +79,16 @@ config_overlay = {
             "client_secret" : os.environ.get("LATIGO_GORDO_CLIENT_SECRET", not_found),
         },
     },
+    "enable_auth_verification": verify_auth,
 }
 # fmt: on
+
 
 config_filename = os.environ.get("LATIGO_EXECUTOR_CONFIG_FILE", "executor_config.yaml")
 config = load_config(config_filename, config_overlay)
 if not config:
     logger.error(f"Could not load configuration for executor from {config_filename}")
     sys.exit(1)
-
 
 instance_count = int(config.get("executor", {}).get("instance_count", 1))
 instance_name = config.get("executor", {}).get(

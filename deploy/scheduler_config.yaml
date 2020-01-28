@@ -22,8 +22,8 @@ scheduler:
     continuous_prediction_delay: "3h"
     projects: ['lat-lit']
     back_fill_max_interval: "7d"
-    restart_interval_sec: 604800
 
+    restart_interval_sec: 604800
 model_info:
     type: "gordo"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
@@ -48,3 +48,6 @@ model_info:
         authority_host_url: "set from env"
         client_id: "set from env"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+    enable_auth: False
+
+enable_auth_verification: True

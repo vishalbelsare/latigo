@@ -1,34 +1,11 @@
 import typing
-import json
-import os
-import random
-import string
 import sys
-import json
 import logging
-import pprint
-import os
-import sys
 import adal
 
 
 from requests_oauthlib import OAuth2Session
-from oauthlib.oauth2 import BackendApplicationClient
 
-
-## AADTokenCredentials for multi-factor authentication
-from msrestazure.azure_active_directory import AADTokenCredentials
-
-## Required for Azure Data Lake Analytics job management
-from azure.mgmt.datalake.analytics.job import DataLakeAnalyticsJobManagementClient
-from azure.mgmt.datalake.analytics.job.models import (
-    JobInformation,
-    JobState,
-    USqlJobProperties,
-)
-
-## Other required imports
-import adal, uuid, time
 
 from .session import *
 
@@ -92,6 +69,12 @@ def token_saver(token):
 
 
 def create_auth_session(auth_config: dict):
+
+    # If any auth element values populated or empty, log error and exit
+    if any([value is None for value in auth_config.values()]):
+        logger.error(f"`Required elements in `auth_config` are missing.")
+        sys.exit(1)
+
     client_id = auth_config.get("client_id")
     client_secret = auth_config.get("client_secret")
     authority_host_url = auth_config.get("authority_host_url")
@@ -99,10 +82,8 @@ def create_auth_session(auth_config: dict):
     scope = auth_config.get("scope", ["read", "write"])
     token_url = f"{authority_host_url}/{tenant}"
     extra = {"client_id": client_id, "client_secret": client_secret}
-    refresh_url = "https://login.microsoftonline.com"
     session = None
     token = fetch_access_token(auth_config)
-    # client = BackendApplicationClient(client_id=client_id, scope=scope, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver, scope=scope)
     if token:
         try:
             # session = OAuth2Session(client=client)

@@ -2,12 +2,13 @@ import re
 import pprint
 import logging
 import datetime
-import typing
 import yaml
+import sys
 import time
 import os.path
+from typing import Any, Dict, List, Optional
 
-import importlib
+import dictdiffer
 import latigo.rfc3339
 
 
@@ -52,34 +53,81 @@ def save_yaml(filename, data, output=False):
         return data
 
 
-def merge(source, destination, skip_none=True):
+def find_missing(source: Dict[Any, Any], parent: Optional[str] = None):
     """
-    run me with nosetests --with-doctest file.py
+    Generate list of keys with missing values in multi-level dictionary
 
-    >>> a = { 'first' : { 'all_rows' : { 'pass' : 'dog', 'number' : '1' } } }
-    >>> b = { 'first' : { 'all_rows' : { 'fail' : 'cat', 'number' : '5' } } }
-    >>> merge(b, a) == { 'first' : { 'all_rows' : { 'pass' : 'dog', 'fail' : 'cat', 'number' : '5' } } }
-    True
+    source: Dict[Any, Any]
+        The dictionary to walk and look for missing values
+    parent: Optional[str]
+        The parent key from the previous iteration, if any.
+
+    Returns
+    -------
+    missing: List[str]
+        List of keys as JSON paths whose values are `None`.
+
+    Example
+    -------
+    >>> find_missing({"a": True, "b":{"c": None, "d": False}, "e": None})
+    ["b.c", "e"]
     """
-    for key, value in source.items():
-        if isinstance(value, dict):
-            # get node or create one
-            node = destination.setdefault(key, {})
-            merge(value, node, skip_none)
-        else:
-            if not skip_none or value:
-                destination[key] = value
+    missing: List[str] = list()
+    for k, v in source.items():
+        k = f"{parent}.{k}" if parent else k
+        if type(v) is dict:
+            missing += find_missing(v, k)
+        elif v is None:
+            missing.append(k)
+    return missing
+
+
+def remove_missing(source: Dict[Any, Any]):
+    """
+    Remove keys from a multi-level dictionary whose values are `None`
+
+    source: dict
+        The dictionary to walk and remove keys with `None` values.
+
+    Returns
+    -------
+    destination: List[str]
+        Dictionary with keys removed whose values were 'None'.
+
+    Example
+    -------
+    >>> remove_missing({"a": True, "b":{"c": None, "d": False}, "e": None})
+    {"a": True, "b":{"d": False}}
+    """
+    destination: Dict[Any, Any] = dict()
+    for k, v in source.items():
+        if type(v) is dict:
+            destination[k] = remove_missing(v)
+        elif v is not None:
+            destination[k] = v
+    return destination
 
 
 def load_config(config_filename: str, overlay_config: dict, output=False):
+
     config_base, failure = load_yaml(config_filename, output)
     if not config_base:
         logger.error(f"Could not load configuration from {config_filename}: {failure}")
         return False
-    # Augment loaded config with secrets from environment
-    config: dict = {}
-    merge(config_base, config, False)
-    merge(overlay_config, config, True)
+
+    # Patch none null values from Overlay to config
+    config = dictdiffer.patch(
+        dictdiffer.diff(config_base, remove_missing(overlay_config)), config_base
+    )
+
+    # At this point, all keys in config should have non null values, Error if otherwise
+    config_missing = find_missing(config)
+    if config_missing:
+        logger.error(
+            f"Configuration contains values with empty values, including: {', '.join(config_missing)}"
+        )
+        sys.exit(1)
+
     return config
 
 
@@ -107,7 +155,7 @@ def parse_gordo_connection_string(connection_string: str):
     matches = list(re.finditer(regex, parts.path))
     if len(matches) > 0:
         match = matches[0]
-        data: typing.Dict[str, typing.Any] = match.groupdict()
+        data: Dict[str, Any] = match.groupdict()
         scheme = parts.scheme
         data["scheme"] = scheme
         data["host"] = parts.hostname

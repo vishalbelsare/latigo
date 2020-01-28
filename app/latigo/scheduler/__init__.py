@@ -11,13 +11,25 @@ from latigo.model_info import model_info_provider_factory
 from latigo.clock import OnTheClockTimer
 from latigo.utils import human_delta, sleep
 from latigo.auth import AuthVerifier
-from latigo.gordo import GordoModelInfoProvider
 
 
 logger = logging.getLogger(__name__)
 
 
 class Scheduler:
+    def __init__(self, config: dict):
+        self.good_to_go = True
+        if not config:
+            self._fail("No config specified")
+        self.config = config
+        self._prepare_task_queue()
+        self._prepare_model_info()
+        self._prepare_scheduler()
+        # Patch to allow disabling authentication verification when developing locally
+        if self.config.get("enable_auth_verification", True):
+            self._perform_auth_check()
+        self.task_serial = 0
+
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
@@ -33,8 +45,12 @@ class Scheduler:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_verification_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
-        verification_project = self.model_info_config.get("verification_project", "lat-lit")
+        self.model_info_verification_connection_string = self.model_info_config.get(
+            "connection_string", "no connection string set for model info"
+        )
+        verification_project = self.model_info_config.get(
+            "verification_project", "lat-lit"
+        )
         self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
@@ -125,34 +141,18 @@ class Scheduler:
                 if self.restart_interval_sec > 0
                 else "Disabled"
             )
-            logger.info(f"Scheduler settings:")
-            logger.info("")
-            logger.info(f"  Restart interval: {restart_interval_desc} (safety)")
-            logger.info(f"  Run at once :     {self.run_at_once}")
-            logger.info(f"  Start time :      {self.continuous_prediction_start_time}")
             logger.info(
-                f"  Interval:         {human_delta(self.continuous_prediction_interval)}"
+                f"Scheduler settings:\n"
+                f"  Restart interval: {restart_interval_desc} (safety)\n"
+                f"  Run at once :     {self.run_at_once}\n"
+                f"  Start time :      {self.continuous_prediction_start_time}\n"
+                f"  Interval:         {human_delta(self.continuous_prediction_interval)}\n"
+                f"  Data delay:       {human_delta(self.continuous_prediction_delay)}\n"
+                f"  Backfill max:     {human_delta(self.back_fill_max_interval)}\n\n"
+                f"  Next start:       {next_start}\n"
+                f"  Projects:         {', '.join(self.projects)}\n\n"
+                f"  ENABLE_AUTH_VERIFICATION: {self.config.get('enable_auth_verification')}\n"
             )
-            logger.info(
-                f"  Data delay:       {human_delta(self.continuous_prediction_delay)}"
-            )
-            logger.info(
-                f"  Backfill max:     {human_delta(self.back_fill_max_interval)}"
-            )
-            logger.info(f"  Next start:       {next_start}")
-            logger.info(f"  Projects:         {', '.join(self.projects)}")
-            logger.info("")
-
-    def __init__(self, config: dict):
-        self.good_to_go = True
-        if not config:
-            self._fail("No config specified")
-        self.config = config
-        self._prepare_task_queue()
-        self._prepare_model_info()
-        self._perform_auth_check()
-        self._prepare_scheduler()
-        self.task_serial = 0
 
     def update_model_info(self):
         stats_start_time = datetime.datetime.now()

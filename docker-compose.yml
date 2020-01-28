@@ -4,12 +4,12 @@ services:
 
 # Scheduler that produces tasks for executors
   latigo-scheduler:
-    image: latigo-scheduler
+    image: latigo-base
     restart: always
     container_name: latigo-scheduler
     build:
       context: .
-      dockerfile: Dockerfile.scheduler
+      dockerfile: Dockerfile.base
     volumes:
       - ../volumes/latigo/scheduler:/tmp/data:Z
     environment:
@@ -25,15 +25,17 @@ services:
       - LATIGO_GORDO_AUTH_HOST_URL=${LATIGO_GORDO_AUTH_HOST_URL}
       - LATIGO_GORDO_CLIENT_ID=${LATIGO_GORDO_CLIENT_ID}
       - LATIGO_GORDO_CLIENT_SECRET=${LATIGO_GORDO_CLIENT_SECRET}
+      - LATIGO_ENABLE_AUTH_VERIFICATION=${LATIGO_ENABLE_AUTH_VERIFICATION}
+    command: ["/app/bin/scheduler.py"]
 
 # First executor for executing tasks from scheduler
   latigo-executor-1:
-    image: latigo-executor
+    image: latigo-base
     restart: always
     container_name: latigo-executor-1
     build:
       context: .
-      dockerfile: Dockerfile.executor
+      dockerfile: Dockerfile.base
     environment:
       - LATIGO_EXECUTOR_INSTANCE_COUNT=${LATIGO_EXECUTOR_INSTANCE_COUNT}
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
@@ -50,15 +52,17 @@ services:
       - LATIGO_TIME_SERIES_AUTH_HOST_URL=${LATIGO_TIME_SERIES_AUTH_HOST_URL}
       - LATIGO_TIME_SERIES_CLIENT_ID=${LATIGO_TIME_SERIES_CLIENT_ID}
       - LATIGO_TIME_SERIES_CLIENT_SECRET=${LATIGO_TIME_SERIES_CLIENT_SECRET}
+      - LATIGO_ENABLE_AUTH_VERIFICATION=${LATIGO_ENABLE_AUTH_VERIFICATION}
+    command: ["/app/bin/executor.py"]
 
 # Second executor for executing tasks from scheduler
   latigo-executor-2:
-    image: latigo-executor
+    image: latigo-base
     restart: always
     container_name: latigo-executor-2
     build:
       context: .
-      dockerfile: Dockerfile.executor
+      dockerfile: Dockerfile.base
     environment:
       - LATIGO_EXECUTOR_INSTANCE_COUNT=${LATIGO_EXECUTOR_INSTANCE_COUNT}
       - LATIGO_INTERNAL_EVENT_HUB=${LATIGO_INTERNAL_EVENT_HUB}
@@ -75,6 +79,8 @@ services:
       - LATIGO_TIME_SERIES_AUTH_HOST_URL=${LATIGO_TIME_SERIES_AUTH_HOST_URL}
       - LATIGO_TIME_SERIES_CLIENT_ID=${LATIGO_TIME_SERIES_CLIENT_ID}
       - LATIGO_TIME_SERIES_CLIENT_SECRET=${LATIGO_TIME_SERIES_CLIENT_SECRET}
+      - LATIGO_ENABLE_AUTH_VERIFICATION=${LATIGO_ENABLE_AUTH_VERIFICATION}
+    command: ["/app/bin/executor.py"]
 
 # Time series database to keep sensor and prediction data (only for local dev/test)
 #  influxdb:

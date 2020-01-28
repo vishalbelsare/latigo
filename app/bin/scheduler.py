@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import sys
+import distutils.util
 import os
-import pprint
-import threading
 import socket
+import sys
+import threading
 from latigo.log import setup_logging
 
 logger = setup_logging("latigo.app.scheduler")
@@ -15,7 +15,11 @@ from latigo.scheduler import Scheduler
 # Augment loaded config with variables from environment
 # fmt: off
 # NOTE: REMEMBER TO UPDATE DOCKER FILES AS WELL TO PRORPERLY PROPEGATE VALUES
-not_found=None #"environemnt variable not found"
+not_found=None # "environemnt variable not found"
+
+verify_auth = bool(distutils.util.strtobool(os.environ.get("LATIGO_ENABLE_AUTH_VERIFICATION", "True")))
+if not verify_auth:
+    logger.warning("Authentication verification disbled! Enable for production.")
 
 config_overlay = {
     "scheduler": {
@@ -37,7 +41,9 @@ config_overlay = {
             "client_id" : os.environ.get("LATIGO_GORDO_CLIENT_ID", not_found),
             "client_secret" : os.environ.get("LATIGO_GORDO_CLIENT_SECRET", not_found),
         },
+        "enable_auth": verify_auth,
     },
+    "enable_auth_verification": verify_auth,
 }
 # fmt: on
 
@@ -53,7 +59,6 @@ if not config:
 threading.current_thread().name = config.get("scheduler", {}).get(
     "instance_name", "latigo-scheduler-" + socket.getfqdn()
 )
-
 
 logger.info("Configuring Latigo Scheduler")
 scheduler = Scheduler(config)
