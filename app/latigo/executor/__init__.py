@@ -51,8 +51,12 @@ class PredictionExecutor:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_verification_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
-        verification_project = self.model_info_config.get("verification_project", "lat-lit")
+        self.model_info_verification_connection_string = self.model_info_config.get(
+            "connection_string", "no connection string set for model info"
+        )
+        verification_project = self.model_info_config.get(
+            "verification_project", "lat-lit"
+        )
         self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:

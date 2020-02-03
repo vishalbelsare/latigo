@@ -87,7 +87,7 @@ def create_auth_session(auth_config: dict):
     if token:
         try:
             # session = OAuth2Session(client=client)
-            session = LatigoAuthSession(client_id=client_id, scope=scope, token=token, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=token_saver)
+            session = LatigoAuthSession(auth_config=auth_config)
             # logger.info(f"Authenticated successfully with token:")
             # logger.info(token)
             # logger.info(f"Authenticated successfully with session:")

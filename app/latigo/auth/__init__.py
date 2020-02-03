@@ -21,7 +21,11 @@ from msrestazure.azure_active_directory import AADTokenCredentials
 
 ## Required for Azure Data Lake Analytics job management
 from azure.mgmt.datalake.analytics.job import DataLakeAnalyticsJobManagementClient
-from azure.mgmt.datalake.analytics.job.models import JobInformation, JobState, USqlJobProperties
+from azure.mgmt.datalake.analytics.job.models import (
+    JobInformation,
+    JobState,
+    USqlJobProperties,
+)
 
 ## Other required imports
 import adal, uuid, time
@@ -32,4 +36,9 @@ from .verifier import *
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["fetch_access_token", "create_auth_session", "AuthVerifier", "LatigoAuthSession"]
+__all__ = [
+    "fetch_access_token",
+    "create_auth_session",
+    "AuthVerifier",
+    "LatigoAuthSession",
+]
