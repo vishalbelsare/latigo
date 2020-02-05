@@ -206,6 +206,11 @@ push-executor:
 
 push-all: push-scheduler push-executor
 
+############### Docker cleanup ####################
+
+prune:
+	docker system prune -a
+
 ############### Help ####################
 
 help:
