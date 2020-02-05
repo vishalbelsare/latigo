@@ -24,6 +24,7 @@ if not path.exists(filename):
         "LATIGO_SCHEDULER_PREDICTION_START_TIME": "The time of day at which prediction starts. Subequent predictions will happen in intervals after",
         "LATIGO_SCHEDULER_PREDICTION_INTERVAL": "The interval at which the scheduler will schedule work",
         "LATIGO_SCHEDULER_PREDICTION_DELAY": "How long back in time from 'now' the data will be fetched during predictions",
+        "LATIGO_ENABLE_AUTH_VERIFICATION": "True",
 
         "LATIGO_GORDO_CONNECTION_STRING": "The connection string for Gordo",
         "LATIGO_GORDO_RESOURCE": "The resource ID of gordo. Used for bearer authentication.",

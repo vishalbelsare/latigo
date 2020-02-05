@@ -3,17 +3,23 @@
 import os
 from setuptools import setup, find_packages
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 setup_requirements = ["pytest-runner", "setuptools_scm"]
 
 
-def read_file(fname):
+def read_file(fname, strip=True):
     fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
-    print(f"Reading from {fn}")
+    data = ""
     if os.path.exists(fn):
         with open(fn) as f:
-            return f.read()
-    return ""
+            data = f.read()
+            data = data.strip() if strip else data
+    # print(f"Got data '{data}' from '{fn}'")
+    return data
 
 
 def remove_comment(line, sep="#"):
@@ -62,6 +68,7 @@ setup(
     ),  # Use rigid deps for testing
     test_suite="../tests",
     python_requires="~=3.7.4",
+    data_files=[("latigo", ["VERSION"])],
     include_package_data=True,
     # From https://pypi.org/pypi?%3Aaction=list_classifiers
     # fmt: off

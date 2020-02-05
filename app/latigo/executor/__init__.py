@@ -3,6 +3,7 @@ import traceback
 import typing
 import logging
 import pprint
+from latigo import __version__ as latigo_version
 from latigo.types import (
     Task,
     SensorDataSpec,
@@ -150,8 +151,9 @@ class PredictionExecutor:
         if self.good_to_go:
             logger.info(
                 f"Executor settings:\n"
-                f"  Restart interval: {self.restart_interval_sec} (safety)\n\n"
-                f"  ENABLE_AUTH_VERIFICATION: {self.config.get('enable_auth_verification')}\n"
+                f"  Version:          {latigo_version}\n"
+                f"  Restart interval: {self.restart_interval_sec} (safety)\n"
+                f"  Auth:             {self.config.get('enable_auth_verification')}\n"
             )
 
     def _fetch_spec(self, project_name: str, model_name: str):

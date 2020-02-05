@@ -18,7 +18,7 @@ class AuthVerifier:
                 res.raise_for_status()
         except Exception as e:
             # Failure
-            raise e
-            return False, f"{e}"
+            # raise e
+            return False, f"{e} ({url})"
         # Success
         return True, None

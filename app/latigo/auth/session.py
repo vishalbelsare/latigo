@@ -27,7 +27,7 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
         auth_config={},
         #        **kwargs,
     ):
-        self.auth_config=auth_config
+        self.auth_config = auth_config
         client_id = self.auth_config.get("client_id")
         client_secret = self.auth_config.get("client_secret")
         resource = self.auth_config.get("resource")
@@ -78,11 +78,9 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
         logger.info(pprint.pformat(token))
         pass
 
-
-
     def verify_auth(self) -> typing.Tuple[bool, typing.Optional[str]]:
         try:
-            url= self.auth_config.get("verification_url")
+            url = self.auth_config.get("verification_url")
             res = self.get(url)
             if None == res:
                 raise Exception("No response object returned")
@@ -94,7 +92,6 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
             return False, f"{e}"
         # Success
         return True, None
-
 
     def prepare_request(self, request):
         logging.info(f"@@@ Latigo Session: prepare_request(request={request}).")

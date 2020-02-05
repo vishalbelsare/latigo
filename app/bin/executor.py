@@ -78,6 +78,7 @@ config_overlay = {
             "client_id" : os.environ.get("LATIGO_GORDO_CLIENT_ID", not_found),
             "client_secret" : os.environ.get("LATIGO_GORDO_CLIENT_SECRET", not_found),
         },
+        "enable_auth": verify_auth,
     },
     "enable_auth_verification": verify_auth,
 }
