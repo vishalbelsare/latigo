@@ -5,6 +5,7 @@ import typing
 import pandas as pd
 import datetime
 from os import environ
+from latigo import __version__ as latigo_version
 from latigo.types import Task
 from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
@@ -85,7 +86,9 @@ class Scheduler:
                 f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details."
             )
         else:
-            logger.info(f"Auth test succeedded for {len(verifiers)} configurations.")
+            logger.info(
+                f"Auth test succeedded for all {len(verifiers)} configurations."
+            )
 
     # Inflate scheduler from config
     def _prepare_scheduler(self):
@@ -143,15 +146,16 @@ class Scheduler:
             )
             logger.info(
                 f"Scheduler settings:\n"
+                f"  Version:          {latigo_version}\n"
                 f"  Restart interval: {restart_interval_desc} (safety)\n"
                 f"  Run at once :     {self.run_at_once}\n"
                 f"  Start time :      {self.continuous_prediction_start_time}\n"
                 f"  Interval:         {human_delta(self.continuous_prediction_interval)}\n"
                 f"  Data delay:       {human_delta(self.continuous_prediction_delay)}\n"
-                f"  Backfill max:     {human_delta(self.back_fill_max_interval)}\n\n"
+                f"  Backfill max:     {human_delta(self.back_fill_max_interval)}\n"
                 f"  Next start:       {next_start}\n"
-                f"  Projects:         {', '.join(self.projects)}\n\n"
-                f"  ENABLE_AUTH_VERIFICATION: {self.config.get('enable_auth_verification')}\n"
+                f"  Projects:         {', '.join(self.projects)}\n"
+                f"  Auth:             {self.config.get('enable_auth_verification')}\n"
             )
 
     def update_model_info(self):

@@ -3,6 +3,7 @@ import traceback
 import typing
 import logging
 import pprint
+from latigo import __version__ as latigo_version
 from latigo.types import (
     Task,
     SensorDataSpec,
@@ -51,8 +52,12 @@ class PredictionExecutor:
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_verification_connection_string = self.model_info_config.get("connection_string", "no connection string set for model info")
-        verification_project = self.model_info_config.get("verification_project", "lat-lit")
+        self.model_info_verification_connection_string = self.model_info_config.get(
+            "connection_string", "no connection string set for model info"
+        )
+        verification_project = self.model_info_config.get(
+            "verification_project", "lat-lit"
+        )
         self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
@@ -98,11 +103,24 @@ class PredictionExecutor:
         self.prediction_executor_provider_config = self.config.get("predictor", None)
         if not self.prediction_executor_provider_config:
             self._fail("No prediction_executor_provider_config specified")
-        prediction_executor_provider_type = self.prediction_executor_provider_config.get("type", None)
-        self.prediction_executor_provider_verification_connection_string = self.prediction_executor_provider_config.get("connection_string", "no connection string set for prediction execution prvider")
-        verification_project = self.prediction_executor_provider_config.get("verification_project", "lat-lit")
-        self.prediction_executor_provider_verification_connection_string += f"/{verification_project}/"
-        self.prediction_executor_provider = prediction_execution_provider_factory(self.sensor_data_provider, self.prediction_storage_provider, self.prediction_executor_provider_config)
+        prediction_executor_provider_type = self.prediction_executor_provider_config.get(
+            "type", None
+        )
+        self.prediction_executor_provider_verification_connection_string = self.prediction_executor_provider_config.get(
+            "connection_string",
+            "no connection string set for prediction execution prvider",
+        )
+        verification_project = self.prediction_executor_provider_config.get(
+            "verification_project", "lat-lit"
+        )
+        self.prediction_executor_provider_verification_connection_string += (
+            f"/{verification_project}/"
+        )
+        self.prediction_executor_provider = prediction_execution_provider_factory(
+            self.sensor_data_provider,
+            self.prediction_storage_provider,
+            self.prediction_executor_provider_config,
+        )
         self.name = self.prediction_executor_provider_config.get("name", "executor")
         if not self.prediction_executor_provider:
             self._fail(
@@ -130,7 +148,9 @@ class PredictionExecutor:
                 f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details."
             )
         else:
-            logger.info(f"Auth test succeedded for {len(verifiers)} configurations.")
+            logger.info(
+                f"Auth test succeedded for all {len(verifiers)} configurations."
+            )
 
     # Inflate executor from config
     def _prepare_executor(self):
@@ -146,8 +166,9 @@ class PredictionExecutor:
         if self.good_to_go:
             logger.info(
                 f"Executor settings:\n"
-                f"  Restart interval: {self.restart_interval_sec} (safety)\n\n"
-                f"  ENABLE_AUTH_VERIFICATION: {self.config.get('enable_auth_verification')}\n"
+                f"  Version:          {latigo_version}\n"
+                f"  Restart interval: {self.restart_interval_sec} (safety)\n"
+                f"  Auth:             {self.config.get('enable_auth_verification')}\n"
             )
 
     def _fetch_spec(self, project_name: str, model_name: str):

@@ -1,6 +1,6 @@
 SHELL:=/bin/bash
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-LATIGO_VERSION:=$(shell cat VERSION)
+LATIGO_VERSION:=$(shell cat app/VERSION)
 APP_DIR:="${ROOT_DIR}/app"
 TESTS_DIR:="${ROOT_DIR}/tests"
 CODE_QUALITY_DIR:="${ROOT_DIR}/code_quality"
@@ -172,6 +172,7 @@ build-scheduler:
 		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_STAGE_NAME}" -t "${LATIGO_SCHEDULER_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
 		echo "Unknown branch!";\
+		docker build . -f Dockerfile.scheduler -t "${LATIGO_SCHEDULER_IMAGE_NAME}";\
 	fi;\
 
 build-executor:
@@ -183,6 +184,7 @@ build-executor:
 		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_STAGE_NAME}" -t "${LATIGO_EXECUTOR_IMAGE_NAME}:tag${GITHUB_TAG}";\
 	else\
 		echo "Unknown branch!";\
+		docker build . -f Dockerfile.executor -t "${LATIGO_EXECUTOR_IMAGE_NAME}";\
 	fi;\
 
 build-all: build-scheduler build-executor
@@ -203,6 +205,11 @@ push-executor:
 	bash -x deploy/docker_push.sh
 
 push-all: push-scheduler push-executor
+
+############### Docker cleanup ####################
+
+prune:
+	docker system prune -a
 
 ############### Help ####################
 

@@ -3,11 +3,11 @@ import os
 import traceback
 from typing import Tuple
 import warnings
+import pkg_resources
 
-try:
-    from ._version import version as __version__
-except ImportError:
-    __version__ = "0.0.0"
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_version(version: str) -> Tuple[int, ...]:
@@ -25,6 +25,8 @@ def _parse_version(version: str) -> Tuple[int, ...]:
     """
     return tuple(int(i) for i in version.split(".")[:2])
 
+
+__version__ = pkg_resources.resource_string(__name__, "VERSION").decode("utf-8")
 
 MAJOR_VERSION, MINOR_VERSION = _parse_version(__version__)
 

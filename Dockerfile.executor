@@ -19,9 +19,9 @@ COPY --chown=$USER_NAME:$USER_NAME app/requirements.txt ./
 RUN pip install --user --upgrade pip
 RUN pip install --user -r requirements.txt
 COPY --chown=$USER_NAME:$USER_NAME app/ .
-COPY --chown=$USER_NAME:$USER_NAME README.md VERSION LICENSE ./
+COPY --chown=$USER_NAME:$USER_NAME README.md app/VERSION LICENSE ./
 COPY --chown=$USER_NAME:$USER_NAME deploy/ ./deploy
 RUN python setup.py install --user
 WORKDIR $HOME/latigo
-COPY --chown=$USER_NAME:$USER_NAME README.md VERSION LICENSE ./
+COPY --chown=$USER_NAME:$USER_NAME README.md app/VERSION LICENSE ./
 CMD ["/app/bin/executor.py"]

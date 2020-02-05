@@ -1,6 +1,7 @@
 import typing
 
 from .session_factory import create_auth_session
+from .session import LatigoAuthSession
 
 
 class AuthVerifier:
@@ -9,16 +10,15 @@ class AuthVerifier:
 
     def test_auth(self, url: str) -> typing.Tuple[bool, typing.Optional[str]]:
         try:
-            self.auth_session = create_auth_session(auth_config=self.config)
+            self.auth_session = LatigoAuthSession(auth_config=self.config)
             res = self.auth_session.get(url)
-            # logger.info(pprint.pformat(res))
             if None == res:
                 raise Exception("No response object returned")
             if not res:
                 res.raise_for_status()
         except Exception as e:
             # Failure
-            raise e
-            return False, f"{e}"
+            # raise e
+            return False, f"{e} ({url})"
         # Success
         return True, None
