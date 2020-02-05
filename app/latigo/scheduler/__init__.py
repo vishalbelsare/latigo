@@ -86,7 +86,9 @@ class Scheduler:
                 f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details."
             )
         else:
-            logger.info(f"Auth test succeedded for {len(verifiers)} configurations.")
+            logger.info(
+                f"Auth test succeedded for all {len(verifiers)} configurations."
+            )
 
     # Inflate scheduler from config
     def _prepare_scheduler(self):
