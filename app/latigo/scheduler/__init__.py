@@ -34,11 +34,13 @@ class Scheduler:
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
-        if False:
+        if True:
             logger.warning(f"NOTE: Using config:")
             logger.warning(f"")
+            lines=""
             for line in str(pprint.pformat(self.config)).split("\n"):
-                logger.warning(line)
+                lines+=line
+            logger.warning(lines)
         logger.warning(f"")
 
     # Inflate model info connection from config

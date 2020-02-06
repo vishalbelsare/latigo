@@ -131,11 +131,14 @@ class PredictionExecutor:
     def _perform_auth_check(self):
         # fmt: off
         verifiers = [
-            (self.model_info_verification_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))),
             (self.sensor_data_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.sensor_data_provider_config.get("auth", {}))),
             (self.prediction_storage_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.prediction_storage_provider_config.get("auth", {}))),
-            (self.prediction_executor_provider_verification_connection_string, AuthVerifier(config=self.prediction_executor_provider_config.get("auth", {}))),
-            ]
+        ]
+        if self.model_info_verification_connection_string:
+            verifiers.append( (self.model_info_verification_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))))
+        if self.prediction_executor_provider_verification_connection_string:
+            verifiers.append( (self.prediction_executor_provider_verification_connection_string, AuthVerifier(config=self.prediction_executor_provider_config.get("auth", {}))))
+
         # fmt: on
         error_count = 0
         for url, verifier in verifiers:
