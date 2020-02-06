@@ -4,7 +4,7 @@ import typing
 
 import requests_oauthlib
 import oauthlib.oauth2
-
+import requests
 from urllib3.exceptions import NewConnectionError
 
 

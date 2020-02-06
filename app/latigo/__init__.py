@@ -26,7 +26,7 @@ def _parse_version(version: str) -> Tuple[int, ...]:
     return tuple(int(i) for i in version.split(".")[:2])
 
 
-__version__ = pkg_resources.resource_string(__name__, "VERSION").decode("utf-8")
+__version__ = pkg_resources.resource_string(__name__, "VERSION").decode("utf-8").strip()
 
 MAJOR_VERSION, MINOR_VERSION = _parse_version(__version__)
 
