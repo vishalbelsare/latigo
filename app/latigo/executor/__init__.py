@@ -18,7 +18,7 @@ from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.utils import sleep, human_delta
-from latigo.auth import AuthVerifier
+from latigo.auth import AuthVerifyList
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +33,14 @@ class PredictionExecutor:
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
         self._prepare_executor()
-        # Patch to allow disabling authentication verification when developing locally
-        if self.config.get("enable_auth_verification", True):
-            self._perform_auth_check()
+        self._perform_auth_check()
 
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
+        self.print_summary()
         if False:
-            logger.warning(f"NOTE: Using config:")
+            logger.warning(f"NOTE: Using executor config:")
             logger.warning(f"")
             for line in str(pprint.pformat(self.config)).split("\n"):
                 logger.warning(line)
@@ -54,7 +53,7 @@ class PredictionExecutor:
             self._fail("No model info config specified")
         self.model_info_verification_connection_string = self.model_info_config.get(
             "connection_string", "no connection string set for model info"
-        )
+        ).rstrip("/")
         verification_project = self.model_info_config.get(
             "verification_project", "lat-lit"
         )
@@ -129,31 +128,31 @@ class PredictionExecutor:
 
     # Perform a basic authentication test up front to fail early with clear error output
     def _perform_auth_check(self):
-        # fmt: off
-        verifiers = [
-            (self.sensor_data_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.sensor_data_provider_config.get("auth", {}))),
-            (self.prediction_storage_provider_config.get('base_url','no_base_url'), AuthVerifier(config=self.prediction_storage_provider_config.get("auth", {}))),
-        ]
-        if self.model_info_verification_connection_string:
-            verifiers.append( (self.model_info_verification_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))))
-        if self.prediction_executor_provider_verification_connection_string:
-            verifiers.append( (self.prediction_executor_provider_verification_connection_string, AuthVerifier(config=self.prediction_executor_provider_config.get("auth", {}))))
+        verifier: AuthVerifyList = AuthVerifyList(name="executor")
 
-        # fmt: on
-        error_count = 0
-        for url, verifier in verifiers:
-            res, message = verifier.test_auth(url=url)
-            if not res:
-                logger.error(f"Auth test for '{url}' failed with: '{message}'")
-                error_count += 1
-        if error_count > 0:
-            self._fail(
-                f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details."
-            )
+        verifier.register_verification(
+            url=self.sensor_data_provider_config.get("base_url", "no_base_url"),
+            config=self.sensor_data_provider_config.get("auth", {}),
+        )
+        verifier.register_verification(
+            url=self.prediction_storage_provider_config.get("base_url", "no_base_url"),
+            config=self.prediction_storage_provider_config.get("auth", {}),
+        )
+        verifier.register_verification(
+            url=self.model_info_verification_connection_string,
+            config=self.model_info_config.get("auth", {}),
+        )
+        verifier.register_verification(
+            url=self.prediction_executor_provider_verification_connection_string,
+            config=self.prediction_executor_provider_config.get("auth", {}),
+        )
+
+        res, msg = verifier.verify()
+
+        if not res:
+            self._fail(msg)
         else:
-            logger.info(
-                f"Auth test succeedded for all {len(verifiers)} configurations."
-            )
+            logger.info(msg)
 
     # Inflate executor from config
     def _prepare_executor(self):
@@ -166,13 +165,14 @@ class PredictionExecutor:
         self.restart_interval_sec = self.executor_config.get(
             "restart_interval_sec", 60 * 60 * 6
         )
-        if self.good_to_go:
-            logger.info(
-                f"Executor settings:\n"
-                f"  Version:          {latigo_version}\n"
-                f"  Restart interval: {self.restart_interval_sec} (safety)\n"
-                f"  Auth:             {self.config.get('enable_auth_verification')}\n"
-            )
+
+    def print_summary(self):
+        logger.info(
+            f"\nExecutor settings:\n"
+            f"  Good to go:       {'Yes' if self.good_to_go else 'No'}\n"
+            f"  Version:          {latigo_version}\n"
+            f"  Restart interval: {self.restart_interval_sec}\n"
+        )
 
     def _fetch_spec(self, project_name: str, model_name: str):
         return self.model_info_provider.get_spec(
@@ -269,11 +269,11 @@ class PredictionExecutor:
 
     def run(self):
         if not self.good_to_go:
-            sleep_time = 20
+            sleep_time = 60 * 5
             logger.error("")
             logger.error(" ### ### Latigo could not be started!")
             logger.error(
-                f"         Will pause for {sleep_time} seconds before terminating."
+                f"         Will pause for {human_delta(datetime.timedelta(seconds=sleep_time))} before terminating."
             )
             logger.error("         Please see previous error messages for clues.")
             logger.error("")
