@@ -45,28 +45,18 @@ All settings are stored in yaml configuration files. The default values are stor
 - [app/deploy/scheduler_config.yaml](app/deploy/scheduler_config.yaml)
 - [app/deploy/executor_config.yaml](app/deploy/executor_config.yaml)
 
-During application initialization these values are loaded as the basis of the configuration and then extended in two stages.
+During application initialization these values are loaded as the basis of the configuration and then extended by another set of configuration files identified by the environment variables for scheduler and executor respectively:
 
-#### Extending with yaml config file
-First an "overlay" yaml file can be named that will change the default values. To enable this, simply set the environment variable **LATIGO_EXECUTOR_CONFIG_FILE** to pointto a valid yaml config for executor and **LATIGO_SCHEDULER_CONFIG_FILE** respectively.
+1. **LATIGO_SCHEDULER_CONFIG_FILE**
+2. **LATIGO_EXECUTOR_CONFIG_FILE**
 
-In production, this is set to use azure vault. Go to azure vault and edit the configurations for *scheduler* and *executor* respectively:
+In production these files are stored in azure vault. Go to azure vault and edit the configurations for *scheduler* and *executor* respectively:
 1. **latigo-scheduler-config-yaml**
 2. **latigo-executor-config-yaml**
 
-> TIP: You can use make set-secrets to propegate changes to secrets quickly. See the Makefile tagets for how this works.
+> TIP: You can use make set-secrets to propegate changes to secrets quickly, and conversely get-secrets to view them. See the Makefile tagets for how this works.
 
-#### Extending with environment variables
-
-Some settings are overridden by environment variables. You can see which by looking in [app/bin/scheduler.py](app/bin/scheduler.py) and [app/bin/executor.py](app/bin/executor.py) respecively.
-
-For example if you would like to set an alternate base URL for sensor data, simply set **LATIGO_TIME_SERIES_BASE_URL** to the value you want.
-
-In production, this is set to use azure vault.
-
-> NOTE: Environment variables will always override custom yaml config, and custom yaml config will always override default values.
-
-The meaning of each parameter are documented below.
+The meaning of each configuration parameter is documented below.
 
 ### Available parameter sections
 
