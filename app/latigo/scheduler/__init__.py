@@ -11,7 +11,7 @@ from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.clock import OnTheClockTimer
 from latigo.utils import human_delta, sleep
-from latigo.auth import AuthVerifier
+from latigo.auth import AuthVerifyList
 
 
 logger = logging.getLogger(__name__)
@@ -26,20 +26,19 @@ class Scheduler:
         self._prepare_task_queue()
         self._prepare_model_info()
         self._prepare_scheduler()
-        # Patch to allow disabling authentication verification when developing locally
-        if self.config.get("enable_auth_verification", True):
-            self._perform_auth_check()
+        self._perform_auth_check()
         self.task_serial = 0
 
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
+        self.print_summary()
         if True:
-            logger.warning(f"NOTE: Using config:")
+            logger.warning(f"NOTE: Using scheduler config:")
             logger.warning(f"")
-            lines=""
+            lines = ""
             for line in str(pprint.pformat(self.config)).split("\n"):
-                lines+=line
+                lines += line
             logger.warning(lines)
         logger.warning(f"")
 
@@ -50,7 +49,7 @@ class Scheduler:
             self._fail("No model info config specified")
         self.model_info_verification_connection_string = self.model_info_config.get(
             "connection_string", "no connection string set for model info"
-        )
+        ).rstrip("/")
         verification_project = self.model_info_config.get(
             "verification_project", "lat-lit"
         )
@@ -72,25 +71,17 @@ class Scheduler:
 
     # Perform a basic authentication test up front to fail early with clear error output
     def _perform_auth_check(self):
-        # fmt: off
-        verifiers = [
-            (self.model_info_verification_connection_string, AuthVerifier(config=self.model_info_config.get("auth", {}))),
-            ]
-        # fmt: on
-        error_count = 0
-        for url, verifier in verifiers:
-            res, message = verifier.test_auth(url=url)
-            if not res:
-                logger.error(f"Auth test for '{url}' failed with: '{message}'")
-                error_count += 1
-        if error_count > 0:
-            self._fail(
-                f"Auth test failed for {error_count} of {len(verifiers)} configurations, see previous logs for details."
-            )
+        verifier: AuthVerifyList = AuthVerifyList(name="scheduler")
+        verifier.register_verification(
+            url=self.model_info_verification_connection_string,
+            config=self.model_info_config.get("auth", {}),
+        )
+        res, msg = verifier.verify()
+
+        if not res:
+            self._fail(msg)
         else:
-            logger.info(
-                f"Auth test succeedded for all {len(verifiers)} configurations."
-            )
+            logger.info(msg)
 
     # Inflate scheduler from config
     def _prepare_scheduler(self):
@@ -129,8 +120,15 @@ class Scheduler:
             interval=self.continuous_prediction_interval,
         )
         try:
-            p = self.scheduler_config.get("projects", "")
-            self.projects = [x.strip(" ") for x in p.split(",")]
+            p = self.scheduler_config.get("projects", None)
+            if None == p:
+                self._fail(f"No projects specified")
+            elif type(p) == str:
+                self.projects = [x.strip(" ") for x in p.split(",")]
+            elif type(p) == list:
+                self.projects = p
+            else:
+                self._fail(f"Error in project spcification: {p}")
         except Exception as e:
             self._fail(f"Could not parse '{p}' into projects: {e}")
         self.run_at_once = self.scheduler_config.get("run_at_once", True)
@@ -139,26 +137,27 @@ class Scheduler:
         )
         if not self.projects:
             self._fail("No projects specified")
-        if self.good_to_go:
-            next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
-            restart_interval_desc = (
-                human_delta(datetime.timedelta(seconds=self.restart_interval_sec))
-                if self.restart_interval_sec > 0
-                else "Disabled"
-            )
-            logger.info(
-                f"Scheduler settings:\n"
-                f"  Version:          {latigo_version}\n"
-                f"  Restart interval: {restart_interval_desc} (safety)\n"
-                f"  Run at once :     {self.run_at_once}\n"
-                f"  Start time :      {self.continuous_prediction_start_time}\n"
-                f"  Interval:         {human_delta(self.continuous_prediction_interval)}\n"
-                f"  Data delay:       {human_delta(self.continuous_prediction_delay)}\n"
-                f"  Backfill max:     {human_delta(self.back_fill_max_interval)}\n"
-                f"  Next start:       {next_start}\n"
-                f"  Projects:         {', '.join(self.projects)}\n"
-                f"  Auth:             {self.config.get('enable_auth_verification')}\n"
-            )
+
+    def print_summary(self):
+        next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
+        restart_interval_desc = (
+            human_delta(datetime.timedelta(seconds=self.restart_interval_sec))
+            if self.restart_interval_sec > 0
+            else "Disabled"
+        )
+        logger.info(
+            f"\nScheduler settings:\n"
+            f"  Good to go:       {'Yes' if self.good_to_go else 'No'}\n"
+            f"  Version:          {latigo_version}\n"
+            f"  Restart interval: {restart_interval_desc}\n"
+            f"  Run at once :     {self.run_at_once}\n"
+            f"  Start time :      {self.continuous_prediction_start_time}\n"
+            f"  Interval:         {human_delta(self.continuous_prediction_interval)}\n"
+            f"  Data delay:       {human_delta(self.continuous_prediction_delay)}\n"
+            f"  Backfill max:     {human_delta(self.back_fill_max_interval)}\n"
+            f"  Next start:       {next_start}\n"
+            f"  Projects:         {', '.join(self.projects)}\n"
+        )
 
     def update_model_info(self):
         stats_start_time = datetime.datetime.now()
@@ -252,11 +251,11 @@ class Scheduler:
 
     def run(self):
         if not self.good_to_go:
-            sleep_time = 20
+            sleep_time = 60 * 5
             logger.error("")
             logger.error(" ### ### Latigo could not be started!")
             logger.error(
-                f"         Will pause for {sleep_time} seconds before terminating."
+                f"         Will pause for {human_delta(datetime.timedelta(seconds=sleep_time))} before terminating."
             )
             logger.error("         Please see previous error messages for clues.")
             logger.error("")

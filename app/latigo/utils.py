@@ -3,16 +3,16 @@ import pprint
 import logging
 import datetime
 import yaml
+import typing
 import sys
 import time
 import os.path
-from typing import Any, Dict, List, Optional
+import typing
 
-import dictdiffer
 import latigo.rfc3339
 
 
-logger = logging.getLogger("latigo.utils")
+logger = logging.getLogger(__name__)
 
 
 def rfc3339_from_datetime(date_object: datetime.datetime) -> str:
@@ -53,7 +53,9 @@ def save_yaml(filename, data, output=False):
         return data
 
 
-def find_missing(source: Dict[Any, Any], parent: Optional[str] = None):
+def find_missing(
+    source: typing.Dict[typing.Any, typing.Any], parent: typing.Optional[str] = None
+):
     """
     Generate list of keys with missing values in multi-level dictionary
 
@@ -72,7 +74,7 @@ def find_missing(source: Dict[Any, Any], parent: Optional[str] = None):
     >>> find_missing({"a": True, "b":{"c": None, "d": False}, "e": None})
     ["b.c", "e"]
     """
-    missing: List[str] = list()
+    missing: typing.List[str] = list()
     for k, v in source.items():
         k = f"{parent}.{k}" if parent else k
         if type(v) is dict:
@@ -82,7 +84,7 @@ def find_missing(source: Dict[Any, Any], parent: Optional[str] = None):
     return missing
 
 
-def remove_missing(source: Dict[Any, Any]):
+def remove_missing(source: typing.Dict[typing.Any, typing.Any]):
     """
     Remove keys from a multi-level dictionary whose values are `None`
 
@@ -99,7 +101,7 @@ def remove_missing(source: Dict[Any, Any]):
     >>> remove_missing({"a": True, "b":{"c": None, "d": False}, "e": None})
     {"a": True, "b":{"d": False}}
     """
-    destination: Dict[Any, Any] = dict()
+    destination: typing.Dict[typing.Any, typing.Any] = dict()
     for k, v in source.items():
         if type(v) is dict:
             destination[k] = remove_missing(v)
@@ -108,27 +110,61 @@ def remove_missing(source: Dict[Any, Any]):
     return destination
 
 
-def load_config(config_filename: str, overlay_config: dict, output=False):
+def merge(source, destination, skip_none=True):
+    """
+    run me with nosetests --with-doctest file.py
+    >>> a = { 'first' : { 'all_rows' : { 'pass' : 'dog', 'number' : '1' } } }
+    >>> b = { 'first' : { 'all_rows' : { 'fail' : 'cat', 'number' : '5' } } }
+    >>> merge(b, a) == { 'first' : { 'all_rows' : { 'pass' : 'dog', 'fail' : 'cat', 'number' : '5' } } }
+    True
+    """
+    for key, value in source.items():
+        if isinstance(value, dict):
+            # get node or create one
+            node = destination.setdefault(key, {})
+            merge(value, node, skip_none)
+        else:
+            if not skip_none or value:
+                destination[key] = value
 
-    config_base, failure = load_yaml(config_filename, output)
-    if not config_base:
-        logger.error(f"Could not load configuration from {config_filename}: {failure}")
-        return False
 
-    # Patch none null values from Overlay to config
-    config = dictdiffer.patch(
-        dictdiffer.diff(config_base, remove_missing(overlay_config)), config_base
-    )
+def load_configs(
+    defaults_filename: str = None,
+    base_filename: str = None,
+    overlay_config: dict = None,
+    output: bool = False,
+) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
 
-    # At this point, all keys in config should have non null values, Error if otherwise
-    config_missing = find_missing(config)
-    if config_missing:
-        logger.error(
-            f"Configuration contains values with empty values, including: {', '.join(config_missing)}"
-        )
-        sys.exit(1)
+    defaults_config = None
+    if defaults_filename:
+        defaults_config, defaults_failure = load_yaml(defaults_filename, output)
+        if not defaults_config:
+            return (
+                None,
+                f"Could not load defaults configuration from {defaults_filename}: {defaults_failure}",
+            )
 
-    return config
+    base_config = None
+    if base_filename:
+        base_config, base_failure = load_yaml(base_filename, output)
+        if not base_config:
+            return (
+                None,
+                f"Could not load base configuration from {base_filename}: {base_failure}",
+            )
+
+    # Start empty handed
+    config: dict = {}
+    # Add defaults
+    if defaults_config:
+        merge(defaults_config, config, False)
+    # Add base
+    if base_config:
+        merge(base_config, config, True)
+    # Add overlay
+    if overlay_config:
+        merge(overlay_config, config, True)
+    return config, None
 
 
 def parse_event_hub_connection_string(connection_string: str):
@@ -155,7 +191,7 @@ def parse_gordo_connection_string(connection_string: str):
     matches = list(re.finditer(regex, parts.path))
     if len(matches) > 0:
         match = matches[0]
-        data: Dict[str, Any] = match.groupdict()
+        data: typing.Dict[str, typing.Any] = match.groupdict()
         scheme = parts.scheme
         data["scheme"] = scheme
         data["host"] = parts.hostname
@@ -219,3 +255,13 @@ def print_process_info():
     if hasattr(os, "getppid"):
         print(f"Parent process:{os.getppid()}")
     print(f"Process id:{os.getpid()}")
+
+
+def read_file(fname, strip=True):
+    fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), fname)
+    data = ""
+    if os.path.exists(fn):
+        with open(fn) as f:
+            data = f.read()
+            data = data.strip() if strip else data
+    return data
