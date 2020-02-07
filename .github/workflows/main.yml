@@ -27,7 +27,7 @@ jobs:
         make info
     - name: Build docker images for scheduler and executor
       run: |
-        make build-all
+        make build
     - name: Push docker images for scheduler and executor
       run: |
-        make push-all
+        make push
