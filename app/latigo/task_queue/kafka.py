@@ -40,13 +40,20 @@ def print_assignment(consumer, partitions):
     print("Assignment:", partitions)
 
 
-def prepare_kafka_config(config: typing.Dict[str, typing.Any]) -> dict:
+def prepare_kafka_config(
+    config: typing.Dict[str, typing.Any]
+) -> typing.Tuple[typing.Optional[dict], str, typing.Optional[str]]:
     connection_string = str(config.get("connection_string"))
     if not connection_string:
-        raise Exception("No connection_string configured")
+        return None, "", "No connection_string in kafka configuration"
     parts = parse_event_hub_connection_string(connection_string) or {}
     if not parts:
-        raise Exception(f"No parts found in connection_string")
+        return (
+            None,
+            "",
+            f"No parts found in kafka connection_string '{connection_string}'",
+        )
+    topic = parts["entity_path"] or ""
     # fmt: off
     return {
         "bootstrap.servers": f"{parts.get('endpoint')}:9093",
@@ -65,50 +72,22 @@ def prepare_kafka_config(config: typing.Dict[str, typing.Any]) -> dict:
         "default.topic.config": config.get("default.topic.config"),
         "debug": config.get("debug"),
         "logger": logger_confluent,
-        }
+        }, topic, None
     # fmt: on
 
 
 class KafkaTaskQueueSender(TaskQueueSenderInterface):
-    # This is not possible in Azure as it is expected you create your topics (a.k.a. event hubs)
-    # Manually in Azure portal, or using azure proprietary APIs
-    def _create_topics(self):
-        # Create Admin instance
-        self.admin = AdminClient(self.config)
-        # Create topics
-        fs = self.admin.create_topics(
-            [
-                NewTopic(topic, num_partitions=3, replication_factor=1)
-                for topic in [self.topic]
-            ]
-        )
-        # Wait for topic creation to complete
-        for topic, f in fs.items():
-            try:
-                logger.info(f"Waiting for topic '{topic}' to be created")
-                f.result()  # The result itself is None
-                logger.info(f"Topic '{topic}' created")
-            except Exception as e:
-                logger.error(f"Failed to create topic '{topic}': {e}")
-
     def __init__(self, config: dict):
         # Producer configuration
         # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
         # See https://github.com/edenhill/librdkafka/wiki/Using-SSL-with-librdkafka#prerequisites for SSL issues
-        connection_string = str(config.get("connection_string"))
-        if not connection_string:
-            raise Exception("No connection_string configured")
         self.poll_timeout_sec = config.get("poll_timeout_sec", 100)
-        self.config = prepare_kafka_config(config)
-        # Find our topic
-
-        parts = parse_event_hub_connection_string(connection_string) or {}
-        if not parts:
-            raise Exception(f"No parts found in connection_string")
-        self.topic = parts.get("entity_path")
+        self.config, self.topic, err = prepare_kafka_config(config)
+        if not self.config:
+            raise Exception(f"No config parsed: {err}")
         if not self.topic:
-            raise Exception("No topic configured")
-        # self._create_topics()
+            raise Exception("No topic configured: {err}")
+
         # Create Producer instance
         self.producer = Producer(self.config)
 
@@ -146,21 +125,12 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
     def __init__(self, config: dict):
         # Consumer configuration
         # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
-        self.config = prepare_kafka_config(config)
-        # Find our topic
-        connection_string = str(config.get("connection_string"))
-        if not connection_string:
-            raise Exception("No connection_string configured")
         self.poll_timeout_sec = config.get("poll_timeout_sec", 100)
-        # self.config = prepare_kafka_config(config)
-
-        parts = parse_event_hub_connection_string(connection_string) or {}
-        if not parts:
-            raise Exception(f"No parts found in connection_string")
-        self.topic = parts.get("entity_path")
+        self.config, self.topic, err = prepare_kafka_config(config)
+        if not self.config:
+            raise Exception(f"No config parsed: {err}")
         if not self.topic:
-            raise Exception("No topic configured")
-
+            raise Exception("No topic configured: {err}")
         # Create Consumer instance
         self.consumer = Consumer(self.config)
         # Subscribe to topics
