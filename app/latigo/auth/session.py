@@ -1,14 +1,35 @@
+import adal
+import json
 import logging
-import pprint
-import typing
-
-import requests_oauthlib
 import oauthlib.oauth2
+import os
+import pprint
+import random
 import requests
-from urllib3.exceptions import NewConnectionError
-
-
+import requests_oauthlib
+import string
+import sys
+import time
+import typing
+import uuid
 import inspect
+
+from requests_oauthlib import OAuth2Session
+
+from oauthlib.oauth2 import BackendApplicationClient
+
+## AADTokenCredentials for multi-factor authentication
+from msrestazure.azure_active_directory import AADTokenCredentials
+
+## Required for Azure Data Lake Analytics job management
+from azure.mgmt.datalake.analytics.job import DataLakeAnalyticsJobManagementClient
+from azure.mgmt.datalake.analytics.job.models import (
+    JobInformation,
+    JobState,
+    USqlJobProperties,
+)
+
+from urllib3.exceptions import NewConnectionError
 
 
 logger = logging.getLogger(__name__)
@@ -27,65 +48,122 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
         auth_config={},
         #        **kwargs,
     ):
-        self.auth_config = auth_config
-        client_id = self.auth_config.get("client_id")
-        client_secret = self.auth_config.get("client_secret")
-        resource = self.auth_config.get("resource")
-        authority_host_url = self.auth_config.get("authority_host_url")
-        tenant = self.auth_config.get("tenant")
-        scope = self.auth_config.get("scope", ["read", "write"])
-        redirect_uri = self.auth_config.get("verification_url")
-        auto_refresh_url = (
-            f"{authority_host_url}/{tenant}"
-        )  # aka token_url # "https://login.microsoftonline.com"
-        auto_refresh_kwargs = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "resource": resource,
+        self.latigo_auth_config = auth_config
+        self.latigo_client_id = self.latigo_auth_config.get("client_id")
+        self.latigo_client_secret = self.latigo_auth_config.get("client_secret")
+        self.latigo_resource_uri = self.latigo_auth_config.get(
+            "resource", "https://management.core.windows.net/"
+        )
+        self.latigo_authority_host_url = self.latigo_auth_config.get(
+            "authority_host_url", "https://login.microsoftonline.com"
+        )
+        self.latigo_tenant = self.latigo_auth_config.get("tenant", "adfs")
+        self.latigo_validate_authority = self.latigo_tenant != "adfs"
+        self.latigo_scope = self.latigo_auth_config.get("scope", ["read", "write"])
+        self.latigo_redirect_uri = self.latigo_auth_config.get("verification_url")
+        self.latigo_auto_refresh_url = (
+            f"{self.latigo_authority_host_url}/{self.latigo_tenant}"
+        )
+        self.latigo_auto_refresh_kwargs = {
+            "client_id": self.latigo_client_id,
+            "client_secret": self.latigo_client_secret,
+            "resource": self.latigo_resource_uri,
         }  # aka extra
-        state = None
-        token_updater = None
-        token = None
-        # token = fetch_access_token(self.auth_config)
-        # client=requests_oauthlib.WebApplicationClient(client_id=client_id, token=token)
-        client = oauthlib.oauth2.BackendApplicationClient(
-            client_id=client_id,
-            token=token,
-            auto_refresh_url=auto_refresh_url,
-            auto_refresh_kwargs=auto_refresh_kwargs,
+        self.latigo_state = None
+        self.latigo_token = self._fetch_access_token()
+        # client=requests_oauthlib.WebApplicationClient(client_id=self.latigo_client_id, token=self.latigo_token)
+        self.latigo_client = oauthlib.oauth2.BackendApplicationClient(
+            client_id=self.latigo_client_id,
+            token=self.latigo_token,
+            auto_refresh_url=self.latigo_auto_refresh_url,
+            auto_refresh_kwargs=self.latigo_auto_refresh_kwargs,
             token_updater=self._token_saver,
-            scope=scope,
+            scope=self.latigo_scope,
         )
 
         logging.info(
-            f"@@@ Latigo Session: __init__(client_id={client_id}, auto_refresh_url={auto_refresh_url}, scope={scope}, redirect_uri={redirect_uri})."
+            f"@@@ Latigo Session: __init__(client_id={self.latigo_client_id}, auto_refresh_url={self.latigo_auto_refresh_url}, scope={self.latigo_scope}, redirect_uri={self.latigo_redirect_uri})."
         )
         super(LatigoAuthSession, self).__init__(
-            #            client_id=client_id,
-            client=client,
-            #            auto_refresh_url=auto_refresh_url,
-            #            auto_refresh_kwargs=auto_refresh_kwargs,
-            #            scope=scope,
-            #            redirect_uri=redirect_uri,
-            #            token=token,
-            #            state=state,
-            #            token_updater=token_updater,
+            #            client_id=self.latigo_client_id,
+            client=self.latigo_client,
+            token=self.latigo_token,
+            #            auto_refresh_url=self.latigo_auto_refresh_url,
+            #            auto_refresh_kwargs=self.latigo_auto_refresh_kwargs,
+            #            scope=self.latigo_scope,
+            #            redirect_uri=self.latigo_redirect_uri,
+            #            token=self.latigo_token,
+            #            state=self.latigo_state,
+            #            token_updater=self._token_saver,
             #            **kwargs,
         )
+        self.verify_auth()
 
-    def _token_saver(token):
+    def _fetch_access_token(self):
+        self.latigo_adal_token = None
+        self.latigo_oathlib_token = None
+        try:
+            context = adal.AuthenticationContext(
+                authority=self.latigo_auto_refresh_url,
+                validate_authority=self.latigo_validate_authority,
+                api_version=None,
+            )
+            self.latigo_adal_token = (
+                context.acquire_token_with_client_credentials(
+                    self.latigo_resource_uri,
+                    self.latigo_client_id,
+                    self.latigo_client_secret,
+                )
+                or {}
+            )
+            if self.latigo_adal_token:
+                # print("Got auth token:")
+                # print(json.dumps(token, indent=2))
+                # logger.info("fetch_access_token:")
+                self.latigo_oathlib_token = {
+                    "access_token": self.latigo_adal_token.get("accessToken", ""),
+                    "refresh_token": self.latigo_adal_token.get("refreshToken", ""),
+                    "token_type": self.latigo_adal_token.get("tokenType", "Bearer"),
+                    "expires_in": self.latigo_adal_token.get("expiresIn", 0),
+                }
+                logger.info(" GOT TOKEN")
+                logger.info(pprint.pformat(self.latigo_adal_token))
+                logger.info(pprint.pformat(self.latigo_oathlib_token))
+            else:
+                logger.error(
+                    f"Could not get token for client {self.latigo_auto_refresh_url}"
+                )
+        except Exception as e:
+            logger.info(f"client_id:            {self.latigo_client_id}")
+            logger.info(f"tenant:               {self.latigo_tenant}")
+            logger.info(f"validate_authority:   {self.latigo_validate_authority}")
+            logger.info(f"authority_host_url:   {self.latigo_authority_host_url}")
+            logger.info(f"auto_refresh_url:     {self.latigo_auto_refresh_url}")
+            logger.error(f"Error fetching token: {e}")
+            raise e
+        return self.latigo_oathlib_token
+
+    def _token_saver(self, token):
         logger.info("TOKEN SAVER SAVING:")
         logger.info(pprint.pformat(token))
         pass
 
     def verify_auth(self) -> typing.Tuple[bool, typing.Optional[str]]:
         try:
-            url = self.auth_config.get("verification_url")
-            res = self.get(url)
-            if None == res:
-                raise Exception("No response object returned")
-            if not res:
-                res.raise_for_status()
+            url = self.latigo_auth_config.get("verification_url")
+            if url:
+                logger.info(
+                    "@@@ Latigo Session: Verification URL specified, performing verification"
+                )
+                res = self.get(url)
+                if None == res:
+                    raise Exception("No response object returned")
+                if not res:
+                    res.raise_for_status()
+            else:
+                logger.info(
+                    "@@@ Latigo Session: No verification URL specified, skipping verification"
+                )
         except Exception as e:
             # Failure
             raise e
