@@ -6,6 +6,7 @@ import socket
 import sys
 import threading
 from latigo.log import setup_logging
+from latigo import __version__ as latigo_version
 
 logger = setup_logging("latigo.app.scheduler")
 from latigo.utils import load_configs, sleep
@@ -22,7 +23,7 @@ if not config:
     sys.exit(1)
 
 threading.current_thread().name = config.get("scheduler", {}).get(
-    "instance_name", "latigo-scheduler-" + socket.getfqdn()
+    "instance_name", f"latigo-scheduler-{latigo_version}-{socket.getfqdn()}"
 )
 
 logger.info("Configuring Latigo Scheduler")

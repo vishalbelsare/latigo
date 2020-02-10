@@ -10,6 +10,7 @@ import distutils.util
 import os
 import typing
 from latigo.log import setup_logging
+from latigo import __version__ as latigo_version
 
 logger = setup_logging("latigo.app.executor")
 
@@ -30,7 +31,7 @@ if not config:
 
 instance_count = int(config.get("executor", {}).get("instance_count", 1))
 instance_name = config.get("executor", {}).get(
-    "instance_name", "latigo-executor-" + socket.getfqdn()
+    "instance_name", f"latigo-executor-{latigo_version}-{socket.getfqdn()}"
 )
 threading.current_thread().name = instance_name
 
