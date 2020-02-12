@@ -117,34 +117,31 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
                 or {}
             )
             if self.latigo_adal_token:
-                # print("Got auth token:")
-                # print(json.dumps(token, indent=2))
-                # logger.info("fetch_access_token:")
                 self.latigo_oathlib_token = {
                     "access_token": self.latigo_adal_token.get("accessToken", ""),
                     "refresh_token": self.latigo_adal_token.get("refreshToken", ""),
                     "token_type": self.latigo_adal_token.get("tokenType", "Bearer"),
                     "expires_in": self.latigo_adal_token.get("expiresIn", 0),
                 }
-                logger.info(" GOT TOKEN")
-                logger.info(pprint.pformat(self.latigo_adal_token))
-                logger.info(pprint.pformat(self.latigo_oathlib_token))
             else:
                 logger.error(
                     f"Could not get token for client {self.latigo_auto_refresh_url}"
                 )
         except Exception as e:
-            logger.info(f"client_id:            {self.latigo_client_id}")
-            logger.info(f"tenant:               {self.latigo_tenant}")
-            logger.info(f"validate_authority:   {self.latigo_validate_authority}")
-            logger.info(f"authority_host_url:   {self.latigo_authority_host_url}")
-            logger.info(f"auto_refresh_url:     {self.latigo_auto_refresh_url}")
-            logger.error(f"Error fetching token: {e}")
+            logger.error(f"Error fetching token: {e}", exc_info=True)
+            logger.warning(
+                "NOTE:\n"
+                + f"client_id:            {self.latigo_client_id}\n"
+                + f"tenant:               {self.latigo_tenant}\n"
+                + f"validate_authority:   {self.latigo_validate_authority}\n"
+                + f"authority_host_url:   {self.latigo_authority_host_url}\n"
+                + f"auto_refresh_url:     {self.latigo_auto_refresh_url}\n"
+            )
             raise e
         return self.latigo_oathlib_token
 
     def _token_saver(self, token):
-        logger.info("TOKEN SAVER SAVING:")
+        logger.info("@@@ Latigo Session: TOKEN SAVER SAVING:")
         logger.info(pprint.pformat(token))
         pass
 
@@ -162,7 +159,7 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
                     res.raise_for_status()
             else:
                 logger.info(
-                    "@@@ Latigo Session: No verification URL specified, skipping verification"
+                    f"@@@ Latigo Session: No verification URL specified in {pprint.pformat(self.latigo_auth_config)}, skipping verification"
                 )
         except Exception as e:
             # Failure
@@ -172,7 +169,9 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
         return True, None
 
     def prepare_request(self, request):
-        logging.info(f"@@@ Latigo Session: prepare_request(request={request}).")
+        logging.info(
+            f"@@@ Latigo Session: prepare_request(method={request.method}, url='{request.url}')."
+        )
         return super(LatigoAuthSession, self).prepare_request(request)
 
     def request(
@@ -187,17 +186,27 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
         **kwargs,
     ):
         logging.info(f"@@@ Latigo Session: request(method={method}, url='{url}').")
+        return super(LatigoAuthSession, self).request(
+            method=method,
+            url=url,
+            data=data,
+            headers=headers,
+            withhold_token=withhold_token,
+            client_id=client_id,
+            client_secret=client_secret,
+            **kwargs,
+        )
+
+    def send(self, request, **kwargs):
+        logging.info(
+            f"@@@ Latigo Session: send(method={request.method}, url='{request.url}')."
+        )
         try:
-            response = super(LatigoAuthSession, self).request(
-                method=method,
-                url=url,
-                data=data,
-                headers=headers,
-                withhold_token=withhold_token,
-                client_id=client_id,
-                client_secret=client_secret,
-                **kwargs,
+            response = super(LatigoAuthSession, self).send(request, **kwargs)
+            logging.info(
+                f"@@@ Latigo Session: Response head follows: -----------------------"
             )
+            logging.info(response.content[0:200])
             return response
         except NewConnectionError as nce:
             logger.error(f"Could not connect (method={method}, url='{url}'): {nce}")
@@ -205,13 +214,10 @@ class LatigoAuthSession(requests_oauthlib.OAuth2Session):
             logger.error(f"HTTP STATUS CODE WAS: {he}")
         except Exception as e:
             logger.error(
-                f"Could not perform request(method={method}, url='{url}'): {e}"
+                f"Could not perform request(method={method}, url='{url}'): {e}",
+                exc_info=True,
             )
         return None
-
-    def send(self, request, **kwargs):
-        logging.info(f"@@@ Latigo Session: send().")
-        return super(LatigoAuthSession, self).send(request, **kwargs)
 
     def close(self):
         logging.info(f"@@@ Latigo Session: close().")

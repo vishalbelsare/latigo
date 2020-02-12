@@ -8,6 +8,7 @@ import sys
 import time
 import os.path
 import typing
+import traceback
 
 import latigo.rfc3339
 
@@ -265,3 +266,7 @@ def read_file(fname, strip=True):
             data = f.read()
             data = data.strip() if strip else data
     return data
+
+
+def format_error(e):
+    return traceback.format_exception(type(e), e, e.__traceback__)

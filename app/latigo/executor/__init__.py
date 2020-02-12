@@ -4,6 +4,8 @@ import typing
 import logging
 import pprint
 from latigo import __version__ as latigo_version
+from gordo import __version__ as gordo_version
+
 from latigo.types import (
     Task,
     SensorDataSpec,
@@ -167,11 +169,17 @@ class PredictionExecutor:
         )
 
     def print_summary(self):
+        restart_interval_desc = (
+            human_delta(datetime.timedelta(seconds=self.restart_interval_sec))
+            if self.restart_interval_sec > 0
+            else "Disabled"
+        )
         logger.info(
             f"\nExecutor settings:\n"
             f"  Good to go:       {'Yes' if self.good_to_go else 'No'}\n"
-            f"  Version:          {latigo_version}\n"
-            f"  Restart interval: {self.restart_interval_sec}\n"
+            f"  Latigo Version:   {latigo_version}\n"
+            f"  Gordo Version:    {gordo_version}\n"
+            f"  Restart interval: {restart_interval_desc}\n"
         )
 
     def _fetch_spec(self, project_name: str, model_name: str):

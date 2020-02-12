@@ -4,7 +4,7 @@ executor:
 
 task_queue:
     type: "kafka"
-    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    connection_string: "CHANGE ME"
     poll_timeout_sec: 100000
     security.protocol: "SASL_SSL"
     ssl.ca.location: "/etc/ssl/certs/ca-certificates.crt"
@@ -22,7 +22,7 @@ task_queue:
 
 model_info:
     type: "gordo"
-    connection_string: "DO NOT PUT SECRETS IN THIS FILE"
+    connection_string: "CHANGE ME"
     verification_project: "ioc-1901"
     target: null
     metadata: null
@@ -38,22 +38,23 @@ model_info:
         debug: false
         n_retries: 5
     auth:
-        resource: "set from env"
-        tenant: "set from env"
-        authority_host_url: "set from env"
-        client_id: "set from env"
-        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+        resource: "CHANGE ME"
+        tenant: "CHANGE ME"
+        authority_host_url: "CHANGE ME"
+        client_id: "CHANGE ME"
+        client_secret: "CHANGE ME"
+        verification_url: "CHANGE ME"
 
 sensor_data:
     type: "time_series_api"
     base_url: "https://api.gateway.equinor.com/plant-beta/timeseries/v1.5"
     async: False
     auth:
-        resource: "not set from env in executor_config.yaml"
-        tenant: "not set from env in executor_config.yaml"
-        authority_host_url: "not set from env in executor_config.yaml"
-        client_id: "not set from env in executor_config.yaml"
-        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+        resource: "CHANGE ME"
+        tenant: "CHANGE ME"
+        authority_host_url: "CHANGE ME"
+        client_id: "CHANGE ME"
+        client_secret: "CHANGE ME"
         scope: ['read', 'write']
 
 prediction_storage:
@@ -61,12 +62,13 @@ prediction_storage:
     base_url: "https://api.gateway.equinor.com/plant-beta/timeseries/v1.5"
     async: False
     auth:
-        resource: "not set from env in executor_config.yaml"
-        tenant: "not set from env in executor_config.yaml"
-        authority_host_url: "not set from env in executor_config.yaml"
-        client_id: "not set from env in executor_config.yaml"
-        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+        resource: "CHANGE ME"
+        tenant: "CHANGE ME"
+        authority_host_url: "CHANGE ME"
+        client_id: "CHANGE ME"
+        client_secret: "CHANGE ME"
         scope: ['read', 'write']
+        verification_url: "CHANGE ME"
 
 predictor:
     type: "gordo"
@@ -87,8 +89,9 @@ predictor:
         debug: false
         n_retries: 5
     auth:
-        resource: "not set from env in executor_config.yaml"
-        tenant: "not set from env in executor_config.yaml"
-        authority_host_url: "not set from env in executor_config.yaml"
-        client_id: "not set from env in executor_config.yaml"
-        client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+            resource: "CHANGE ME"
+            tenant: "CHANGE ME"
+            authority_host_url: "CHANGE ME"
+            client_id: "CHANGE ME"
+            client_secret: "CHANGE ME"
+            verification_url: "CHANGE ME"

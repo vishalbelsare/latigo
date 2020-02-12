@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def _get_config(type="time_series"):
     # Note: This file should be provided by the environment that conducts the test and never put into source control
-    filename = "../executor_secret.yml"
+    filename = "../executor_local.yaml"
     assert os.path.exists(filename)
     with open(filename, "r") as stream:
         data = {}
@@ -59,9 +59,6 @@ def _test_session_signatures():
     assert inspect.signature(OAuth2Session.request) == inspect.signature(
         latigo.auth.session.LatigoAuthSession.request
     )
-
-
-from latigo.auth.session_factory import classic_create_auth_session as sf
 
 
 def test_session():
