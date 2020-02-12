@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Adapted from https://github.com/equinor/gordo-components/blob/master/docker_push.sh
+# Adapted from https://github.com/equinor/gordo/blob/master/docker_push.sh
 
 # Script to push an docker image to a docker registry. The docker image can
 # either exist and be provided in the env variable DOCKER_IMAGE, or it will be

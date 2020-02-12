@@ -2,7 +2,6 @@ import pprint
 import typing
 import logging
 
-from .session_factory import create_auth_session
 from .session import LatigoAuthSession
 
 logger = logging.getLogger(__name__)

@@ -58,7 +58,7 @@ pgsql-perm :
 
 req:
 	pip install --upgrade pip
-	pip uninstall gordo-components -y
+	pip uninstall gordo -y
 	pip install --upgrade pip-tools
 	cd app && cat requirements.in | sort -u > r.in
 	cd app && pip-compile --output-file=requirements.txt r.in

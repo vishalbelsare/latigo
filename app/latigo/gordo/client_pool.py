@@ -89,12 +89,8 @@ class GordoClientPool:
         client = self.client_instances_by_project.get(project, None)
         if not client:
             # Patch to all disableing the use of OAuth2Session's when developing locally
-            if self.config.get("enable_auth"):
-                auth_config = self.config.get("auth", dict())
-                session = self.get_auth_session(auth_config)
-            else:
-                session = requests.Session()
-
+            auth_config = self.config.get("auth", dict())
+            session = self.get_auth_session(auth_config)
             config = {**self.config}
             config["project"] = project
             config["session"] = session
@@ -118,7 +114,8 @@ class GordoClientPool:
                         )
                 except Exception as error:
                     logger.error(
-                        f"Skipping client allocation for {project} due to unknown error ('{type(error)}'): '{error}' "
+                        f"Skipping client allocation for {project} due to unknown error ('{type(error)}'): '{error}' ",
+                        exc_info=True,
                     )
                     logger.warning(
                         f"NOTE: Using gordo config:\n{pprint.pformat(clean_config)}"
