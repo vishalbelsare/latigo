@@ -22,7 +22,8 @@ from latigo.intermediate import IntermediateFormat
 from latigo.sensor_data import SensorDataProviderInterface
 from latigo.prediction_storage import PredictionStorageProviderInterface
 from latigo.utils import rfc3339_from_datetime
-from latigo.auth.session import LatigoAuthSession
+import requests_adal_auth
+
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +218,9 @@ def _get_items(datas: dict) -> typing.List:
 def _get_auth_session(auth_config: dict, force: bool = False):
     global timeseries_client_auth_session
     if not timeseries_client_auth_session or force:
-        timeseries_client_auth_session = LatigoAuthSession(auth_config=auth_config)
+        timeseries_client_auth_session = requests_adal_auth.AdalRequestsSession(
+            auth_config=auth_config
+        )
     return timeseries_client_auth_session
 
 
