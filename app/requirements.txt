@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements.txt r.in
 #
 absl-py==0.8.0            # via tensorboard, tensorflow
-adal==1.2.1               # via -r r.in, azure-datalake-store, msrestazure, requests-adal-auth
+adal==1.2.1               # via -r r.in, azure-datalake-store, msrestazure, requests-ms-auth
 alembic==1.2.1            # via -r r.in
 aniso8601==8.0.0          # via flask-restplus
 astor==0.8.0              # via tensorflow
@@ -131,7 +131,7 @@ markupsafe==1.1.1         # via jinja2, mako
 marshmallow-enum==1.5.1   # via dataclasses-json
 marshmallow==3.2.1        # via dataclasses-json, marshmallow-enum
 matplotlib==3.1.1         # via catboost
-msal==1.1.0               # via requests-adal-auth
+msal==1.1.0               # via requests-ms-auth
 msrest==0.6.10            # via azure-applicationinsights, azure-eventgrid, azure-keyvault, azure-loganalytics, azure-mgmt-cdn, azure-mgmt-compute, azure-mgmt-containerinstance, azure-mgmt-containerregistry, azure-mgmt-containerservice, azure-mgmt-dns, azure-mgmt-eventhub, azure-mgmt-keyvault, azure-mgmt-managementpartner, azure-mgmt-media, azure-mgmt-network, azure-mgmt-notificationhubs, azure-mgmt-rdbms, azure-mgmt-resource, azure-mgmt-search, azure-mgmt-servicebus, azure-mgmt-servicefabric, azure-mgmt-signalr, azure-servicefabric, msrestazure
 msrestazure==0.6.0        # via -r r.in, azure-batch, azure-eventgrid, azure-eventhub, azure-graphrbac, azure-keyvault, azure-mgmt-advisor, azure-mgmt-applicationinsights, azure-mgmt-authorization, azure-mgmt-batch, azure-mgmt-batchai, azure-mgmt-billing, azure-mgmt-cdn, azure-mgmt-cognitiveservices, azure-mgmt-commerce, azure-mgmt-compute, azure-mgmt-consumption, azure-mgmt-containerinstance, azure-mgmt-containerregistry, azure-mgmt-containerservice, azure-mgmt-cosmosdb, azure-mgmt-datafactory, azure-mgmt-datalake-analytics, azure-mgmt-datalake-store, azure-mgmt-datamigration, azure-mgmt-devspaces, azure-mgmt-devtestlabs, azure-mgmt-dns, azure-mgmt-eventgrid, azure-mgmt-eventhub, azure-mgmt-hanaonazure, azure-mgmt-iotcentral, azure-mgmt-iothub, azure-mgmt-iothubprovisioningservices, azure-mgmt-keyvault, azure-mgmt-loganalytics, azure-mgmt-logic, azure-mgmt-machinelearningcompute, azure-mgmt-managementgroups, azure-mgmt-managementpartner, azure-mgmt-maps, azure-mgmt-marketplaceordering, azure-mgmt-media, azure-mgmt-monitor, azure-mgmt-msi, azure-mgmt-network, azure-mgmt-notificationhubs, azure-mgmt-policyinsights, azure-mgmt-powerbiembedded, azure-mgmt-rdbms, azure-mgmt-recoveryservices, azure-mgmt-recoveryservicesbackup, azure-mgmt-redis, azure-mgmt-relay, azure-mgmt-reservations, azure-mgmt-resource, azure-mgmt-scheduler, azure-mgmt-search, azure-mgmt-servicebus, azure-mgmt-servicefabric, azure-mgmt-signalr, azure-mgmt-sql, azure-mgmt-storage, azure-mgmt-subscription, azure-mgmt-trafficmanager, azure-mgmt-web
 multiprocessing-logging==0.3.0  # via -r r.in
@@ -153,9 +153,9 @@ python-dateutil==2.8.0    # via adal, alembic, azure-cosmosdb-table, azure-stora
 python-editor==1.0.4      # via alembic
 pytz==2019.2              # via flask-restplus, influxdb, pandas
 pyyaml==5.3               # via -r r.in, gordo
-requests-adal-auth==0.0.6  # via -r r.in
-requests-oauthlib==1.2.0  # via -r r.in, msrest, requests-adal-auth
-requests==2.21.0          # via -r r.in, adal, azure-cosmosdb-table, azure-datalake-store, azure-keyvault, azure-servicebus, azure-servicemanagement-legacy, azure-storage-common, gordo, influxdb, msal, msrest, requests-adal-auth, requests-oauthlib
+requests-ms-auth==0.0.7   # via -r r.in
+requests-oauthlib==1.2.0  # via -r r.in, msrest, requests-ms-auth
+requests==2.21.0          # via -r r.in, adal, azure-cosmosdb-table, azure-datalake-store, azure-keyvault, azure-servicebus, azure-servicemanagement-legacy, azure-storage-common, gordo, influxdb, msal, msrest, requests-ms-auth, requests-oauthlib
 retrying==1.3.3           # via plotly
 scikit-learn==0.22.1      # via gordo
 scipy==1.3.1              # via catboost, scikit-learn
