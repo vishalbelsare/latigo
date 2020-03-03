@@ -2,7 +2,7 @@ import pprint
 import typing
 import logging
 
-import requests_adal_auth
+import requests_ms_auth
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,9 @@ class AuthVerifier:
 
     def test_auth(self, url: str) -> typing.Tuple[bool, typing.Optional[str]]:
         try:
-            self.auth_session = requests_adal_auth.AdalRequestsSession(auth_config=self.config)
+            self.auth_session = requests_ms_auth.MsRequestsSession(
+                auth_config=self.config
+            )
             res = self.auth_session.get(url)
             if None == res:
                 raise Exception("No response object returned")

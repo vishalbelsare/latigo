@@ -18,7 +18,7 @@ from latigo.types import (
 from latigo.sensor_data import SensorDataProviderInterface
 
 from latigo.model_info import ModelInfoProviderInterface, Model
-import requests_adal_auth
+import requests_ms_auth
 
 from gordo.client.client import Client
 from gordo.machine import Machine
@@ -133,5 +133,7 @@ class GordoClientPool:
     def get_auth_session(self, auth_config: dict):
         if not self.client_auth_session:
             # logger.info("CREATING SESSION:")
-            self.client_auth_session = requests_adal_auth.AdalRequestsSession(auth_config=auth_config)
+            self.client_auth_session = requests_ms_auth.MsRequestsSession(
+                auth_config=auth_config
+            )
         return self.client_auth_session

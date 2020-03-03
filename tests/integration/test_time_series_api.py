@@ -24,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 def _get_config():
     not_found = "Not found in environment variables"
-    data, err=load_yaml('../secrets.yaml')
+    data, err = load_yaml("../secrets.yaml")
     if not data:
         logger.error(f"Could not load yaml:{err}")
     assert data is not None
-    env =data['auth']
-    #env=environ
+    env = data["auth"]
+    # env=environ
     # fmt: off
     return {
         "type": "time_series_api",
