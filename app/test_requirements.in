@@ -1,3 +1,4 @@
+-c requirements.txt
 flake8~=3.7
 mypy~=0.7
 sqlalchemy-stubs

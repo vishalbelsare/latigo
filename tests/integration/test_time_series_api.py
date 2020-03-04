@@ -14,7 +14,7 @@ from latigo.time_series_api import (
     _id_in_data,
 )
 from latigo.types import PredictionDataSet, TimeRange, SensorDataSpec, LatigoSensorTag
-from latigo.utils import datetime_from_rfc3339
+from latigo.utils import datetime_from_rfc3339, load_yaml
 
 from latigo.intermediate import IntermediateFormat
 
@@ -24,33 +24,42 @@ logger = logging.getLogger(__name__)
 
 def _get_config():
     not_found = "Not found in environment variables"
+    data, err = load_yaml("../secrets.yaml")
+    if not data:
+        logger.error(f"Could not load yaml:{err}")
+    assert data is not None
+    env = data["auth"]
+    # env=environ
     # fmt: off
     return {
         "type": "time_series_api",
-        "base_url": "https://api.gateway.equinor.com/plant/timeseries/v1.5", #environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
-        "ims_meta_base_url": "https://api.gateway.equinor.com/plant-beta/ims-metadata/v1.2", #environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
-        "ims_subscription_base_url": "https://api.gateway.equinor.com/plant/ims-subscriptions/v1.0", #environ.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
+        "base_url": "https://api.gateway.equinor.com/plant/timeseries/v1.5", #env.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
+        "ims_meta_base_url": "https://api.gateway.equinor.com/plant-beta/ims-metadata/v1.2", #env.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
+        "ims_subscription_base_url": "https://api.gateway.equinor.com/plant/ims-subscriptions/v1.0", #env.get("LATIGO_TIME_SERIES_BASE_URL", not_found),
         "async": False,
         "auth": {
-            "resource": environ.get("LATIGO_TIME_SERIES_RESOURCE", not_found),
-            "tenant": environ.get("LATIGO_TIME_SERIES_TENANT", not_found),
-            "authority_host_url": environ.get("LATIGO_TIME_SERIES_AUTH_HOST_URL", not_found),
-            "client_id": environ.get("LATIGO_TIME_SERIES_CLIENT_ID", not_found),
-            "client_secret": environ.get("LATIGO_TIME_SERIES_CLIENT_SECRET", not_found)
+            "resource": env.get("resource", not_found),
+            "tenant": env.get("tenant", not_found),
+            "authority_host_url": env.get("authority_host_url", not_found),
+            "client_id": env.get("client_id", not_found),
+            "client_secret": env.get("client_secret", not_found),
+            "verification_url": env.get("verification_url", not_found)
         },
         "ims_meta_auth": {
-            "resource": environ.get("LATIGO_TIME_SERIES_IMS_META_RESOURCE", not_found),
-            "tenant": environ.get("LATIGO_TIME_SERIES_IMS_META_TENANT", not_found),
-            "authority_host_url": environ.get("LATIGO_IMS_TIME_SERIES_META_AUTH_HOST_URL", not_found),
-            "client_id": environ.get("LATIGO_TIME_SERIES_IMS_META_CLIENT_ID", not_found),
-            "client_secret": environ.get("LATIGO_TIME_SERIES_IMS_META_CLIENT_SECRET", not_found)
+            "resource": env.get("resource", not_found),
+            "tenant": env.get("tenant", not_found),
+            "authority_host_url": env.get("authority_host_url", not_found),
+            "client_id": env.get("client_id", not_found),
+            "client_secret": env.get("client_secret", not_found),
+            "verification_url": env.get("verification_url", not_found)
         },
         "ims_subscription_auth": {
-            "resource": environ.get("LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_RESOURCE", not_found),
-            "tenant": environ.get("LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_TENANT", not_found),
-            "authority_host_url": environ.get("LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_AUTH_HOST_URL", not_found),
-            "client_id": environ.get("LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_CLIENT_ID", not_found),
-            "client_secret": environ.get("LATIGO_TIME_SERIES_IMS_SUBSCRIPTION_CLIENT_SECRET", not_found)
+            "resource": env.get("resource", not_found),
+            "tenant": env.get("tenant", not_found),
+            "authority_host_url": env.get("authority_host_url", not_found),
+            "client_id": env.get("client_id", not_found),
+            "client_secret": env.get("client_secret", not_found),
+            "verification_url": env.get("verification_url", not_found)
         },
         
     }

@@ -20,7 +20,6 @@ from latigo.sensor_data import SensorDataProviderInterface
 
 from latigo.model_info import ModelInfoProviderInterface, Model
 from latigo.prediction_storage import PredictionStorageProviderInterface
-from latigo.auth import LatigoAuthSession
 
 from gordo.client.client import Client
 from gordo.machine import Machine

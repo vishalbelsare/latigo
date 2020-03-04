@@ -18,7 +18,6 @@ from latigo.types import (
 from latigo.sensor_data import SensorDataProviderInterface
 
 from latigo.model_info import ModelInfoProviderInterface, Model
-from latigo.auth import LatigoAuthSession
 
 from gordo.client.client import Client
 from gordo.machine import Machine
