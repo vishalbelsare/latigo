@@ -22,8 +22,6 @@ def setup_logging(filename, log_level=logging.INFO):
             "urllib3",
             "aiohttp.access",
             "uamqp",
-            "sqlalchemy",
-            "sqlalchemy.engine.base",
             "adal-python",
             "matplotlib.font_manager",
             "gordo",

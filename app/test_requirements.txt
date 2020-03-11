@@ -20,7 +20,7 @@ mccabe==0.6.1             # via flake8, pylint
 mock==3.0.5               # via -r r.in
 more-itertools==7.2.0     # via pytest
 mypy-extensions==0.4.3    # via -c requirements.txt, mypy
-mypy==0.730               # via -r r.in, pytest-mypy, sqlalchemy-stubs
+mypy==0.730               # via -r r.in, pytest-mypy
 packaging==19.2           # via pytest
 pip-tools==4.1.0          # via -r r.in
 pluggy==0.13.0            # via pytest
@@ -37,10 +37,9 @@ pytest-mypy==0.4.1        # via -r r.in
 pytest-timeout==1.3.3     # via -r r.in
 pytest==4.6.5             # via -r r.in, pytest-asyncio, pytest-cov, pytest-flakes, pytest-mock, pytest-mypy, pytest-timeout
 six==1.12.0               # via -c requirements.txt, astroid, mock, packaging, pip-tools, pytest
-sqlalchemy-stubs==0.2     # via -r r.in
 toml==0.10.0              # via black
 typed-ast==1.4.0          # via astroid, mypy
-typing-extensions==3.7.4  # via -c requirements.txt, mypy, sqlalchemy-stubs
+typing-extensions==3.7.4  # via -c requirements.txt, mypy
 wcwidth==0.1.7            # via pytest
 wrapt==1.11.2             # via -c requirements.txt, astroid
 zipp==0.6.0               # via importlib-metadata

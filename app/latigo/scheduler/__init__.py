@@ -7,6 +7,7 @@ import datetime
 from os import environ
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
+from requests_ms_auth import __version__ as auth_version
 from latigo.types import Task
 from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
@@ -151,6 +152,7 @@ class Scheduler:
             f"  Good to go:       {'Yes' if self.good_to_go else 'No'}\n"
             f"  Latigo Version:   {latigo_version}\n"
             f"  Gordo Version:    {gordo_version}\n"
+            f"  Auth Version:     {auth_version}\n"
             f"  Restart interval: {restart_interval_desc}\n"
             f"  Run at once :     {self.run_at_once}\n"
             f"  Start time :      {self.continuous_prediction_start_time}\n"

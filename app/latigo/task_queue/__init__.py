@@ -61,6 +61,7 @@ class TaskQueueSenderInterface:
         """
         Put one task on the queue
         """
+        raise NotImplementedError()
 
 
 class TaskQueueReceiverInterface:
@@ -68,6 +69,7 @@ class TaskQueueReceiverInterface:
         """
         Return exactly one task from queue or block
         """
+        raise NotImplementedError()
 
 
 class DevNullTaskQueue(TaskQueueSenderInterface, TaskQueueReceiverInterface):

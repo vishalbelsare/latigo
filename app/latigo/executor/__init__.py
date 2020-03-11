@@ -5,6 +5,7 @@ import logging
 import pprint
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
+from requests_ms_auth import __version__ as auth_version
 
 from latigo.types import (
     Task,
@@ -179,6 +180,7 @@ class PredictionExecutor:
             f"  Good to go:       {'Yes' if self.good_to_go else 'No'}\n"
             f"  Latigo Version:   {latigo_version}\n"
             f"  Gordo Version:    {gordo_version}\n"
+            f"  Auth Version:     {auth_version}\n"
             f"  Restart interval: {restart_interval_desc}\n"
         )
 

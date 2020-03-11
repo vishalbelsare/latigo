@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SensorDataProviderInterface:
     def supports_tag(self, tag: LatigoSensorTag) -> bool:
-        pass
+        raise NotImplementedError()
 
     def get_data_for_range(
         self, spec: SensorDataSpec, time_range: TimeRange
@@ -24,7 +24,7 @@ class SensorDataProviderInterface:
         """
         return the actual data as per the range specified
         """
-        pass
+        raise NotImplementedError()
 
 
 class DevNullSensorDataProvider(SensorDataProviderInterface):

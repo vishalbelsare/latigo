@@ -16,6 +16,7 @@ class PredictionExecutionProviderInterface:
         """
         Train and/or run data through a given model
         """
+        raise NotImplementedError()
 
 
 class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):

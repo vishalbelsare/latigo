@@ -14,7 +14,7 @@ class AuthVerifier:
     def test_auth(self, url: str) -> typing.Tuple[bool, typing.Optional[str]]:
         try:
             self.auth_session = requests_ms_auth.MsRequestsSession(
-                auth_config=self.config
+                requests_ms_auth.MsSessionConfig(**self.config)
             )
             res = self.auth_session.get(url)
             if None == res:

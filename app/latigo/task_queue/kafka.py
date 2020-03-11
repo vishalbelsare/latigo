@@ -177,8 +177,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         else:
             task = deserialize_task(task_bytes)
         if not task:
-            logger.error("Could not deserialize task")
-            logger.error(f" + Task bytes:{task_bytes}")
+            logger.error(f"Could not deserialize task\n Task bytes:{str(task_bytes)}")
         return task
 
     def get_task(self) -> typing.Optional[Task]:

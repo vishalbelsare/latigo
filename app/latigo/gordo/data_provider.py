@@ -36,7 +36,7 @@ def _gordo_to_latigo_tag(gordo_tag: SensorTag) -> LatigoSensorTag:
 
 
 def _gordo_to_latigo_tag_list(
-    gordo_tag_list: typing.List[SensorTag]
+    gordo_tag_list: typing.List[SensorTag],
 ) -> typing.List[LatigoSensorTag]:
     latigo_tag_list: typing.List[LatigoSensorTag] = []
     for gordo_tag in gordo_tag_list:
