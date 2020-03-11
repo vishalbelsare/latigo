@@ -37,7 +37,6 @@ def gordo_config_hash(config: dict):
         "host",
         "port",
         "project",
-        "target",
         "batch_size",
         "parallelism",
         "forward_resampled_sensors",
@@ -53,7 +52,6 @@ def gordo_config_hash(config: dict):
 def clean_gordo_client_args(raw: dict):
     whitelist = [
         "project",
-        "target",
         "host",
         "port",
         "scheme",
