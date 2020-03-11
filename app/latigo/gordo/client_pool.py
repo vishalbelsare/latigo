@@ -134,6 +134,6 @@ class GordoClientPool:
         if not self.client_auth_session:
             # logger.info("CREATING SESSION:")
             self.client_auth_session = requests_ms_auth.MsRequestsSession(
-                auth_config=auth_config
+                requests_ms_auth.MsSessionConfig(**auth_config)
             )
         return self.client_auth_session

@@ -74,8 +74,9 @@ def _get_auth_session(auth_config: dict, force: bool = False):
     global timeseries_client_auth_session
     if not timeseries_client_auth_session or force:
         timeseries_client_auth_session = requests_ms_auth.MsRequestsSession(
-            auth_config=auth_config
+            requests_ms_auth.MsSessionConfig(**auth_config)
         )
+
     return timeseries_client_auth_session
 
 

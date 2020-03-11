@@ -10,7 +10,7 @@ class PredictionStorageProviderInterface:
         """
         Store the prediction data
         """
-        pass
+        raise NotImplementedError()
 
 
 class MockPredictionStorageProvider(PredictionStorageProviderInterface):

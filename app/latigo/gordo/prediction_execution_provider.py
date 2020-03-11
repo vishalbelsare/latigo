@@ -55,24 +55,24 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         return f"GordoPredictionExecutionProvider({self.projects})"
 
     def execute_prediction(
-        self, project_name: str, machine_name: str, sensor_data: SensorDataSet
+        self, project_name: str, model_name: str, sensor_data: SensorDataSet
     ) -> PredictionDataSet:
         if not project_name:
             raise Exception("No project_name in gordo.execute_prediction()")
-        if not machine_name:
-            raise Exception("No machine_name in gordo.execute_prediction()")
+        if not model_name:
+            raise Exception("No model_name in gordo.execute_prediction()")
         if not sensor_data:
             raise Exception("No sensor_data in gordo.execute_prediction()")
         if not sensor_data.data:
             logger.warning(
-                f"No data in prediction for project '{project_name}' and model {machine_name}"
+                f"No data in prediction for project '{project_name}' and model {model_name}"
             )
             return PredictionDataSet(
                 time_range=sensor_data.time_range, data=None, meta_data={}
             )
         if len(sensor_data.data) < 1:
             logger.warning(
-                f"Length of data < 1 in prediction for project '{project_name}' and model {machine_name}"
+                f"Length of data < 1 in prediction for project '{project_name}' and model {model_name}"
             )
             return PredictionDataSet(
                 time_range=sensor_data.time_range, data=None, meta_data={}
@@ -90,7 +90,7 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
         return PredictionDataSet(
-            meta_data={project_name: project_name, machine_name: machine_name},
+            meta_data={project_name: project_name, model_name: model_name},
             time_range=sensor_data.time_range,
             data=result,
         )

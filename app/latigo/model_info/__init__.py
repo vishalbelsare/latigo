@@ -35,10 +35,10 @@ class Model:
 
 class ModelInfoProviderInterface:
     def get_all_models(self, projects: typing.List):
-        pass
+        raise NotImplementedError()
 
     def get_model_by_key(self, project_name: str, model_name: str):
-        pass
+        raise NotImplementedError()
 
     def get_spec(
         self, project_name: str, model_name: str
@@ -46,7 +46,7 @@ class ModelInfoProviderInterface:
         """
         Return a sensor data spec for given project name and model name
         """
-        pass
+        raise NotImplementedError()
 
 
 class MockModelInfoProvider(ModelInfoProviderInterface):

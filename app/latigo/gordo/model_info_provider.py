@@ -53,7 +53,7 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
     def get_model_data(
         self,
         projects: typing.Optional[typing.List] = None,
-        machine_names: typing.Optional[typing.List] = None,
+        model_names: typing.Optional[typing.List] = None,
     ) -> typing.List[Machine]:
         machines: typing.List[Machine] = []
         if not projects:
@@ -75,10 +75,10 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         for machine in machines:
             if machine:
                 project_name = machine.project_name or "unnamed"
-                machine_name = machine.name or "unnamed"
+                model_name = machine.name or "unnamed"
                 model = Model(
                     project_name=project_name,
-                    model_name=machine_name,
+                    model_name=model_name,
                     tag_list=machine.dataset.tag_list,
                     target_tag_list=machine.dataset.target_tag_list,
                 )
@@ -87,10 +87,10 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         return models
 
     def get_machine_by_key(
-        self, project_name: str, machine_name: str
+        self, project_name: str, model_name: str
     ) -> typing.Optional[Model]:
         machines = self.get_model_data(
-            projects=[project_name], machine_names=[machine_name]
+            projects=[project_name], model_names=[model_name]
         )
         if not machines:
             return None
@@ -98,20 +98,20 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         machine = machines[0]
         if machine:
             project_name = machine.project_name or "unnamed"
-            machine_name = machine.name or "unnamed"
+            model_name = machine.name or "unnamed"
             model = Model(
                 project_name=project_name,
-                model_name=machine_name,
+                model_name=model_name,
                 tag_list=machine.dataset.tag_list,
                 target_tag_list=machine.dataset.target_tag_list,
             )
         return model
 
     def get_spec(
-        self, project_name: str, machine_name: str
+        self, project_name: str, model_name: str
     ) -> typing.Optional[SensorDataSpec]:
         model = self.get_machine_by_key(
-            project_name=project_name, machine_name=machine_name
+            project_name=project_name, model_name=model_name
         )
         if not model:
             return None

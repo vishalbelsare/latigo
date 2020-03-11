@@ -22,7 +22,6 @@ from latigo.intermediate import IntermediateFormat
 from latigo.sensor_data import SensorDataProviderInterface
 from latigo.prediction_storage import PredictionStorageProviderInterface
 from latigo.utils import rfc3339_from_datetime
-import requests_ms_auth
 
 from .misc import _get_auth_session, _parse_request_json
 from .cache import *
