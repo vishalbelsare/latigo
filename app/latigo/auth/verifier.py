@@ -3,6 +3,7 @@ import typing
 import logging
 
 import requests_ms_auth
+from requests_ms_auth import MsSessionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class AuthVerifier:
     def test_auth(self, url: str) -> typing.Tuple[bool, typing.Optional[str]]:
         try:
             self.auth_session = requests_ms_auth.MsRequestsSession(
-                auth_config=self.config
+                MsSessionConfig(**self.config)
             )
             res = self.auth_session.get(url)
             if None == res:

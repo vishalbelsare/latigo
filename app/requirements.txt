@@ -153,13 +153,13 @@ python-dateutil==2.8.0    # via adal, alembic, azure-cosmosdb-table, azure-stora
 python-editor==1.0.4      # via alembic
 pytz==2019.2              # via flask-restplus, influxdb, pandas
 pyyaml==5.3               # via -r requirements.in, gordo
-requests-ms-auth==0.0.10  # via -r requirements.in
+requests-ms-auth==0.1.5   # via -r requirements.in
 requests-oauthlib==1.2.0  # via -r requirements.in, msrest, requests-ms-auth
 requests==2.21.0          # via -r requirements.in, adal, azure-cosmosdb-table, azure-datalake-store, azure-keyvault, azure-servicebus, azure-servicemanagement-legacy, azure-storage-common, gordo, influxdb, msal, msrest, requests-ms-auth, requests-oauthlib
 retrying==1.3.3           # via plotly
 scikit-learn==0.22.1      # via gordo
 scipy==1.3.1              # via catboost, scikit-learn
-simplejson==3.17.0        # via gordo
+simplejson==3.17.0        # via gordo, requests-ms-auth
 six==1.12.0               # via absl-py, catboost, cryptography, cycler, flask-restplus, grpcio, h5py, influxdb, isodate, jsonschema, keras-preprocessing, plotly, protobuf, pyarrow, pyrsistent, python-dateutil, retrying, tensorboard, tensorflow, uamqp
 sqlalchemy==1.3.8         # via -r requirements.in, alembic
 stringcase==1.2.0         # via dataclasses-json

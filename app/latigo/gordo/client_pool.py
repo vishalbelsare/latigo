@@ -25,7 +25,7 @@ from gordo.machine import Machine
 from gordo.machine.dataset.data_provider.base import GordoBaseDataProvider
 from gordo.machine.dataset.sensor_tag import SensorTag
 from gordo.util.utils import capture_args
-
+from requests_ms_auth import MsSessionConfig
 
 logger = logging.getLogger(__name__)
 # logging.getLogger().setLevel(logging.WARNING)
@@ -134,6 +134,6 @@ class GordoClientPool:
         if not self.client_auth_session:
             # logger.info("CREATING SESSION:")
             self.client_auth_session = requests_ms_auth.MsRequestsSession(
-                auth_config=auth_config
+                MsSessionConfig(**self.config.get('auth'))
             )
         return self.client_auth_session
