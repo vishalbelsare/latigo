@@ -24,12 +24,10 @@ model_info:
     type: "gordo"
     connection_string: "CHANGE ME"
     verification_project: "ioc-1901"
-    target: null
     metadata: null
     batch_size: 1000
     parallelism: 10
     forward_resampled_sensors : false
-    ignore_unhealthy_targets: true
     n_retries: 5
     data_provider:
         debug: true
@@ -74,12 +72,10 @@ predictor:
     type: "gordo"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
     verification_project: "ioc-1901"
-    target: null
     metadata: null
     batch_size: 1000
     parallelism: 10
     forward_resampled_sensors : false
-    ignore_unhealthy_targets: true
     n_retries: 5
     use_parquet: true
     data_provider:

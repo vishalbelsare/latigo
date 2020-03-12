@@ -64,7 +64,7 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
             # logger.info(f"LOOKING AT PROJECT {project_name}")
             client = self.gordo_pool.allocate_instance(project_name)
             if client:
-                machines += client.get_machines()
+                machines += client._get_machines()
             else:
                 logger.error(f"No client found for project '{project_name}', skipping")
         return machines
