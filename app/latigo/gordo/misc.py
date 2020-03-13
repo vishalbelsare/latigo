@@ -67,20 +67,21 @@ def print_client_debug(client: typing.Optional[Client]):
     if not client:
         logger.info("  None")
         return
-    data = {
-        "base_url": client.base_url,
-        "metadata": client.metadata,
-        "revision": client.revision,
-        "prediction_forwarder": client.prediction_forwarder,
-        "data_provider": client.data_provider,
-        "use_parquet": client.use_parquet,
-        "session": client.session,
-        "prediction_path": client.prediction_path,
-        "batch_size": client.batch_size,
-        "parallelism": client.parallelism,
-        "forward_resampled_sensors": client.forward_resampled_sensors,
-        "n_retries": client.n_retries,
-        "query": client.query,
-        "target": client.target,
-    }
+    data = {}
+    try:
+        data = {
+            "base_url": client.base_url,
+            "metadata": client.metadata,
+            "prediction_forwarder": client.prediction_forwarder,
+            "data_provider": client.data_provider,
+            "use_parquet": client.use_parquet,
+            "session": client.session,
+            "prediction_path": client.prediction_path,
+            "batch_size": client.batch_size,
+            "parallelism": client.parallelism,
+            "forward_resampled_sensors": client.forward_resampled_sensors,
+            "n_retries": client.n_retries,
+        }
+    except:
+        logger.error(f"Could not log client {pprint.pformat(client)}", exc_info=True)
     logger.info(pprint.pformat(data))
