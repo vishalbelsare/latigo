@@ -219,18 +219,18 @@ class PredictionExecutor:
                     spec, time_range
                 )
                 if not sensor_data:
-                    logger.warning(f"Error getting sensor data: {err}")
+                    logger.error(f"Error getting sensor data: {err}")
                 elif not sensor_data.ok():
-                    logger.warning(f"Sensor data '{sensor_data}' was not ok")
+                    logger.error(f"Sensor data '{sensor_data}' was not ok")
             else:
-                logger.warning(
+                logger.error(
                     f"Error getting spec for project={project_name} and model={model_name}"
                 )
         except Exception as e:
             logger.error(
-                f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}"
+                f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}",
+                exc_info=True,
             )
-            traceback.print_exc()
         return sensor_data
 
     def _execute_prediction(
