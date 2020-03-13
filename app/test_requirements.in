@@ -1,4 +1,4 @@
--c requirements.txt
+#-c requirements.txt
 flake8~=3.7
 mypy~=0.7
 pylint==2.4.2
