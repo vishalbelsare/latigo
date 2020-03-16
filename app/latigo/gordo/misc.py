@@ -82,6 +82,6 @@ def print_client_debug(client: typing.Optional[Client]):
             "forward_resampled_sensors": client.forward_resampled_sensors,
             "n_retries": client.n_retries,
         }
-    except:
+    except Exception:
         logger.error(f"Could not log client {pprint.pformat(client)}", exc_info=True)
     logger.info(pprint.pformat(data))
