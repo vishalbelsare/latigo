@@ -113,3 +113,6 @@ junk
 
 # QtCreator
 *.autosave
+
+# Pycharm files
+.idea

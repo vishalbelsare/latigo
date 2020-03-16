@@ -26,8 +26,10 @@ jobs:
         make show-env
         make info
     - name: Build docker images for scheduler and executor
+      if: github.ref == 'refs/heads/master'
       run: |
         make build
     - name: Push docker images for scheduler and executor
+      if: github.ref == 'refs/heads/master'
       run: |
         make push
