@@ -228,7 +228,7 @@ class PredictionExecutor:
                 )
         except Exception as e:
             logger.error(
-                f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}",
+                "Could not fetch sensor data for task '%s.%s':", task.project_name, task.model_name,
                 exc_info=True,
             )
         return sensor_data
