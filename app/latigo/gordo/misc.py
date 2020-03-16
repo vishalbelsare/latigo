@@ -84,4 +84,5 @@ def print_client_debug(client: typing.Optional[Client]):
         }
     except Exception:
         logger.error(f"Could not log client {pprint.pformat(client)}", exc_info=True)
-    logger.info(pprint.pformat(data))
+    else:
+        logger.info(pprint.pformat(data))
