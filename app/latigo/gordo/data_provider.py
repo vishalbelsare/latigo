@@ -69,8 +69,8 @@ class LatigoDataProvider(GordoBaseDataProvider):
 
     def load_series(
         self,
-        from_ts: datetime,
-        to_ts: datetime,
+        train_start_date: datetime,
+        train_end_date: datetime,
         tag_list: typing.List[SensorTag],
         dry_run: typing.Optional[bool] = False,
     ) -> typing.Iterable[pd.Series]:
@@ -83,9 +83,9 @@ class LatigoDataProvider(GordoBaseDataProvider):
                 "LatigoDataProvider called with empty tag_list, returning none"
             )
             return
-        if to_ts < from_ts:
+        if train_end_date < train_start_date:
             raise ValueError(
-                f"LatigoDataProvider called with to_ts: {to_ts} before from_ts: {from_ts}"
+                f"LatigoDataProvider called with to_ts: {train_end_date} before from_ts: {train_start_date}"
             )
         if not self.sensor_data_provider:
             logger.warning("Skipping, no sensor_data_provider")
@@ -93,7 +93,7 @@ class LatigoDataProvider(GordoBaseDataProvider):
         spec: SensorDataSpec = SensorDataSpec(
             tag_list=_gordo_to_latigo_tag_list(tag_list)
         )
-        time_range = TimeRange(from_time=from_ts, to_time=to_ts)
+        time_range = TimeRange(from_time=train_start_date, to_time=train_end_date)
         sensor_data, err = self.sensor_data_provider.get_data_for_range(
             spec, time_range
         )
@@ -115,7 +115,7 @@ class LatigoDataProvider(GordoBaseDataProvider):
             return
         # logger.info(data)
         for d in data:
-            d = d[((d.index >= from_ts) & (d.index <= to_ts))]
+            d = d[((d.index >= train_start_date) & (d.index <= train_end_date))]
             yield d
         return
 
