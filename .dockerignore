@@ -1,4 +1,5 @@
 venv/*
+latigo_venv/*
 .git/*
 .idea/
 .gitignore

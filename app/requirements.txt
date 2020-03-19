@@ -155,7 +155,7 @@ pyrsistent==0.15.7        # via jsonschema
 python-dateutil==2.8.1    # via adal, azure-cosmosdb-table, azure-storage-common, gordo, influxdb, matplotlib, pandas
 pytz==2019.3              # via flask-restplus, influxdb, pandas
 pyyaml==5.3               # via -r r.in, gordo
-requests-ms-auth==0.1.6   # via -r r.in
+requests-ms-auth==0.1.9   # via -r r.in
 requests-oauthlib==1.2.0  # via -r r.in, google-auth-oauthlib, msrest, requests-ms-auth
 requests==2.23.0          # via -r r.in, adal, azure-cosmosdb-table, azure-datalake-store, azure-keyvault, azure-servicebus, azure-servicemanagement-legacy, azure-storage-common, gordo, influxdb, msal, msrest, requests-ms-auth, requests-oauthlib, tensorboard
 retrying==1.3.3           # via plotly

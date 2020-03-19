@@ -2,10 +2,10 @@ import datetime
 import traceback
 import typing
 import logging
-import pprint
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
+from requests_ms_auth import MsRequestsSession, MsSessionConfig
 
 from latigo.types import (
     Task,
@@ -21,7 +21,6 @@ from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.utils import sleep, human_delta
-from latigo.auth import AuthVerifyList
 
 logger = logging.getLogger(__name__)
 
@@ -41,26 +40,12 @@ class PredictionExecutor:
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
-        self.print_summary()
-        if False:
-            logger.warning(f"NOTE: Using executor config:")
-            logger.warning(f"")
-            for line in str(pprint.pformat(self.config)).split("\n"):
-                logger.warning(line)
-        logger.warning(f"")
 
     # Inflate model info connection from config
     def _prepare_model_info(self):
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_verification_connection_string = self.model_info_config.get(
-            "connection_string", "no connection string set for model info"
-        ).rstrip("/")
-        verification_project = self.model_info_config.get(
-            "verification_project", "lat-lit"
-        )
-        self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
             self._fail("No model info configured")
@@ -105,19 +90,6 @@ class PredictionExecutor:
         self.prediction_executor_provider_config = self.config.get("predictor", None)
         if not self.prediction_executor_provider_config:
             self._fail("No prediction_executor_provider_config specified")
-        prediction_executor_provider_type = self.prediction_executor_provider_config.get(
-            "type", None
-        )
-        self.prediction_executor_provider_verification_connection_string = self.prediction_executor_provider_config.get(
-            "connection_string",
-            "no connection string set for prediction execution prvider",
-        )
-        verification_project = self.prediction_executor_provider_config.get(
-            "verification_project", "lat-lit"
-        )
-        self.prediction_executor_provider_verification_connection_string += (
-            f"/{verification_project}/"
-        )
         self.prediction_executor_provider = prediction_execution_provider_factory(
             self.sensor_data_provider,
             self.prediction_storage_provider,
@@ -131,31 +103,21 @@ class PredictionExecutor:
 
     # Perform a basic authentication test up front to fail early with clear error output
     def _perform_auth_check(self):
-        verifier: AuthVerifyList = AuthVerifyList(name="executor")
-
-        verifier.register_verification(
-            url=self.sensor_data_provider_config.get("base_url", "no_base_url"),
-            config=self.sensor_data_provider_config.get("auth", {}),
-        )
-        verifier.register_verification(
-            url=self.prediction_storage_provider_config.get("base_url", "no_base_url"),
-            config=self.prediction_storage_provider_config.get("auth", {}),
-        )
-        verifier.register_verification(
-            url=self.model_info_verification_connection_string,
-            config=self.model_info_config.get("auth", {}),
-        )
-        verifier.register_verification(
-            url=self.prediction_executor_provider_verification_connection_string,
-            config=self.prediction_executor_provider_config.get("auth", {}),
-        )
-
-        res, msg = verifier.verify()
-
-        if not res:
-            self._fail(msg)
-        else:
-            logger.info(msg)
+        auth_configs = [
+            self.sensor_data_provider_config.get("auth"),
+            self.prediction_storage_provider_config.get("auth"),
+            self.model_info_config.get("auth"),
+            self.prediction_executor_provider_config.get("auth"),
+        ]
+        for auth_config in auth_configs:
+            if auth_config:
+                auth_config["verify_on_startup"] = False
+                auth_session = MsRequestsSession(MsSessionConfig(**auth_config))
+                res, msg = auth_session.verify_auth()
+                if not res:
+                    self._fail(f"{msg} for session::\n'{auth_session}'")
+                del auth_session
+        logger.info(f"Auth test succeedded for all {len(auth_configs)} configurations.")
 
     # Inflate executor from config
     def _prepare_executor(self):

@@ -1,7 +1,7 @@
 azure
 azure-eventhub~=1.3
 colorlog~=4.0
-gordo~=0.50
+gordo~=0.54
 msrestazure~=0.6
 numpy~=1.18
 pandas~=1.0
@@ -9,7 +9,7 @@ psycopg2~=2.8
 pyyaml~=5.3
 requests~=2.20
 requests_oauthlib~=1.2.0
-requests_ms_auth>=0.1.6
+requests_ms_auth>=0.1.9
 typing-extensions~=3.7.4
 confluent-kafka~=1.0.1
 dataclasses-json~=0.3.5
