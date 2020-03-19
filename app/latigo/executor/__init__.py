@@ -6,7 +6,6 @@ from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringErro
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
-from requests_ms_auth import MsRequestsSession, MsSessionConfig
 
 from latigo.types import (
     Task,
@@ -22,6 +21,7 @@ from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.utils import sleep, human_delta
+from latigo.auth import auth_check
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class PredictionExecutor:
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
         self._prepare_executor()
-        self._perform_auth_check()
+        self._perform_auth_checks()
 
     def _fail(self, message: str):
         self.good_to_go = False
@@ -102,26 +102,12 @@ class PredictionExecutor:
                 f"No prediction_executor_provider configured, cannot continue..."
             )
 
-    # Helper to perform auth check given a single auth config
-    def _perform_single_auth_check(self, auth_config):
-        if auth_config:
-            auth_config["verify_on_startup"] = False
-            auth_session = MsRequestsSession(MsSessionConfig(**auth_config))
-            res, msg = auth_session.verify_auth()
-            if not res:
-                self._fail(f"{msg} for session::\n'{auth_session}'")
-            del auth_session
-
     # Perform a basic authentication test up front to fail early with clear error output
-    def _perform_auth_check(self):
-        auth_configs = [
-            self.sensor_data_provider_config.get("auth"),
-            self.prediction_storage_provider_config.get("auth"),
-            self.model_info_config.get("auth"),
-            self.prediction_executor_provider_config.get("auth"),
-        ]
-        for auth_config in auth_configs:
-            self._perform_single_auth_check(auth_config)
+    def _perform_auth_checks(self):
+        auth_configs = [self.model_info_config.get("auth")]
+        res, msg, auth_session = auth_check(auth_configs)
+        if not res:
+            self._fail(f"{msg} for session::\n'{auth_session}'")
         logger.info(f"Auth test succeedded for all {len(auth_configs)} configurations.")
 
     # Inflate executor from config
@@ -195,7 +181,9 @@ class PredictionExecutor:
                 )
         except Exception as e:
             logger.error(
-                "Could not fetch sensor data for task '%s.%s':", task.project_name, task.model_name,
+                "Could not fetch sensor data for task '%s.%s':",
+                task.project_name,
+                task.model_name,
                 exc_info=True,
             )
         return sensor_data
@@ -282,13 +270,21 @@ class PredictionExecutor:
                         if sensor_data and sensor_data.ok():
                             prediction_data = None
                             try:
-                                prediction_data = self._execute_prediction(task, sensor_data)
+                                prediction_data = self._execute_prediction(
+                                    task, sensor_data
+                                )
 
-                                prediction_execution_interval = (datetime.datetime.now() - task_fetch_start)
-                                logger.info(f"Prediction completed after {human_delta(prediction_execution_interval)}")
+                                prediction_execution_interval = (
+                                    datetime.datetime.now() - task_fetch_start
+                                )
+                                logger.info(
+                                    f"Prediction completed after {human_delta(prediction_execution_interval)}"
+                                )
                             except InsufficientDataAfterRowFilteringError:
-                                logger.warning("[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
-                                               f"'{task.project_name}.{task.model_name}'")
+                                logger.warning(
+                                    "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
+                                    f"'{task.project_name}.{task.model_name}'"
+                                )
 
                             if prediction_data and prediction_data.ok():
                                 self._store_prediction_data(task, prediction_data)
@@ -300,10 +296,14 @@ class PredictionExecutor:
                                 )
                                 self.idle_count(True)
                             else:
-                                logger.warning(f"Skipping store due to bad prediction: "
-                                               f"{prediction_data.data if prediction_data else 'empty'}")
+                                logger.warning(
+                                    f"Skipping store due to bad prediction: "
+                                    f"{prediction_data.data if prediction_data else 'empty'}"
+                                )
                         else:
-                            logger.warning(f"Skipping prediction due to bad data: {sensor_data}")
+                            logger.warning(
+                                f"Skipping prediction due to bad data: {sensor_data}"
+                            )
                     else:
                         logger.warning(f"No task")
                         self.idle_count(False)

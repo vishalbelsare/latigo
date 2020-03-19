@@ -10,7 +10,7 @@ from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.clock import OnTheClockTimer
 from latigo.utils import human_delta, sleep
-from requests_ms_auth import MsRequestsSession, MsSessionConfig
+from latigo.auth import auth_check
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +53,11 @@ class Scheduler:
 
     # Perform a basic authentication test up front to fail early with clear error output
     def _perform_auth_checks(self):
-        auth_config = self.model_info_config.get("auth")
-        if auth_config:
-            auth_config["verify_on_startup"] = False
-            auth_session = MsRequestsSession(MsSessionConfig(**auth_config))
-            res, msg = auth_session.verify_auth()
-            if not res:
-                self._fail(f"{msg} for session:\n'{auth_session}'")
-            del auth_session
+        auth_configs = [self.model_info_config.get("auth")]
+        res, msg, auth_session = auth_check(auth_configs)
+        if not res:
+            self._fail(f"{msg} for session::\n'{auth_session}'")
+        logger.info(f"Auth test succeedded for all {len(auth_configs)} configurations.")
 
     # Inflate scheduler from config
     def _prepare_scheduler(self):
