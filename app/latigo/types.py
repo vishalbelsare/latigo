@@ -38,8 +38,8 @@ class TimeRange:
         return f"TimeRange({rfc3339_from_datetime(self.from_time)} -> {rfc3339_from_datetime(self.to_time)})"
 
 
-LatigoSensorTag = SensorTag
-# LatigoSensorTag = namedtuple("LatigoSensorTag", ["name", "asset"])
+# LatigoSensorTag = SensorTag
+LatigoSensorTag = namedtuple("LatigoSensorTag", ["name", "asset"])
 
 
 @dataclass

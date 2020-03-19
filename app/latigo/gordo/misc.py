@@ -1,33 +1,14 @@
-import typing
+from typing import Dict, Optional
 import logging
 import pprint
-import pandas as pd
-import requests
 import copy
-from datetime import datetime
 import latigo.utils
-from latigo.prediction_execution import PredictionExecutionProviderInterface
 
-from latigo.types import (
-    TimeRange,
-    SensorDataSpec,
-    SensorDataSet,
-    PredictionDataSet,
-    LatigoSensorTag,
-)
 from latigo.sensor_data import SensorDataProviderInterface
-
-from latigo.model_info import ModelInfoProviderInterface, Model
+from .data_provider import LatigoDataProvider
+from .prediction_forwarder import LatigoPredictionForwarder
 
 from gordo.client.client import Client
-from gordo.machine import Machine
-from gordo.machine.dataset.data_provider.base import GordoBaseDataProvider
-from gordo.machine.dataset.sensor_tag import SensorTag
-from gordo.util.utils import capture_args
-
-from .data_provider import *
-from .prediction_forwarder import *
-
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +26,7 @@ def expand_gordo_connection_string(config: dict):
 
 
 def expand_gordo_data_provider(
-    config: dict, sensor_data_provider: typing.Optional[SensorDataProviderInterface]
+    config: dict, sensor_data_provider: Optional[SensorDataProviderInterface]
 ):
     data_provider_config = config.get("data_provider", {})
     config["data_provider"] = LatigoDataProvider(
@@ -62,12 +43,12 @@ def expand_gordo_prediction_forwarder(config: dict, prediction_storage_provider)
     )
 
 
-def print_client_debug(client: typing.Optional[Client]):
+def print_client_debug(client: Optional[Client]):
     logger.info("Client:")
     if not client:
         logger.info("  None")
         return
-    data = {}
+    data: Dict = {}
     try:
         data = {
             "base_url": client.base_url,
