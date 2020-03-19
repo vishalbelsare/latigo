@@ -27,6 +27,7 @@ from gordo.util.utils import capture_args
 
 from .misc import *
 from .client_pool import *
+from .data_provider import _gordo_to_latigo_tag_list
 
 logger = logging.getLogger(__name__)
 
@@ -115,5 +116,5 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         )
         if not model:
             return None
-        spec = SensorDataSpec(tag_list=model.tag_list)
+        spec = SensorDataSpec(tag_list=_gordo_to_latigo_tag_list(model.tag_list))
         return spec

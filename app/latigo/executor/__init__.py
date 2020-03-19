@@ -2,6 +2,7 @@ import datetime
 import traceback
 import typing
 import logging
+from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringError
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
@@ -185,18 +186,18 @@ class PredictionExecutor:
                     spec, time_range
                 )
                 if not sensor_data:
-                    logger.warning(f"Error getting sensor data: {err}")
+                    logger.error(f"Error getting sensor data: {err}")
                 elif not sensor_data.ok():
-                    logger.warning(f"Sensor data '{sensor_data}' was not ok")
+                    logger.error(f"Sensor data '{sensor_data}' was not ok")
             else:
-                logger.warning(
+                logger.error(
                     f"Error getting spec for project={project_name} and model={model_name}"
                 )
         except Exception as e:
             logger.error(
-                f"Could not fetch sensor data for task '{task.project_name}.{task.model_name}': {e}"
+                "Could not fetch sensor data for task '%s.%s':", task.project_name, task.model_name,
+                exc_info=True,
             )
-            traceback.print_exc()
         return sensor_data
 
     def _execute_prediction(
@@ -279,15 +280,16 @@ class PredictionExecutor:
                             f"Got data after {human_delta(data_fetch_interval)}"
                         )
                         if sensor_data and sensor_data.ok():
-                            prediction_data = self._execute_prediction(
-                                task, sensor_data
-                            )
-                            prediction_execution_interval = (
-                                datetime.datetime.now() - task_fetch_start
-                            )
-                            logger.info(
-                                f"Prediction completed after {human_delta(prediction_execution_interval)}"
-                            )
+                            prediction_data = None
+                            try:
+                                prediction_data = self._execute_prediction(task, sensor_data)
+
+                                prediction_execution_interval = (datetime.datetime.now() - task_fetch_start)
+                                logger.info(f"Prediction completed after {human_delta(prediction_execution_interval)}")
+                            except InsufficientDataAfterRowFilteringError:
+                                logger.warning("[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
+                                               f"'{task.project_name}.{task.model_name}'")
+
                             if prediction_data and prediction_data.ok():
                                 self._store_prediction_data(task, prediction_data)
                                 prediction_storage_interval = (
@@ -298,13 +300,10 @@ class PredictionExecutor:
                                 )
                                 self.idle_count(True)
                             else:
-                                logger.warning(
-                                    f"Skipping store due to bad prediction: {prediction_data.data}"
-                                )
+                                logger.warning(f"Skipping store due to bad prediction: "
+                                               f"{prediction_data.data if prediction_data else 'empty'}")
                         else:
-                            logger.warning(
-                                f"Skipping prediciton due to bad data: {sensor_data}"
-                            )
+                            logger.warning(f"Skipping prediction due to bad data: {sensor_data}")
                     else:
                         logger.warning(f"No task")
                         self.idle_count(False)
@@ -318,10 +317,7 @@ class PredictionExecutor:
                     logger.error("-----------------------------------")
                     sleep(1)
             executor_interval = datetime.datetime.now() - executor_start
-            if (
-                self.restart_interval_sec > 0
-                and executor_interval.total_seconds() > self.restart_interval_sec
-            ):
+            if 0 < self.restart_interval_sec < executor_interval.total_seconds():
                 logger.info("Terminating executor for teraputic restart")
                 done = True
             # logger.info("Executor stopped processing")
