@@ -101,6 +101,16 @@ class PredictionExecutor:
                 f"No prediction_executor_provider configured, cannot continue..."
             )
 
+    # Helper to perform auth check given a single auth config
+    def _perform_single_auth_check(self, auth_config):
+        if auth_config:
+            auth_config["verify_on_startup"] = False
+            auth_session = MsRequestsSession(MsSessionConfig(**auth_config))
+            res, msg = auth_session.verify_auth()
+            if not res:
+                self._fail(f"{msg} for session::\n'{auth_session}'")
+            del auth_session
+
     # Perform a basic authentication test up front to fail early with clear error output
     def _perform_auth_check(self):
         auth_configs = [
@@ -110,13 +120,7 @@ class PredictionExecutor:
             self.prediction_executor_provider_config.get("auth"),
         ]
         for auth_config in auth_configs:
-            if auth_config:
-                auth_config["verify_on_startup"] = False
-                auth_session = MsRequestsSession(MsSessionConfig(**auth_config))
-                res, msg = auth_session.verify_auth()
-                if not res:
-                    self._fail(f"{msg} for session::\n'{auth_session}'")
-                del auth_session
+            self._perform_single_auth_check(auth_config)
         logger.info(f"Auth test succeedded for all {len(auth_configs)} configurations.")
 
     # Inflate executor from config

@@ -24,7 +24,7 @@ class Scheduler:
         self._prepare_task_queue()
         self._prepare_model_info()
         self._prepare_scheduler()
-        self._perform_auth_check()
+        self._perform_auth_checks()
         self.task_serial = 0
 
     def _fail(self, message: str):
@@ -52,7 +52,7 @@ class Scheduler:
             self._fail("No task queue configured")
 
     # Perform a basic authentication test up front to fail early with clear error output
-    def _perform_auth_check(self):
+    def _perform_auth_checks(self):
         auth_config = self.model_info_config.get("auth")
         if auth_config:
             auth_config["verify_on_startup"] = False
