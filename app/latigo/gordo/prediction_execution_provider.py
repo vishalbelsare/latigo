@@ -90,7 +90,7 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
         return PredictionDataSet(
-            meta_data={project_name: project_name, model_name: model_name},
+            meta_data={"project_name": project_name, "model_name": model_name},
             time_range=sensor_data.time_range,
             data=result,
         )
