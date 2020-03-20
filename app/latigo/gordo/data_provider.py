@@ -1,30 +1,15 @@
 import typing
 import logging
-import pprint
 import pandas as pd
-import requests
-import copy
 from datetime import datetime
-import latigo.utils
-from latigo.prediction_execution import PredictionExecutionProviderInterface
 
-from latigo.types import (
-    TimeRange,
-    SensorDataSpec,
-    SensorDataSet,
-    PredictionDataSet,
-    LatigoSensorTag,
-)
+from latigo.types import TimeRange, LatigoSensorTag
 from latigo.sensor_data import SensorDataProviderInterface
+from latigo.types import SensorDataSpec
 
-from latigo.model_info import ModelInfoProviderInterface, Model
-
-from gordo.client.client import Client
-from gordo.machine import Machine
 from gordo.machine.dataset.data_provider.base import GordoBaseDataProvider
 from gordo.machine.dataset.sensor_tag import SensorTag
 from gordo.util.utils import capture_args
-
 
 logger = logging.getLogger(__name__)
 # logging.getLogger().setLevel(logging.WARNING)

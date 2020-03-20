@@ -86,6 +86,7 @@ celerybeat-schedule
 .venv
 env/
 venv/
+latigo_venv/
 ENV/
 env.bak/
 venv.bak/
@@ -116,3 +117,8 @@ junk
 
 # Pycharm files
 .idea
+
+app/*_local.yaml
+app/*_secret.yaml
+*_local.yaml
+*_secret.yaml

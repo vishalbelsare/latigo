@@ -72,7 +72,7 @@ req:
 setup:
 	rm -rf app/build
 	pip uninstall -y latigo
-	pip install app/
+	pip install -e app/
 
 build-docs:
 	@echo "PLACEHOLDER: LATIGO MAKEFILE IS BUILDING DOCUMENTATION"

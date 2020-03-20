@@ -2,10 +2,7 @@ import datetime
 import traceback
 import typing
 import logging
-import pprint
-
 from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringError
-
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
@@ -24,7 +21,7 @@ from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.utils import sleep, human_delta
-from latigo.auth import AuthVerifyList
+from latigo.auth import auth_check
 
 logger = logging.getLogger(__name__)
 
@@ -39,31 +36,17 @@ class PredictionExecutor:
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
         self._prepare_executor()
-        self._perform_auth_check()
+        self._perform_auth_checks()
 
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
-        self.print_summary()
-        if False:
-            logger.warning(f"NOTE: Using executor config:")
-            logger.warning(f"")
-            for line in str(pprint.pformat(self.config)).split("\n"):
-                logger.warning(line)
-        logger.warning(f"")
 
     # Inflate model info connection from config
     def _prepare_model_info(self):
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_verification_connection_string = self.model_info_config.get(
-            "connection_string", "no connection string set for model info"
-        ).rstrip("/")
-        verification_project = self.model_info_config.get(
-            "verification_project", "lat-lit"
-        )
-        self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
             self._fail("No model info configured")
@@ -108,19 +91,6 @@ class PredictionExecutor:
         self.prediction_executor_provider_config = self.config.get("predictor", None)
         if not self.prediction_executor_provider_config:
             self._fail("No prediction_executor_provider_config specified")
-        prediction_executor_provider_type = self.prediction_executor_provider_config.get(
-            "type", None
-        )
-        self.prediction_executor_provider_verification_connection_string = self.prediction_executor_provider_config.get(
-            "connection_string",
-            "no connection string set for prediction execution prvider",
-        )
-        verification_project = self.prediction_executor_provider_config.get(
-            "verification_project", "lat-lit"
-        )
-        self.prediction_executor_provider_verification_connection_string += (
-            f"/{verification_project}/"
-        )
         self.prediction_executor_provider = prediction_execution_provider_factory(
             self.sensor_data_provider,
             self.prediction_storage_provider,
@@ -133,32 +103,12 @@ class PredictionExecutor:
             )
 
     # Perform a basic authentication test up front to fail early with clear error output
-    def _perform_auth_check(self):
-        verifier: AuthVerifyList = AuthVerifyList(name="executor")
-
-        verifier.register_verification(
-            url=self.sensor_data_provider_config.get("base_url", "no_base_url"),
-            config=self.sensor_data_provider_config.get("auth", {}),
-        )
-        verifier.register_verification(
-            url=self.prediction_storage_provider_config.get("base_url", "no_base_url"),
-            config=self.prediction_storage_provider_config.get("auth", {}),
-        )
-        verifier.register_verification(
-            url=self.model_info_verification_connection_string,
-            config=self.model_info_config.get("auth", {}),
-        )
-        verifier.register_verification(
-            url=self.prediction_executor_provider_verification_connection_string,
-            config=self.prediction_executor_provider_config.get("auth", {}),
-        )
-
-        res, msg = verifier.verify()
-
+    def _perform_auth_checks(self):
+        auth_configs = [self.model_info_config.get("auth")]
+        res, msg, auth_session = auth_check(auth_configs)
         if not res:
-            self._fail(msg)
-        else:
-            logger.info(msg)
+            self._fail(f"{msg} for session::\n'{auth_session}'")
+        logger.info(f"Auth test succeedded for all {len(auth_configs)} configurations.")
 
     # Inflate executor from config
     def _prepare_executor(self):
@@ -231,7 +181,9 @@ class PredictionExecutor:
                 )
         except Exception as e:
             logger.error(
-                "Could not fetch sensor data for task '%s.%s':", task.project_name, task.model_name,
+                "Could not fetch sensor data for task '%s.%s':",
+                task.project_name,
+                task.model_name,
                 exc_info=True,
             )
         return sensor_data
@@ -318,13 +270,21 @@ class PredictionExecutor:
                         if sensor_data and sensor_data.ok():
                             prediction_data = None
                             try:
-                                prediction_data = self._execute_prediction(task, sensor_data)
+                                prediction_data = self._execute_prediction(
+                                    task, sensor_data
+                                )
 
-                                prediction_execution_interval = (datetime.datetime.now() - task_fetch_start)
-                                logger.info(f"Prediction completed after {human_delta(prediction_execution_interval)}")
+                                prediction_execution_interval = (
+                                    datetime.datetime.now() - task_fetch_start
+                                )
+                                logger.info(
+                                    f"Prediction completed after {human_delta(prediction_execution_interval)}"
+                                )
                             except InsufficientDataAfterRowFilteringError:
-                                logger.warning("[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
-                                               f"'{task.project_name}.{task.model_name}'")
+                                logger.warning(
+                                    "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
+                                    f"'{task.project_name}.{task.model_name}'"
+                                )
 
                             if prediction_data and prediction_data.ok():
                                 self._store_prediction_data(task, prediction_data)
@@ -336,10 +296,14 @@ class PredictionExecutor:
                                 )
                                 self.idle_count(True)
                             else:
-                                logger.warning(f"Skipping store due to bad prediction: "
-                                               f"{prediction_data.data if prediction_data else 'empty'}")
+                                logger.warning(
+                                    f"Skipping store due to bad prediction: "
+                                    f"{prediction_data.data if prediction_data else 'empty'}"
+                                )
                         else:
-                            logger.warning(f"Skipping prediction due to bad data: {sensor_data}")
+                            logger.warning(
+                                f"Skipping prediction due to bad data: {sensor_data}"
+                            )
                     else:
                         logger.warning(f"No task")
                         self.idle_count(False)

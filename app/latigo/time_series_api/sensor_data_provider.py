@@ -90,14 +90,20 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         missing_id = 0
         completed = 0
         data: typing.List[typing.Dict] = []
-        if len(spec.tag_list) <= 0:
+        # This is here to make typing explicit to help mypy to not fail
+        # See https://github.com/equinor/latigo/pull/45
+        tag_list: typing.List[LatigoSensorTag] = spec.tag_list
+        if len(tag_list) <= 0:
             logger.warning("Tag list empty")
-        for tag in spec.tag_list:
-            if not tag:
+        for raw_tag in tag_list:
+            if not raw_tag:
                 return None, f"Invalid tag"
-            tag_type = type(tag)
-            if not isinstance(tag, LatigoSensorTag):
+            tag_type = type(raw_tag)
+            if not isinstance(raw_tag, LatigoSensorTag):
                 return None, f"Invalid tag type '{tag_type}'"
+            # This is here to make typing explicit to help mypy to not fail
+            # See https://github.com/equinor/latigo/pull/45
+            tag: LatigoSensorTag = raw_tag
             name = tag.name
             if not name:
                 return None, f"Invalid tag name={name}"

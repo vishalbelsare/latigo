@@ -1,10 +1,7 @@
 import traceback
 import logging
-import pprint
-import typing
 import pandas as pd
 import datetime
-from os import environ
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
@@ -13,8 +10,7 @@ from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.clock import OnTheClockTimer
 from latigo.utils import human_delta, sleep
-from latigo.auth import AuthVerifyList
-
+from latigo.auth import auth_check
 
 logger = logging.getLogger(__name__)
 
@@ -28,34 +24,18 @@ class Scheduler:
         self._prepare_task_queue()
         self._prepare_model_info()
         self._prepare_scheduler()
-        self._perform_auth_check()
+        self._perform_auth_checks()
         self.task_serial = 0
 
     def _fail(self, message: str):
         self.good_to_go = False
         logger.error(message)
-        self.print_summary()
-        if True:
-            logger.warning(f"NOTE: Using scheduler config:")
-            logger.warning(f"")
-            lines = ""
-            for line in str(pprint.pformat(self.config)).split("\n"):
-                lines += line
-            logger.warning(lines)
-        logger.warning(f"")
 
     # Inflate model info connection from config
     def _prepare_model_info(self):
         self.model_info_config = self.config.get("model_info", None)
         if not self.model_info_config:
             self._fail("No model info config specified")
-        self.model_info_verification_connection_string = self.model_info_config.get(
-            "connection_string", "no connection string set for model info"
-        ).rstrip("/")
-        verification_project = self.model_info_config.get(
-            "verification_project", "lat-lit"
-        )
-        self.model_info_verification_connection_string += f"/{verification_project}/"
         self.model_info_provider = model_info_provider_factory(self.model_info_config)
         if not self.model_info_provider:
             self._fail("No model info configured")
@@ -72,18 +52,12 @@ class Scheduler:
             self._fail("No task queue configured")
 
     # Perform a basic authentication test up front to fail early with clear error output
-    def _perform_auth_check(self):
-        verifier: AuthVerifyList = AuthVerifyList(name="scheduler")
-        verifier.register_verification(
-            url=self.model_info_verification_connection_string,
-            config=self.model_info_config.get("auth", {}),
-        )
-        res, msg = verifier.verify()
-
+    def _perform_auth_checks(self):
+        auth_configs = [self.model_info_config.get("auth")]
+        res, msg, auth_session = auth_check(auth_configs)
         if not res:
-            self._fail(msg)
-        else:
-            logger.info(msg)
+            self._fail(f"{msg} for session::\n'{auth_session}'")
+        logger.info(f"Auth test succeedded for all {len(auth_configs)} configurations.")
 
     # Inflate scheduler from config
     def _prepare_scheduler(self):

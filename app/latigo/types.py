@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import pandas as pd
 import typing
 import logging
@@ -38,8 +39,7 @@ class TimeRange:
         return f"TimeRange({rfc3339_from_datetime(self.from_time)} -> {rfc3339_from_datetime(self.to_time)})"
 
 
-LatigoSensorTag = SensorTag
-# LatigoSensorTag = namedtuple("LatigoSensorTag", ["name", "asset"])
+LatigoSensorTag = namedtuple("LatigoSensorTag", ["name", "asset"])
 
 
 @dataclass
