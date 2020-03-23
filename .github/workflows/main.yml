@@ -25,10 +25,37 @@ jobs:
       run: |
         make show-env
         make info
-    - name: Build docker images for scheduler and executor
+
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - uses: actions/cache@v1
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}
+        restore-keys: |
+          pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}
+
+
+
+    - name: Install project requirements
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        make build
-    - name: Push docker images for scheduler and executor
-      if: github.ref == 'refs/heads/master'
-      run: |
-        make push
+        ls app
+        python -m pip install --upgrade pip
+        pip install -r app/requirements.txt
+        pip install -r app/test_requirements.txt
+
+    - name: Run Integration Tests
+      run: make tests_integration
+
+#    - name: Build docker images for scheduler and executor
+#      run: |
+#        make build
+#    - name: Push docker images for scheduler and executor
+#      if: github.ref == 'refs/heads/master'
+#      run: |
+#        make push

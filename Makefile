@@ -47,8 +47,11 @@ info:
 code-quality:
 	cd "${CODE_QUALITY_DIR}" && make all
 
-test:
+tests:
 	cd "${TESTS_DIR}" && make all
+
+tests_integration:
+	cd "${TESTS_DIR}" && make integration_metadata_api
 
 show-env:
 	env | sort
@@ -71,8 +74,8 @@ req:
 # Rebuild latest latigo and install it to site-packages
 setup:
 	rm -rf app/build
-	pip uninstall -y latigo
-	pip install -e app/
+	./venv/bin/pip uninstall -y latigo
+	./venv/bin/pip install -e app/
 
 build-docs:
 	@echo "PLACEHOLDER: LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
@@ -113,8 +116,10 @@ port-forward:
 
 ############### Convenience docker compose ####################
 
-docker-build: setup code-quality tests show-env login-docker
-	eval $(./set_env.py) && docker-compose -f docker-compose.yml build --parallel --pull --compress
+#docker-build: setup code-quality tests show-env login-docker
+docker-build: login-docker
+	eval $(./set_env.py) && docker-compose -f docker-compose.yml build --parallel
+	#eval $(./set_env.py) && docker-compose -f docker-compose.yml build --parallel --pull --compress
 
 docker-prep-data:
 	# NOTE: The volumes folder must not be inside the context of any docker or the docker builds will fail!
@@ -123,11 +128,12 @@ docker-prep-data:
 	sudo chown 472:472 ../volumes/latigo/grafana/data
 
 up: docker-build
-	eval $(./set_env.py) && docker-compose up --remove-orphans --quiet-pull --no-build --force-recreate
+	#eval $(./set_env.py) && docker-compose up --remove-orphans
+	eval $(./set_env.py) && docker-compose up --remove-orphans --no-build --force-recreate -d
 	docker ps -a
 
 up-dev:
-	eval $(./set_env.py) && docker-compose up --remove-orphans
+	eval $(./set_env.py) && docker-compose up --build --remove-orphans -d
 	docker ps -a
 
 down:
