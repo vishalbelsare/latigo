@@ -25,6 +25,9 @@ executor:
 integration:
 	py.test -vv integration
 
+integration_metadata_api:
+	py.test -vv integration/metadata_api
+
 load:
 	py.test -vv load
 

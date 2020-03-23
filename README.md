@@ -532,3 +532,27 @@ The scheduler operates using the following algorithm:
 7. Repeat
 
 Deployment of Latigo is handled by the [Latigo Kustomize project](W/equinor/latigo-k8s).
+
+### Run Tests
+To run tests - export following ENV variables (with previously replaced values):
+```shell script
+export METADATA_API_TENANT=tenent
+export METADATA_API_CLIENT_ID=id
+export METADATA_API_CLIENT_SECRET=secret
+export METADATA_API_RESOURCE=resourse
+export METADATA_API_AUTHORITY_HOST_URL=authority
+export METADATA_API_BASE_URL=url
+export METADATA_API_APIM_KEY=key
+```
+
+OR add env variables to Pycharn or other IDE (with previously added values):
+```text
+METADATA_API_TENANT=;METADATA_API_CLIENT_ID=;METADATA_API_CLIENT_SECRET=;METADATA_API_RESOURCE=;METADATA_API_AUTHORITY_HOST_URL=;METADATA_API_BASE_URL=;METADATA_API_APIM_KEY=;
+```
+
+Then run:
+```
+make test
+```
+
+
