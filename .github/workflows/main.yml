@@ -37,25 +37,30 @@ jobs:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}
         restore-keys: |
-          pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}
-
-
+          pip-
 
     - name: Install project requirements
-      if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        ls app
         python -m pip install --upgrade pip
         pip install -r app/requirements.txt
         pip install -r app/test_requirements.txt
 
     - name: Run Integration Tests
-      run: make tests_integration
+      run: |
+        make tests_integration
+      env:
+        METADATA_API_TENANT: ${{ secrets.METADATA_API_TENANT }}
+        METADATA_API_CLIENT_ID: ${{ secrets.METADATA_API_CLIENT_ID }}
+        METADATA_API_CLIENT_SECRET: ${{ secrets.METADATA_API_CLIENT_SECRET }}
+        METADATA_API_RESOURCE: ${{ secrets.METADATA_API_RESOURCE }}
+        METADATA_API_AUTHORITY_HOST_URL: ${{ secrets.METADATA_API_AUTHORITY_HOST_URL }}
+        METADATA_API_BASE_URL: ${{ secrets.METADATA_API_BASE_URL }}
+        METADATA_API_APIM_KEY: ${{ secrets.METADATA_API_APIM_KEY }}
 
-#    - name: Build docker images for scheduler and executor
-#      run: |
-#        make build
-#    - name: Push docker images for scheduler and executor
-#      if: github.ref == 'refs/heads/master'
-#      run: |
-#        make push
+    - name: Build docker images for scheduler and executor
+      run: |
+        make build
+    - name: Push docker images for scheduler and executor
+      if: github.ref == 'refs/heads/master'
+      run: |
+        make push
