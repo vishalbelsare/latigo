@@ -7,14 +7,12 @@ from unittest import mock
 import pandas as pd
 import pytest
 
-from .mock_classes import MockSensorDataProvider
-
 latigo_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../app/"))
-
-
 sys.path.insert(0, latigo_path)
 sys.path.insert(0, "/private/lroll/Desktop/ioc_client/latigo/app/latigo")
 sys.path.insert(0, "/private/lroll/Desktop/ioc_client/latigo/app")
+
+from .mock_classes import MockSensorDataProvider
 
 
 @pytest.fixture
@@ -90,6 +88,10 @@ def config(auth_config):
             "data_provider": {"debug": True, "n_retries": 5},
             "prediction_forwarder": {"debug": False, "n_retries": 5},
             "auth": auth_config,
+        },
+        "time_series_data_handler": {
+            "type": "mock",
+            "auth": auth_config
         },
     }
 

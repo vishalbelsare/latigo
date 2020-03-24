@@ -25,6 +25,38 @@ jobs:
       run: |
         make show-env
         make info
+
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - uses: actions/cache@v1
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}
+        restore-keys: |
+          pip-
+
+    - name: Install project requirements
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r app/requirements.txt
+        pip install -r app/test_requirements.txt
+
+    - name: Run Integration Tests
+      run: |
+        make tests_integration
+      env:
+        METADATA_API_TENANT: ${{ secrets.METADATA_API_TENANT }}
+        METADATA_API_CLIENT_ID: ${{ secrets.METADATA_API_CLIENT_ID }}
+        METADATA_API_CLIENT_SECRET: ${{ secrets.METADATA_API_CLIENT_SECRET }}
+        METADATA_API_RESOURCE: ${{ secrets.METADATA_API_RESOURCE }}
+        METADATA_API_AUTHORITY_HOST_URL: ${{ secrets.METADATA_API_AUTHORITY_HOST_URL }}
+        METADATA_API_BASE_URL: ${{ secrets.METADATA_API_BASE_URL }}
+        METADATA_API_APIM_KEY: ${{ secrets.METADATA_API_APIM_KEY }}
+
     - name: Build docker images for scheduler and executor
       run: |
         make build

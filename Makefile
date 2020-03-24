@@ -47,8 +47,11 @@ info:
 code-quality:
 	cd "${CODE_QUALITY_DIR}" && make all
 
-test:
+tests:
 	cd "${TESTS_DIR}" && make all
+
+tests_integration:
+	cd "${TESTS_DIR}" && make integration_metadata_api
 
 show-env:
 	env | sort
