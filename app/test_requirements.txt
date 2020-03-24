@@ -20,7 +20,7 @@ mccabe==0.6.1             # via flake8, pylint
 mock==3.0.5               # via -r r.in
 more-itertools==7.2.0     # via pytest
 mypy-extensions==0.4.3    # via mypy
-mypy==0.730               # via -r r.in, pytest-mypy
+mypy==0.770               # via -r r.in, pytest-mypy
 packaging==19.2           # via pytest
 pip-tools==4.1.0          # via -r r.in
 pluggy==0.13.0            # via pytest

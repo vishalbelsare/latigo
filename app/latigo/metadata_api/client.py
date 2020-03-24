@@ -32,7 +32,9 @@ class MetadataAPIClient:
 
         # Metadata API requires АРІМ headers to be passed on each request
         if not self.auth_config.get("auto_adding_headers", False):
-            return self._raise_exception("'auto_adding_headers' should be passed in the 'auth' for APIM requests")
+            return self._raise_exception(
+                "'auto_adding_headers' should be passed in the 'auth' for APIM requests"
+            )
 
     def _parse_base_url(self):
         """Save 'base_url' to the instance from the passed config."""
@@ -47,7 +49,9 @@ class MetadataAPIClient:
                 requests_ms_auth.MsSessionConfig(**self.auth_config)
             )
         if not self.session:
-            return self._raise_exception(f"Could not create session for {self.__class__.__name__}")
+            return self._raise_exception(
+                f"Could not create session for {self.__class__.__name__}"
+            )
 
     @staticmethod
     def _raise_exception(message: str, exception_type=Exception) -> None:

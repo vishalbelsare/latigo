@@ -1,6 +1,6 @@
 #-c requirements.txt
 flake8~=3.7
-mypy~=0.7
+mypy>=0.770
 pylint==2.4.2
 pytest~=4.6
 pytest-cov~=2.7

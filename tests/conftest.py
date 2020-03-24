@@ -89,10 +89,7 @@ def config(auth_config):
             "prediction_forwarder": {"debug": False, "n_retries": 5},
             "auth": auth_config,
         },
-        "time_series_data_handler": {
-            "type": "mock",
-            "auth": auth_config
-        },
+        "time_series_data_handler": {"type": "mock", "auth": auth_config},
     }
 
 

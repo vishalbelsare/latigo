@@ -56,8 +56,11 @@ class Scheduler:
         auth_configs = [self.model_info_config.get("auth")]
         res, msg, auth_session = auth_check(auth_configs)
         if not res:
-            self._fail(f"{msg} for session::\n'{auth_session}'")
-        logger.info(f"Auth test succeedded for all {len(auth_configs)} configurations.")
+            self._fail(f"{msg} for session:\n'{auth_session}'")
+        else:
+            logger.info(
+                f"Auth test succeedded for all {len(auth_configs)} configurations."
+            )
 
     # Inflate scheduler from config
     def _prepare_scheduler(self):
