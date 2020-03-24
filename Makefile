@@ -171,12 +171,12 @@ prune:
 ############### Secrets management ####################
 
 get-secrets:
-	az keyvault secret show --name "latigo-executor-config-yaml" --vault-name "gordo-vault" --query value --output tsv
-	az keyvault secret show --name "latigo-scheduler-config-yaml" --vault-name "gordo-vault" --query value --output tsv
+	az keyvault secret show --name "latigo-executor-config-yaml" --vault-name "gordo-vault" --query value --output tsv > ./executor_secret.yaml
+	az keyvault secret show --name "latigo-scheduler-config-yaml" --vault-name "gordo-vault" --query value --output tsv > ./scheduler_secret.yaml
 
 set-secrets:
-	az keyvault secret set --name "latigo-executor-config-yaml" --vault-name "gordo-vault" --file ./executor_secret.yml  --encoding utf-8
-	az keyvault secret set --name "latigo-scheduler-config-yaml" --vault-name "gordo-vault" --file ./scheduler_secret.yml  --encoding utf-8
+	az keyvault secret set --name "latigo-executor-config-yaml" --vault-name "gordo-vault" --file ./executor_secret.yaml  --encoding utf-8
+	az keyvault secret set --name "latigo-scheduler-config-yaml" --vault-name "gordo-vault" --file ./scheduler_secret.yaml  --encoding utf-8
 
 
 
