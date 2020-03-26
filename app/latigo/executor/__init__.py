@@ -7,6 +7,7 @@ from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
 
+from latigo.gordo import NoTagDataInDataLake
 from latigo.types import (
     Task,
     SensorDataSpec,
@@ -197,17 +198,18 @@ class PredictionExecutor:
         """
         This internal helper executes prediction on one bulk of data
         """
-        prediction_data = None
         try:
             prediction_data = self.prediction_executor_provider.execute_prediction(
                 project_name=task.project_name,
                 model_name=task.model_name,
                 sensor_data=sensor_data,
             )
+        except NoTagDataInDataLake as e:
+            # there's no data in the Data Lake for particular tag for given period of time.
+            logger.error(str(e), exc_info=True)
+            raise e
         except Exception as e:
-            logger.error(
-                f"Could not execute prediction for task '{task.project_name}.{task.model_name}': {e}"
-            )
+            logger.error(f"Could not execute prediction for task '{task.project_name}.{task.model_name}': {e}")
             raise e
             # traceback.print_exc()
         return prediction_data
@@ -263,7 +265,9 @@ class PredictionExecutor:
                     if task:
                         task_fetch_interval = datetime.datetime.now() - task_fetch_start
                         logger.info(
-                            f"Processing task fetched after {human_delta(task_fetch_interval)} starting {task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' in '{task.project_name}'"
+                            f"Processing task fetched after {human_delta(task_fetch_interval)} starting "
+                            f"{task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' "
+                            f"in '{task.project_name}'"
                         )
                         sensor_data = self._fetch_sensor_data(task)
                         data_fetch_interval = datetime.datetime.now() - task_fetch_start

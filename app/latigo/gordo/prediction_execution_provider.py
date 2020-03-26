@@ -6,6 +6,7 @@ import requests
 import copy
 from datetime import datetime
 import latigo.utils
+from latigo.gordo.gordo_exceptions import NoTagDataInDataLake
 from latigo.prediction_execution import PredictionExecutionProviderInterface
 
 from latigo.types import (
@@ -83,10 +84,15 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
                 f"No gordo client found for project '{project_name}' in gordo.execute_prediction()"
             )
         print_client_debug(client)
-        result = client.predict(
-            start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time, targets=[model_name]
-        )
-        # logger.info(f"PREDICTION RESULT: {result}")
+
+        try:
+            result = client.predict(
+                start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time, targets=[model_name]
+            )
+        except KeyError as e:
+            raise NoTagDataInDataLake(project_name, model_name, sensor_data.time_range.from_time,
+                                      sensor_data.time_range.to_time, e)
+
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
         return PredictionDataSet(
