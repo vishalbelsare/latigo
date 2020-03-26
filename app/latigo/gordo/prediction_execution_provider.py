@@ -84,7 +84,7 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
             )
         print_client_debug(client)
         result = client.predict(
-            start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time
+            start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time, targets=[model_name]
         )
         # logger.info(f"PREDICTION RESULT: {result}")
         if not result:
