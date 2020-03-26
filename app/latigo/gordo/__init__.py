@@ -11,4 +11,5 @@ __all__ = [
     "LatigoPredictionForwarder",
     "GordoModelInfoProvider",
     "GordoPredictionExecutionProvider",
+    "NoTagDataInDataLake",
 ]
