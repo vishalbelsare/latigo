@@ -68,10 +68,28 @@ class SensorDataSet:
 
 
 @dataclass
+class PredictionDataSetMetadata:
+    """Metadata of prediction that was made by Gordo.
+
+    Dataclass attributes:
+        project_name: name of the project.
+        model_name: name of the model.
+        revision (optional): revision(version) of the entities that were used in the prediction.
+    """
+    project_name: str
+    model_name: str
+    revision: str = None
+
+    def __post_init__(self):
+        if not self.project_name or not self.model_name:
+            raise ValueError("project_name and model_name can not be empty or None.")
+
+
+@dataclass
 class PredictionDataSet:
     time_range: TimeRange
     data: typing.Optional[typing.Any]
-    meta_data: typing.Dict = field(default_factory=dict)
+    meta_data: PredictionDataSetMetadata
 
     def ok(self):
         return True

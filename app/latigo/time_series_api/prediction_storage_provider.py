@@ -61,30 +61,30 @@ class TimeSeriesAPIPredictionStorageProvider(
     def __str__(self):
         return f"TimeSeriesAPIPredictionStorageProvider({self.base_url})"
 
-    def put_predictions(self, prediction_data: PredictionDataSet):
+    def put_prediction(self, prediction_data: PredictionDataSet):
+        """Store prediction data in time series api.
+
+        Raises:
+            Exception: if more then one prediction in "prediction_data.data" were passed.
         """
-        Store prediction data in time series api
-        """
-        # logger.info("Got predictions:")
-        # logger.info(pprint.pformat(prediction_data))
-        # logger.info("")
         data = prediction_data.data
         if not data:
             logger.warning("No prediction data for storing")
             return None
+        if len(data) > 1:
+            raise Exception(f"Only one prediction could be passed for storing, but passed - '{len(data)}'")
+
         output_tag_names: typing.Dict[typing.Tuple[str, str], str] = {}
         output_time_series_ids: typing.Dict[typing.Tuple[str, str], str] = {}
         row = data[0]
-        # logger.info("ROW:")
-        # logger.info(row)
         df = row[1]
-        model_name = prediction_data.meta_data.get("model_name", "")
+        model_name = prediction_data.meta_data.model_name
+
         for col in df.columns:
             output_tag_name = prediction_data_naming_convention(
                 operation=col[0], model_name=model_name, tag_name=col[1]
             )
             if not output_tag_name:
-                # logger. info("Skipping invalid output tag name: {output_tag_name}")
                 continue
             output_time_series_ids[col] = ""
             description = f"Gordo prediction for {col[0]} - {col[1]}"
@@ -101,9 +101,7 @@ class TimeSeriesAPIPredictionStorageProvider(
             if not meta and not err:
                 err = "Meta mising with no error"
             if err:
-                logger.error(
-                    f"Could not create/find id for name {output_tag_name}: {err}"
-                )
+                logger.error(f"Could not create/find id for name {output_tag_name}: {err}")
                 continue
             id = _id_in_data(meta)
             if not id:

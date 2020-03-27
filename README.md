@@ -93,7 +93,7 @@ Wraps the source of sensor data.
 
 #### PredictionStorageProviderInterface
 Wraps the destination where predictions are stored (currently implemented by [Time Series API](/equinor/OmniaPlant/tree/master/Omnia%20Timeseries%20API)).
-- put_predictions(prediction_data: PredictionData)
+- put_prediction(prediction_data: PredictionData)
 
 [source code](/equinor/latigo/tree/master/app/latigo/prediction_storage)
 

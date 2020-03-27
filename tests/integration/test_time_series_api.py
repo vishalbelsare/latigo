@@ -151,7 +151,7 @@ def test_time_series_api_write_read():
     prediction_data = PredictionDataSet(
         time_range=time_range, data=data1_wrapped, meta_data=meta_data
     )
-    meta = prediction_storage_provider.put_predictions(prediction_data=prediction_data)
+    meta = prediction_storage_provider.put_prediction(prediction_data=prediction_data)
     logger.info(pprint.pformat(meta))
     logger.info("")
     logger.info("READING ---------------")
@@ -200,7 +200,7 @@ def test_name_lookup_bug1():
     prediction_data = PredictionDataSet(
         meta_data=in_meta, time_range=time_range, data=data1_wrapped
     )
-    out_meta1 = prediction_storage_provider.put_predictions(
+    out_meta1 = prediction_storage_provider.put_prediction(
         prediction_data=prediction_data
     )
     logger.info(pprint.pformat(out_meta1))
@@ -211,7 +211,7 @@ def test_name_lookup_bug1():
     prediction_data2 = PredictionDataSet(
         meta_data=in_meta2, time_range=time_range, data=data2_wrapped
     )
-    out_meta2 = prediction_storage_provider.put_predictions(
+    out_meta2 = prediction_storage_provider.put_prediction(
         prediction_data=prediction_data2
     )
     logger.info(pprint.pformat(out_meta2))
