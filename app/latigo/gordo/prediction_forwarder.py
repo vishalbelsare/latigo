@@ -90,7 +90,7 @@ class LatigoPredictionForwarder(PredictionForwarder):
         resampled_sensor_data: pd.DataFrame = None,
     ):
         # if self.prediction_storage_provider:
-        # self.prediction_storage_provider.put_predictions(predictions)
+        # self.prediction_storage_provider.put_prediction(predictions)
         pass
 
     def __repr__(self):
