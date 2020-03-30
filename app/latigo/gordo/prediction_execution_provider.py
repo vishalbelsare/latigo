@@ -15,7 +15,7 @@ from latigo.types import (
     SensorDataSet,
     PredictionDataSet,
     LatigoSensorTag,
-)
+    PredictionDataSetMetadata)
 from latigo.sensor_data import SensorDataProviderInterface
 
 from latigo.model_info import ModelInfoProviderInterface, Model
@@ -64,19 +64,18 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
             raise Exception("No model_name in gordo.execute_prediction()")
         if not sensor_data:
             raise Exception("No sensor_data in gordo.execute_prediction()")
+
+        meta_data = PredictionDataSetMetadata(project_name=project_name, model_name=model_name)
+
         if not sensor_data.data:
-            logger.warning(
-                f"No data in prediction for project '{project_name}' and model {model_name}"
-            )
+            logger.warning(f"No data in prediction for project '{project_name}' and model {model_name}")
             return PredictionDataSet(
-                time_range=sensor_data.time_range, data=None, meta_data={}
+                time_range=sensor_data.time_range, data=None, meta_data=meta_data
             )
         if len(sensor_data.data) < 1:
-            logger.warning(
-                f"Length of data < 1 in prediction for project '{project_name}' and model {model_name}"
-            )
+            logger.warning(f"Length of data < 1 in prediction for project '{project_name}' and model {model_name}")
             return PredictionDataSet(
-                time_range=sensor_data.time_range, data=None, meta_data={}
+                time_range=sensor_data.time_range, data=None, meta_data=meta_data
             )
         client = self.gordo_pool.allocate_instance(project_name)
         if not client:
@@ -96,7 +95,8 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
         return PredictionDataSet(
-            meta_data={"project_name": project_name, "model_name": model_name},
+            meta_data=meta_data,
             time_range=sensor_data.time_range,
             data=result,
         )
+

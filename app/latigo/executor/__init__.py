@@ -219,7 +219,7 @@ class PredictionExecutor:
         Prediction data represents the result of performing predictions on sensor data. This internal helper stores one bulk of prediction data to the store
         """
         try:
-            self.prediction_storage_provider.put_predictions(prediction_data)
+            self.prediction_storage_provider.put_prediction(prediction_data)
         except Exception as e:
             logger.error(
                 f"Could not store prediction data for task '{task.project_name}.{task.model_name}': {e}"

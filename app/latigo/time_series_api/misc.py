@@ -109,18 +109,18 @@ def prediction_data_naming_convention(
     model_name: str,
     tag_name: str,
     separator: str = "|",
-    global_tag_name: str = "INDICATOR",
-    global_model_name: str = "UNKNOWN_MODEL",
+    missing_tag_name: str = ""
 ):
     if operation in invalid_operations:
         return None
     if not tag_name:
-        tag_name = global_tag_name
+        tag_name = missing_tag_name
     if not model_name:
-        model_name = global_model_name
+        raise Exception(f"'model_name' can not be empty")
     # Escape separator
     replacement = "_" if separator == "-" else "-"
     tag_name = tag_name.replace(separator, replacement)
     model_name = model_name.replace(separator, replacement)
     operation = operation.replace(separator, replacement)
     return f"{tag_name}{separator}{model_name}{separator}{operation}"
+
