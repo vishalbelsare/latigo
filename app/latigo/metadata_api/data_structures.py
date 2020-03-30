@@ -22,17 +22,18 @@ class OutputTag:
     """Info about tag(sensor). Prediction results metadata.
 
     Dataclass attributes:
-        name: name if the tag(sensor). Example: "1903.R-29TE3001.MA_Y".
+        name (optional): name of the tag(sensor). Example: "1903.R-29TE3001.MA_Y".
+            It'll be None for such predictions as 'total-anomaly-scaled', 'total-anomaly-confidence', etc.
         time_series_id: id from Time Series API where prediction results were written to.
         type: prediction results type. Could be one of: "aggregated" OR "derived".
         description (optional): short description of the prediction.
         derived_from (optional): input tag name base on what prediction was made.
-            It'll be empty for such predictions as 'total-anomaly-scaled', 'total-anomaly-confidence', etc.
+            It'll be None for such predictions as 'total-anomaly-scaled', 'total-anomaly-confidence', etc.
     """
 
-    name: str
     time_series_id: str
     type: str
+    name: str = None
     description: str = None
     derived_from: str = None
 
