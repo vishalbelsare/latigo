@@ -67,6 +67,12 @@ class SensorDataSet:
         return f"SensorDataSet(time_range={self.time_range}, data={self.data}, meta_data={self.meta_data})"
 
 
+class ModelTrainingPeriod(typing.NamedTuple):
+    """Training period of the model that is in the yaml file (not the period of the prediction)."""
+    train_start_date: datetime
+    train_end_date: datetime
+
+
 @dataclass
 class PredictionDataSetMetadata:
     """Metadata of prediction that was made by Gordo.
@@ -75,9 +81,12 @@ class PredictionDataSetMetadata:
         project_name: name of the project.
         model_name: name of the model.
         revision (optional): revision(version) of the entities that were used in the prediction.
+        model_start_training: datetime = None
+
     """
     project_name: str
     model_name: str
+    model_training_period: ModelTrainingPeriod
     revision: str = None
 
     def __post_init__(self):

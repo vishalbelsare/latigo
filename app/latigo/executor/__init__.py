@@ -8,6 +8,9 @@ from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
 
 from latigo.gordo import NoTagDataInDataLake
+from latigo.metadata_storage import prediction_metadata_storage_provider_factory
+from latigo.time_series_api import get_time_series_id_from_response
+from latigo.time_series_api.misc import MODEL_INPUT_OPERATION
 from latigo.types import (
     Task,
     SensorDataSpec,
@@ -34,6 +37,7 @@ class PredictionExecutor:
         self._prepare_task_queue()
         self._prepare_sensor_data_provider()
         self._prepare_prediction_storage_provider()
+        self._prepare_prediction_metadata_storage_provider()
         self._prepare_model_info()
         self._prepare_prediction_executor_provider()
         self._prepare_executor()
@@ -86,6 +90,20 @@ class PredictionExecutor:
         )
         if not self.prediction_storage_provider:
             self._fail(f"No prediction storage configured, cannot continue...")
+
+    # Inflate prediction metadata storage provider from config
+    def _prepare_prediction_metadata_storage_provider(self):
+        """Initialize provider for storing of prediction metadata."""
+        prediction_metadata_storage_provider_config = self.config.get(
+            "prediction_metadata_storage", None
+        )
+        if not prediction_metadata_storage_provider_config:
+            self._fail("No prediction_metadata_storage specified")
+        self.prediction_metadata_storage_provider = prediction_metadata_storage_provider_factory(
+            prediction_metadata_storage_provider_config
+        )
+        if not self.prediction_metadata_storage_provider:
+            self._fail(f"No prediction metadata storage configured, cannot continue...")
 
     # Inflate prediction executor provider from config
     def _prepare_prediction_executor_provider(self):
@@ -141,7 +159,7 @@ class PredictionExecutor:
             f"  Restart interval: {restart_interval_desc}\n"
         )
 
-    def _fetch_spec(self, project_name: str, model_name: str):
+    def fetch_spec(self, project_name: str, model_name: str) -> SensorDataSpec:
         return self.model_info_provider.get_spec(
             project_name=project_name, model_name=model_name
         )
@@ -170,7 +188,7 @@ class PredictionExecutor:
             time_range: TimeRange = TimeRange(task.from_time, task.to_time)
             project_name: str = task.project_name
             model_name: str = task.model_name
-            spec: SensorDataSpec = self._fetch_spec(project_name, model_name)
+            spec: SensorDataSpec = self.fetch_spec(project_name, model_name)
             if spec:
                 sensor_data, err = self.sensor_data_provider.get_data_for_range(
                     spec, time_range
@@ -192,17 +210,22 @@ class PredictionExecutor:
             )
         return sensor_data
 
-    def _execute_prediction(
-        self, task: Task, sensor_data: SensorDataSet
-    ) -> typing.Optional[PredictionDataSet]:
+    def _execute_prediction(self, task: Task, sensor_data: SensorDataSet, revision: str) \
+            -> typing.Optional[PredictionDataSet]:
         """
         This internal helper executes prediction on one bulk of data
         """
         try:
+            model_training_period = self.model_info_provider.get_model_training_dates(
+                project_name=task.project_name, model_name=task.model_name, revision=revision
+            )
+
             prediction_data = self.prediction_executor_provider.execute_prediction(
                 project_name=task.project_name,
                 model_name=task.model_name,
                 sensor_data=sensor_data,
+                revision=revision,
+                model_training_period=model_training_period,
             )
         except NoTagDataInDataLake as e:
             # there's no data in the Data Lake for particular tag for given period of time.
@@ -214,18 +237,63 @@ class PredictionExecutor:
             # traceback.print_exc()
         return prediction_data
 
-    def _store_prediction_data(self, task, prediction_data: PredictionDataSet):
-        """
-        Prediction data represents the result of performing predictions on sensor data. This internal helper stores one bulk of prediction data to the store
+    def _store_prediction_data_and_metadata(self, task: Task, prediction_data: PredictionDataSet):
+        """Store prediction data (what represents the result of performing predictions on sensor data) and its metadata.
+
+        1. Store just one bulk of prediction data. Do not send predictions for different models at ones.
+        2. Store metadata of the prediction.
         """
         try:
-            self.prediction_storage_provider.put_prediction(prediction_data)
+            # store predictions
+            output_tag_names, output_time_series_ids = self.prediction_storage_provider.put_prediction(prediction_data)
+
+            # store predictions metadata
+            input_time_series_ids = self._get_tags_time_series_ids_for_model(prediction_data)
+            self.prediction_metadata_storage_provider.put_prediction_metadata(
+                prediction_data, output_tag_names, output_time_series_ids, input_time_series_ids
+            )
+
         except Exception as e:
             logger.error(
-                f"Could not store prediction data for task '{task.project_name}.{task.model_name}': {e}"
+                f"Could not store prediction or metadata data for task '{task.project_name}.{task.model_name}, "
+                f"time period: from '{task.from_time}' to '{task.to_time}''. Error: {e}"
             )
             raise e
-            # traceback.print_exc()
+
+    def _get_tags_time_series_ids_for_model(self, prediction_data: PredictionDataSet) -> typing.Dict[str, str]:
+        """Fetch 'Time Series IDs' to the relevant 'input_tags'.
+
+        Args:
+            prediction_data: dataframe as a result of prediction execution and prediction metadata.
+        """
+        input_time_series_ids: typing.Dict[str, str] = {}  # {(operation, tag_name): time_series_id}.
+        df_columns = prediction_data.data[0][1].columns
+
+        # save tag names for further fetching its Time Series IDs
+        for col in df_columns:
+            operation = col[0]  # example: "start", "end", "model-input"
+            tag_name = col[1]  # example: "1903.R-29TT3018.MA_Y"
+
+            if operation == MODEL_INPUT_OPERATION:
+                # save tag names for further fetching its Time Series IDs
+                input_time_series_ids[tag_name] = ""
+
+        spec = self.fetch_spec(prediction_data.meta_data.project_name, prediction_data.meta_data.model_name)
+
+        for tag in spec.tag_list:
+            if tag.name in input_time_series_ids.keys():
+                meta, error = self.prediction_storage_provider._get_meta_by_name(name=tag.name, asset_id=tag.asset)
+                if error:
+                    # Raise error if tag does not exist
+                    raise Exception(f"Tag was not found. Name='{tag.name}' asset='{tag.asset}': error='{error}'")
+
+                tag_id = get_time_series_id_from_response(meta)
+                input_time_series_ids[tag.name] = tag_id
+
+        missing_tags = {key: val for key, val in input_time_series_ids.items() if not val}
+        if missing_tags:
+            raise Exception("[TAG_NOT_FOUND]: " + ';'.join(missing_tags.keys()))
+        return input_time_series_ids
 
     def idle_count(self, has_task):
         if self.idle_number > 0:
@@ -269,6 +337,9 @@ class PredictionExecutor:
                             f"{task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' "
                             f"in '{task.project_name}'"
                         )
+
+                        revision = self.model_info_provider.get_project_latest_revisions(task.project_name)
+
                         sensor_data = self._fetch_sensor_data(task)
                         data_fetch_interval = datetime.datetime.now() - task_fetch_start
                         logger.info(
@@ -277,24 +348,21 @@ class PredictionExecutor:
                         if sensor_data and sensor_data.ok():
                             prediction_data = None
                             try:
-                                prediction_data = self._execute_prediction(
-                                    task, sensor_data
-                                )
+                                prediction_data = self._execute_prediction(task, sensor_data, revision)
 
-                                prediction_execution_interval = (
-                                    datetime.datetime.now() - task_fetch_start
-                                )
+                                prediction_execution_interval = (datetime.datetime.now() - task_fetch_start)
                                 logger.info(
                                     f"Prediction completed after {human_delta(prediction_execution_interval)}"
                                 )
-                            except InsufficientDataAfterRowFilteringError:
+                            except InsufficientDataAfterRowFilteringError as e:
                                 logger.warning(
                                     "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
-                                    f"'{task.project_name}.{task.model_name}'"
+                                    f"'{task.project_name}.{task.model_name}, "
+                                    f"time period: from '{task.from_time}' to '{task.to_time}''. Error: {e}"
                                 )
 
                             if prediction_data and prediction_data.ok():
-                                self._store_prediction_data(task, prediction_data)
+                                self._store_prediction_data_and_metadata(task, prediction_data)
                                 prediction_storage_interval = (
                                     datetime.datetime.now() - task_fetch_start
                                 )

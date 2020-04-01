@@ -1,8 +1,13 @@
 """Client for connecting to the Metadata API."""
+import json
 import logging
+from dataclasses import asdict
+from typing import Any
 
 import requests_ms_auth
 from requests import Response
+
+from latigo.metadata_api.data_structures import TimeSeriesIdMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +37,7 @@ class MetadataAPIClient:
 
         # Metadata API requires АРІМ headers to be passed on each request
         if not self.auth_config.get("auto_adding_headers", False):
-            return self._raise_exception(
-                "'auto_adding_headers' should be passed in the 'auth' for APIM requests"
-            )
+            return self._raise_exception("'auto_adding_headers' should be passed in the 'auth' for APIM requests")
 
     def _parse_base_url(self):
         """Save 'base_url' to the instance from the passed config."""
@@ -45,13 +48,9 @@ class MetadataAPIClient:
     def _create_session(self, force: bool = False):
         """Create session for the future calls."""
         if not self.session or force:
-            self.session = requests_ms_auth.MsRequestsSession(
-                requests_ms_auth.MsSessionConfig(**self.auth_config)
-            )
+            self.session = requests_ms_auth.MsRequestsSession(requests_ms_auth.MsSessionConfig(**self.auth_config))
         if not self.session:
-            return self._raise_exception(
-                f"Could not create session for {self.__class__.__name__}"
-            )
+            return self._raise_exception(f"Could not create session for {self.__class__.__name__}")
 
     @staticmethod
     def _raise_exception(message: str, exception_type=Exception) -> None:
@@ -68,3 +67,18 @@ class MetadataAPIClient:
         """Make POST call the the API. Standard params are allowed."""
         res = self.session.post(*args, **kwargs)
         return res
+
+    def send_time_series_id_metadata(self, time_series_ids_metadata: TimeSeriesIdMetadata) -> Response:
+        """Save time series id metadata to the Metadata API after storing it in the Time Series API."""
+        url = f"{self.base_url}/models"
+
+        res = self.post(url=url, data=self._dump_data(asdict(time_series_ids_metadata)))
+        return res
+
+    @staticmethod
+    def _dump_data(data: Any) -> str:
+        """Dump any kind of unknown data to string.
+
+        Note: pass here only dicts (not classes).
+        """
+        return json.dumps(data, indent=4, sort_keys=True, default=str)

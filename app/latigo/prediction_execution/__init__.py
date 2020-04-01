@@ -6,12 +6,17 @@ import pandas as pd
 from pprint import pprint
 from dataclasses import dataclass
 
-from latigo.types import SensorDataSet, PredictionDataSet
+from latigo.types import SensorDataSet, PredictionDataSet, ModelTrainingPeriod
 
 
 class PredictionExecutionProviderInterface:
     def execute_prediction(
-        self, project_name: str, model_name: str, sensor_data: SensorDataSet
+        self,
+        project_name: str,
+        model_name: str,
+        sensor_data: SensorDataSet,
+        revision: str,
+        model_training_period: ModelTrainingPeriod,
     ) -> PredictionDataSet:
         """
         Train and/or run data through a given model
@@ -24,7 +29,12 @@ class MockPredictionExecutionProvider(PredictionExecutionProviderInterface):
         self.config = config
 
     def execute_prediction(
-        self, project_name: str, model_name: str, sensor_data: SensorDataSet
+        self,
+        project_name: str,
+        model_name: str,
+        sensor_data: SensorDataSet,
+        revision: str,
+        model_training_period: ModelTrainingPeriod,
     ) -> PredictionDataSet:
         """
         Testing mock prediction execution provider
@@ -40,7 +50,12 @@ class DevNullPredictionExecutionProvider(PredictionExecutionProviderInterface):
         self.config = config
 
     def execute_prediction(
-        self, project_name: str, model_name: str, sensor_data: SensorDataSet
+        self,
+        project_name: str,
+        model_name: str,
+        sensor_data: SensorDataSet,
+        revision: str,
+        model_training_period: ModelTrainingPeriod,
     ) -> PredictionDataSet:
         """
         Dummy no-op prediction execution provider
