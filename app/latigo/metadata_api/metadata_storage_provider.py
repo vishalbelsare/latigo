@@ -4,19 +4,17 @@ from typing import Dict, Tuple
 from latigo.metadata_api.client import MetadataAPIClient
 from latigo.metadata_api.data_structures import InputTag, OutputTag, TimeSeriesIdMetadata
 from latigo.metadata_storage import MetadataStorageProviderInterface
-from latigo.time_series_api.misc import make_output_tag_derived_from, make_output_tag_description, make_output_tag_type, \
-    make_prediction_metadata_description
+from latigo.time_series_api.misc import (DATES_OPERATIONS, MODEL_INPUT_OPERATION, make_output_tag_derived_from,
+                                         make_output_tag_description, make_output_tag_type,
+                                         make_prediction_metadata_description)
 from latigo.types import PredictionDataSet
 
 logger = logging.getLogger(__name__)
 
 
 class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProviderInterface):
-    def __init__(self, config: dict):
-        super().__init__(config)
-
     def __str__(self):
-        return f"{self.__class__.__name__}({self.base_url})"
+        return f"<{ type(self).__name__ }: { self.base_url }>"
 
     def put_prediction_metadata(
         self,
@@ -47,12 +45,13 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
 
         # fill the tags
         for col in df_columns:
-            operation = col[0]  # example: "start", "end", "model-input"
-            tag_name = col[1]  # example: "1903.R-29TT3018.MA_Y"
-            if operation == "model-input":
+            operation, tag_name, *_ = col
+            # example: operation: "start", "end", "model-input"; tag_name:  "1903.R-29TT3018.MA_Y"
+
+            if operation == MODEL_INPUT_OPERATION:
                 tag_time_series_id = input_time_series_ids[tag_name]
                 metadata_api_input_tags.append(InputTag(name=tag_name, time_series_id=tag_time_series_id))
-            elif operation not in ["start", "end"]:
+            elif operation not in DATES_OPERATIONS:
                 metadata_api_output_tags.append(
                     OutputTag(
                         name=output_tag_names[col],
@@ -82,4 +81,3 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
 
         logger.info(f"[MODEL_ID] Prediction metadata was stored to the Metadata API. "
                     f"Record ID - '{res.json()['model_id']}'")
-        return None

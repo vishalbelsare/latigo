@@ -83,7 +83,8 @@ def _parse_request_json(res) -> typing.Tuple[typing.Optional[typing.Dict], typin
 
 
 MODEL_INPUT_OPERATION = "model-input"
-INVALID_OPERATIONS = ["start", "end", MODEL_INPUT_OPERATION]
+DATES_OPERATIONS = frozenset(["start", "end"])
+INVALID_OPERATIONS = frozenset([*DATES_OPERATIONS, MODEL_INPUT_OPERATION])
 MISSING_TAG_NAME = "INDICATOR"
 
 
