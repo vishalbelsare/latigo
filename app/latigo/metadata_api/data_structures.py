@@ -1,7 +1,9 @@
 """Dataclasses for Time Series ID metadata for sending to the Metadata API."""
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import List, Union
+
+from latigo.types import PredictionDataSet
 
 
 @dataclass
@@ -44,6 +46,25 @@ class OutputTag:
         if self.type not in ["aggregated", "derived"]:
             raise ValueError("'type' attribute can be one of the 'aggregated' or 'derived' values.")
 
+    @staticmethod
+    def make_output_tag_type(original_tag_name: str) -> str:
+        """Make 'type' for output_tag metadata.
+
+        Args:
+            original_tag_name: original tag name that we got from the prediction results.
+        """
+        return "derived" if original_tag_name else "aggregated"
+
+    @staticmethod
+    def make_output_tag_derived_from(tag_name: str) -> Union[str, None]:
+        """Make 'derived_from' for output_tag metadata."""
+        return tag_name or None
+
+    @staticmethod
+    def make_output_tag_description(operation: str, tag_name: str) -> str:
+        """Make description for output_tag."""
+        return f"Gordo {operation} - {tag_name}"
+
 
 @dataclass
 class TimeSeriesIdMetadata:
@@ -72,3 +93,12 @@ class TimeSeriesIdMetadata:
     description: str = None
     status: str = "not_defined"
     labels: List[str] = None
+
+    @staticmethod
+    def make_prediction_metadata_description(prediction_data: PredictionDataSet) -> str:
+        """Make description for prediction metadata."""
+        return (
+            f"Gordo prediction for project '{prediction_data.meta_data.project_name}', "
+            f"model '{prediction_data.meta_data.model_name}'. "
+            f"Prediction period: from '{prediction_data.time_range.from_time}' : to '{prediction_data.time_range.to_time}'"
+        )

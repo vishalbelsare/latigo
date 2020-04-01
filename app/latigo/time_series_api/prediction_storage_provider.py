@@ -2,14 +2,14 @@ import logging
 import math
 from typing import Dict, Tuple
 
+from latigo.metadata_api.data_structures import OutputTag
 from latigo.prediction_storage import PredictionStorageProviderInterface
 from latigo.types import PredictionDataSet
 from latigo.utils import rfc3339_from_datetime
 
 from .client import TimeSeriesAPIClient
-from .misc import (INVALID_OPERATIONS, get_time_series_id_from_response,
-                   make_output_tag_description,
-                   prediction_data_naming_convention, get_common_asset_id)
+from .misc import (INVALID_OPERATIONS, get_common_asset_id,
+                   get_time_series_id_from_response, prediction_data_naming_convention)
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class TimeSeriesAPIPredictionStorageProvider(
             if not output_tag_name:
                 continue
             output_time_series_ids[col] = ""
-            description = make_output_tag_description(operation, tag_name)
+            description = OutputTag.make_output_tag_description(operation, tag_name)
             # Units cannot be derrived easily. Should be provided by prediction execution provider or set to none
             unit = ""
             # TODO: Should we generate some external_id?

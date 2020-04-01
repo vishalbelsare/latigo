@@ -6,8 +6,6 @@ import requests_ms_auth
 from pandas import MultiIndex
 from requests.exceptions import HTTPError
 
-from latigo.types import PredictionDataSet
-
 logger = logging.getLogger(__name__)
 
 timeseries_client_auth_session: typing.Optional[requests.Session] = None
@@ -108,34 +106,6 @@ def prediction_data_naming_convention(
     model_name = model_name.replace(separator, replacement)
     operation = operation.replace(separator, replacement)
     return f"{tag_name}{separator}{model_name}{separator}{operation}"
-
-
-def make_prediction_metadata_description(prediction_data: PredictionDataSet) -> str:
-    """Make description for prediction metadata."""
-    return (
-        f"Gordo prediction for project '{prediction_data.meta_data.project_name}', "
-        f"model '{prediction_data.meta_data.model_name}'. "
-        f"Prediction period: from '{prediction_data.time_range.from_time}' : to '{prediction_data.time_range.to_time}'"
-    )
-
-
-def make_output_tag_type(original_tag_name: str) -> str:
-    """Make 'type' for output_tag metadata.
-
-    Args:
-        original_tag_name: original tag name that we got from the prediction results.
-    """
-    return "derived" if original_tag_name else "aggregated"
-
-
-def make_output_tag_derived_from(tag_name: str) -> typing.Union[str, None]:
-    """Make 'derived_from' for output_tag metadata."""
-    return tag_name or None
-
-
-def make_output_tag_description(operation: str, tag_name: str) -> str:
-    """Make description for output_tag."""
-    return f"Gordo {operation} - {tag_name}"
 
 
 def get_common_asset_id(columns: MultiIndex) -> str:

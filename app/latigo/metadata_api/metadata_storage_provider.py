@@ -4,9 +4,7 @@ from typing import Dict, Tuple
 from latigo.metadata_api.client import MetadataAPIClient
 from latigo.metadata_api.data_structures import InputTag, OutputTag, TimeSeriesIdMetadata
 from latigo.metadata_storage import MetadataStorageProviderInterface
-from latigo.time_series_api.misc import (DATES_OPERATIONS, MODEL_INPUT_OPERATION, make_output_tag_derived_from,
-                                         make_output_tag_description, make_output_tag_type,
-                                         make_prediction_metadata_description)
+from latigo.time_series_api.misc import DATES_OPERATIONS, MODEL_INPUT_OPERATION
 from latigo.types import PredictionDataSet
 
 logger = logging.getLogger(__name__)
@@ -56,9 +54,9 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
                     OutputTag(
                         name=output_tag_names[col],
                         time_series_id=output_time_series_ids[(operation, tag_name)],
-                        type=make_output_tag_type(tag_name),
-                        derived_from=make_output_tag_derived_from(tag_name),
-                        description=make_output_tag_description(operation, tag_name),
+                        type=OutputTag.make_output_tag_type(tag_name),
+                        derived_from=OutputTag.make_output_tag_derived_from(tag_name),
+                        description=OutputTag.make_output_tag_description(operation, tag_name),
                     )
                 )
             else:
@@ -68,7 +66,7 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
             project_name=project_name,
             model_name=model_name,
             revision=revision,
-            description=make_prediction_metadata_description(prediction_data),
+            description=TimeSeriesIdMetadata.make_prediction_metadata_description(prediction_data),
             training_time_from=model_training_period.train_start_date,
             training_time_to=model_training_period.train_end_date,
             labels=["string-label"],  # TODO Alex remove this after adjusting the API
