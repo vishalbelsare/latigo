@@ -255,8 +255,7 @@ class PredictionExecutor:
 
         except Exception as e:
             logger.error(
-                f"Could not store prediction or metadata data for task '{task.project_name}.{task.model_name}, "
-                f"time period: from '{task.from_time}' to '{task.to_time}''. Error: {e}"
+                f"Could not store prediction or metadata for task {self.make_prediction_task_info(task)}. Error: {e}."
             )
             raise e
 
@@ -337,6 +336,7 @@ class PredictionExecutor:
                             f"{task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' "
                             f"in '{task.project_name}'"
                         )
+                        logger.info(f"[Prediction_task_info] {self.make_prediction_task_info(task)}")
 
                         revision = self.model_info_provider.get_project_latest_revisions(task.project_name)
 
@@ -357,8 +357,7 @@ class PredictionExecutor:
                             except InsufficientDataAfterRowFilteringError as e:
                                 logger.warning(
                                     "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
-                                    f"'{task.project_name}.{task.model_name}, "
-                                    f"time period: from '{task.from_time}' to '{task.to_time}''. Error: {e}"
+                                    f"{self.make_prediction_task_info(task)}"
                                 )
 
                             if prediction_data and prediction_data.ok():
@@ -367,7 +366,7 @@ class PredictionExecutor:
                                     datetime.datetime.now() - task_fetch_start
                                 )
                                 logger.info(
-                                    f"Prediction stored after {human_delta(prediction_storage_interval)}"
+                                    f"Prediction stored after {human_delta(prediction_storage_interval)}\n"
                                 )
                                 self.idle_count(True)
                             else:
@@ -398,3 +397,8 @@ class PredictionExecutor:
             # logger.info("Executor stopped processing")
         else:
             logger.error("No task queue")
+
+    @staticmethod
+    def make_prediction_task_info(task: Task) -> str:
+        """Make info about prediction task for logging."""
+        return f"'{task.project_name}.{task.model_name}', prediction: from '{task.from_time}' to '{task.to_time}'"

@@ -80,5 +80,6 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
         if res.status_code != 200:
             raise Exception(f"[METADATA_STORING_ERROR]: {res.status_code} - {res.text}.")
 
-        logger.info("Prediction metadata was stored to the Metadata API.")
+        logger.info(f"[MODEL_ID] Prediction metadata was stored to the Metadata API. "
+                    f"Record ID - '{res.json()['model_id']}'")
         return None
