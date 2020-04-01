@@ -64,6 +64,10 @@ class MockModelInfoProvider(ModelInfoProviderInterface):
     ) -> typing.Optional[SensorDataSpec]:
         return None
 
+    @staticmethod
+    def get_project_latest_revisions(project_name: str) -> str:
+        return f"{project_name}-111"
+
 
 class DevNullModelInfoProvider(ModelInfoProviderInterface):
     def __init__(self, config: dict):
