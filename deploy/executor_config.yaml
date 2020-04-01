@@ -85,9 +85,22 @@ predictor:
         debug: false
         n_retries: 5
     auth:
-            resource: "CHANGE ME"
-            tenant: "CHANGE ME"
-            authority_host_url: "CHANGE ME"
-            client_id: "CHANGE ME"
-            client_secret: "CHANGE ME"
-            verification_url: "CHANGE ME"
+        resource: "CHANGE ME"
+        tenant: "CHANGE ME"
+        authority_host_url: "CHANGE ME"
+        client_id: "CHANGE ME"
+        client_secret: "CHANGE ME"
+        verification_url: "CHANGE ME"
+
+prediction_metadata_storage:
+    type: "metadata_api"
+    base_url: "DO NOT PUT SECRETS IN THIS FILE"
+    auth:
+        resource: "CHANGE ME"
+        tenant: "CHANGE ME"
+        authority_host_url: "CHANGE ME"
+        client_id: "CHANGE ME"
+        client_secret: "CHANGE ME"
+        verification_url: "CHANGE ME"
+        auto_adding_headers:
+            Ocp-Apim-Subscription-Key: "CHANGE ME"
