@@ -284,14 +284,14 @@ class PredictionExecutor:
                 meta, error = self.prediction_storage_provider._get_meta_by_name(name=tag.name, asset_id=tag.asset)
                 if error:
                     # Raise error if tag does not exist
-                    raise Exception(f"Tag was not found. Name='{tag.name}' asset='{tag.asset}': error='{error}'")
+                    raise ValueError(f"Tag was not found. Name='{tag.name}' asset='{tag.asset}': error='{error}'")
 
                 tag_id = get_time_series_id_from_response(meta)
                 input_time_series_ids[tag.name] = tag_id
 
         missing_tags = {key: val for key, val in input_time_series_ids.items() if not val}
         if missing_tags:
-            raise Exception("[TAG_NOT_FOUND]: " + ';'.join(missing_tags.keys()))
+            raise ValueError("[TAG_NOT_FOUND]: " + ';'.join(missing_tags.keys()))
         return input_time_series_ids
 
     def idle_count(self, has_task):
@@ -357,7 +357,7 @@ class PredictionExecutor:
                             except InsufficientDataAfterRowFilteringError as e:
                                 logger.warning(
                                     "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
-                                    f"{self.make_prediction_task_info(task)}"
+                                    f"{self.make_prediction_task_info(task)}. Error: {e}"
                                 )
 
                             if prediction_data and prediction_data.ok():

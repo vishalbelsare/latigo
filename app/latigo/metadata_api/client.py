@@ -2,7 +2,7 @@
 import json
 import logging
 from dataclasses import asdict
-from typing import Any
+from typing import Dict
 
 import requests_ms_auth
 from requests import Response
@@ -76,7 +76,7 @@ class MetadataAPIClient:
         return res
 
     @staticmethod
-    def _dump_data(data: Any) -> str:
+    def _dump_data(data: Dict) -> str:
         """Dump any kind of unknown data to string.
 
         Note: pass here only dicts (not classes).
