@@ -1,29 +1,10 @@
-import typing
 import logging
-import math
+import typing
+
 import requests
-import datetime
-import json
-import pprint
-from requests.exceptions import HTTPError
-import pandas as pd
-import urllib.parse
-from oauthlib.oauth2.rfc6749.errors import MissingTokenError
-
-from latigo.types import (
-    Task,
-    SensorDataSpec,
-    SensorDataSet,
-    TimeRange,
-    PredictionDataSet,
-    LatigoSensorTag,
-)
-from latigo.intermediate import IntermediateFormat
-from latigo.sensor_data import SensorDataProviderInterface
-from latigo.prediction_storage import PredictionStorageProviderInterface
-from latigo.utils import rfc3339_from_datetime
 import requests_ms_auth
-
+from pandas import MultiIndex
+from requests.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +61,7 @@ def _get_auth_session(auth_config: dict, force: bool = False):
     return timeseries_client_auth_session
 
 
-def _parse_request_json(
-    res,
-) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+def _parse_request_json(res) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
     try:
         res.raise_for_status()
         ret = res.json()
@@ -101,20 +80,24 @@ def _parse_request_json(
     return None, "ERRROR"
 
 
-invalid_operations = ["start", "end", "model-input"]
+MODEL_INPUT_OPERATION = "model-input"
+DATES_OPERATIONS = frozenset(["start", "end"])
+INVALID_OPERATIONS = frozenset([*DATES_OPERATIONS, MODEL_INPUT_OPERATION])
+MISSING_TAG_NAME = "INDICATOR"
 
 
 def prediction_data_naming_convention(
     operation: str,
     model_name: str,
     tag_name: str,
+    common_asset_id: str,
     separator: str = "|",
-    missing_tag_name: str = ""
+    missing_tag_name: str = MISSING_TAG_NAME,
 ):
-    if operation in invalid_operations:
+    if operation in INVALID_OPERATIONS:
         return None
     if not tag_name:
-        tag_name = missing_tag_name
+        tag_name = f"{common_asset_id}.{missing_tag_name}"
     if not model_name:
         raise Exception(f"'model_name' can not be empty")
     # Escape separator
@@ -124,3 +107,38 @@ def prediction_data_naming_convention(
     operation = operation.replace(separator, replacement)
     return f"{tag_name}{separator}{model_name}{separator}{operation}"
 
+
+def get_common_asset_id(columns: MultiIndex) -> str:
+    """Fetch common asset from tag name the dataframe columns where operation and tag name are.
+
+    Return:
+        '1903.R-29PST3037.MA_Y' -> '1903'. Split first non empty tag name with '.' and take first part as asset.
+    """
+    for operation, tag_name in columns:
+        if tag_name:
+            return tag_name.split(".")[0]
+    raise Exception(
+        f"Not common asset found in dataframe columns. Parsed data: " + "; ".join(col[1] for col in columns.values)
+    )
+
+
+def find_in_time_series_resp(res, x):
+    if not isinstance(res, dict):
+        return None
+    data = res.get("data", {})
+    if not isinstance(data, dict):
+        return None
+    items = data.get("items", [])
+    if not isinstance(items, list):
+        return None
+    if len(items) < 1:
+        return None
+    item = items[0]
+    if not isinstance(item, dict):
+        return None
+    return item.get(x, None)
+
+
+def get_time_series_id_from_response(res):
+    """Get Time Series ID from the time series tag data."""
+    return find_in_time_series_resp(res, "id")

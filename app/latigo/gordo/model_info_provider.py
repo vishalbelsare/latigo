@@ -14,7 +14,7 @@ from latigo.types import (
     SensorDataSet,
     PredictionDataSet,
     LatigoSensorTag,
-)
+    ModelTrainingPeriod)
 from latigo.sensor_data import SensorDataProviderInterface
 
 from latigo.model_info import ModelInfoProviderInterface, Model
@@ -118,3 +118,18 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
             return None
         spec = SensorDataSpec(tag_list=_gordo_to_latigo_tag_list(model.tag_list))
         return spec
+
+    def get_project_latest_revisions(self, project_name: str):
+        """Fetch latest revision(version) of the project in Gordo."""
+        client = self.gordo_pool.allocate_instance(project_name)
+        return client.get_revisions()["latest"]
+
+    def get_model_training_dates(self, project_name: str, model_name: str, revision: str = None) -> ModelTrainingPeriod:
+        """Fetch model training dates from Gordo."""
+        client = self.gordo_pool.allocate_instance(project_name)
+        machines = client._get_machines(revision=revision, machine_names=[model_name])
+
+        train_end_date = machines[0].dataset.train_end_date
+        train_start_date = machines[0].dataset.train_start_date
+
+        return ModelTrainingPeriod(train_start_date=train_start_date, train_end_date=train_end_date)

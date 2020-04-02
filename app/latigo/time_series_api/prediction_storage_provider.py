@@ -1,55 +1,17 @@
-import typing
 import logging
 import math
-import requests
-import datetime
-import json
-import pprint
-from requests.exceptions import HTTPError
-import pandas as pd
-import urllib.parse
-from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+from typing import Dict, Tuple
 
-from latigo.types import (
-    Task,
-    SensorDataSpec,
-    SensorDataSet,
-    TimeRange,
-    PredictionDataSet,
-    LatigoSensorTag,
-)
-from latigo.intermediate import IntermediateFormat
-from latigo.sensor_data import SensorDataProviderInterface
+from latigo.metadata_api.data_structures import OutputTag
 from latigo.prediction_storage import PredictionStorageProviderInterface
+from latigo.types import PredictionDataSet
 from latigo.utils import rfc3339_from_datetime
-import requests_ms_auth
 
-from .misc import invalid_operations, prediction_data_naming_convention
 from .client import TimeSeriesAPIClient
-
+from .misc import (INVALID_OPERATIONS, get_common_asset_id,
+                   get_time_series_id_from_response, prediction_data_naming_convention)
 
 logger = logging.getLogger(__name__)
-
-
-def _x_in_data(res, x):
-    if not isinstance(res, dict):
-        return None
-    data = res.get("data", {})
-    if not isinstance(data, dict):
-        return None
-    items = data.get("items", [])
-    if not isinstance(items, list):
-        return None
-    if len(items) < 1:
-        return None
-    item = items[0]
-    if not isinstance(item, dict):
-        return None
-    return item.get(x, None)
-
-
-def _id_in_data(res):
-    return _x_in_data(res, "id")
 
 
 class TimeSeriesAPIPredictionStorageProvider(
@@ -64,6 +26,9 @@ class TimeSeriesAPIPredictionStorageProvider(
     def put_prediction(self, prediction_data: PredictionDataSet):
         """Store prediction data in time series api.
 
+        Args:
+            prediction_data: dataframe as a result of prediction execution and prediction metadata.
+
         Raises:
             Exception: if more then one prediction in "prediction_data.data" were passed.
         """
@@ -74,20 +39,28 @@ class TimeSeriesAPIPredictionStorageProvider(
         if len(data) > 1:
             raise Exception(f"Only one prediction could be passed for storing, but passed - '{len(data)}'")
 
-        output_tag_names: typing.Dict[typing.Tuple[str, str], str] = {}
-        output_time_series_ids: typing.Dict[typing.Tuple[str, str], str] = {}
+        logger.info("Start putting the predictions...")
+
+        # output_tag_names: ('model-output', '1903.R-29L.MA_Y'): '1903.R-29LT.MA_Y|24ae-6d22-a6-b8-337-999|model-output'
+        output_tag_names: Dict[Tuple[str, str], str] = {}
+        # "output_time_series_ids": ('model-output', '1903.R-29LT1047.MA_Y'): '73ef5e6c-9142-4127-be64-a68e6916'
+        output_time_series_ids: Dict[Tuple[str, str], str] = {}
+        model_name = prediction_data.meta_data.model_name
         row = data[0]
         df = row[1]
-        model_name = prediction_data.meta_data.model_name
+        common_asset_id = get_common_asset_id(df.columns)
 
         for col in df.columns:
+            operation = col[0]
+            tag_name = col[1]
+
             output_tag_name = prediction_data_naming_convention(
-                operation=col[0], model_name=model_name, tag_name=col[1]
+                operation=operation, model_name=model_name, tag_name=tag_name, common_asset_id=common_asset_id
             )
             if not output_tag_name:
                 continue
             output_time_series_ids[col] = ""
-            description = f"Gordo prediction for {col[0]} - {col[1]}"
+            description = OutputTag.make_output_tag_description(operation, tag_name)
             # Units cannot be derrived easily. Should be provided by prediction execution provider or set to none
             unit = ""
             # TODO: Should we generate some external_id?
@@ -103,12 +76,12 @@ class TimeSeriesAPIPredictionStorageProvider(
             if err:
                 logger.error(f"Could not create/find id for name {output_tag_name}: {err}")
                 continue
-            id = _id_in_data(meta)
-            if not id:
+            time_series_id = get_time_series_id_from_response(meta)
+            if not time_series_id:
                 logger.error(f"Could not get ID for {output_tag_name}")
                 continue
             output_tag_names[col] = output_tag_name
-            output_time_series_ids[col] = id
+            output_time_series_ids[col] = time_series_id
         failed_tags = 0
         stored_tags = 0
         skipped_values = 0
@@ -116,7 +89,7 @@ class TimeSeriesAPIPredictionStorageProvider(
         logger.info(f"Storing {len(df.columns)} predictions:")
         for key, item in df.items():
             operation, tag_name = key
-            if operation in invalid_operations:
+            if operation in INVALID_OPERATIONS:
                 continue
             datapoints = []
             id = output_time_series_ids[key]
@@ -137,11 +110,9 @@ class TimeSeriesAPIPredictionStorageProvider(
                 failed_tags += 1
             else:
                 stored_tags += 1
+
         logger.info(
             f"  {stored_values} values stored, {skipped_values} NaNs skipped. {stored_tags} tags stored, {failed_tags} tags failed"
         )
-        # with pd.option_context("display.max_rows", None, "display.max_columns", None):
-        #    logger.info("")
-        #    logger.info(f"  Item({item})")
 
-        return None
+        return output_tag_names, output_time_series_ids

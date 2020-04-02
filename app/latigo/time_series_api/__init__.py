@@ -6,4 +6,5 @@ __all__ = [
     "TimeSeriesAPIClient",
     "TimeSeriesAPIPredictionStorageProvider",
     "TimeSeriesAPISensorDataProvider",
+    "get_time_series_id_from_response",
 ]

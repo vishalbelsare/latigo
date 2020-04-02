@@ -1,33 +1,8 @@
-import typing
-import logging
-import pprint
-import pandas as pd
-import requests
-import copy
-from datetime import datetime
-import latigo.utils
 from latigo.gordo.gordo_exceptions import NoTagDataInDataLake
-from latigo.prediction_execution import PredictionExecutionProviderInterface
+from latigo.types import ModelTrainingPeriod, PredictionDataSetMetadata
 
-from latigo.types import (
-    TimeRange,
-    SensorDataSpec,
-    SensorDataSet,
-    PredictionDataSet,
-    LatigoSensorTag,
-    PredictionDataSetMetadata)
-from latigo.sensor_data import SensorDataProviderInterface
-
-from latigo.model_info import ModelInfoProviderInterface, Model
-
-from gordo.client.client import Client
-from gordo.machine import Machine
-from gordo.machine.dataset.data_provider.base import GordoBaseDataProvider
-from gordo.machine.dataset.sensor_tag import SensorTag
-from gordo.util.utils import capture_args
-
-from .misc import *
 from .client_pool import *
+from .misc import *
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +18,8 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         if not self.config:
             raise Exception("No predictor_config specified")
         expand_gordo_connection_string(self.config)
-        expand_gordo_data_provider(
-            self.config, sensor_data_provider=sensor_data_provider
-        )
-        expand_gordo_prediction_forwarder(
-            self.config, prediction_storage_provider=prediction_storage_provider
-        )
+        expand_gordo_data_provider(self.config, sensor_data_provider=sensor_data_provider)
+        expand_gordo_prediction_forwarder(self.config, prediction_storage_provider=prediction_storage_provider)
         self.gordo_pool = GordoClientPool(self.config)
         self._prepare_projects()
 
@@ -56,7 +27,12 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         return f"GordoPredictionExecutionProvider({self.projects})"
 
     def execute_prediction(
-        self, project_name: str, model_name: str, sensor_data: SensorDataSet
+        self,
+        project_name: str,
+        model_name: str,
+        sensor_data: SensorDataSet,
+        revision: str,
+        model_training_period: ModelTrainingPeriod,
     ) -> PredictionDataSet:
         if not project_name:
             raise Exception("No project_name in gordo.execute_prediction()")
@@ -65,38 +41,35 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         if not sensor_data:
             raise Exception("No sensor_data in gordo.execute_prediction()")
 
-        meta_data = PredictionDataSetMetadata(project_name=project_name, model_name=model_name)
+        meta_data = PredictionDataSetMetadata(
+            project_name=project_name,
+            model_name=model_name,
+            revision=revision,
+            model_training_period=model_training_period,
+        )
 
         if not sensor_data.data:
             logger.warning(f"No data in prediction for project '{project_name}' and model {model_name}")
-            return PredictionDataSet(
-                time_range=sensor_data.time_range, data=None, meta_data=meta_data
-            )
+            return PredictionDataSet(time_range=sensor_data.time_range, data=None, meta_data=meta_data)
         if len(sensor_data.data) < 1:
             logger.warning(f"Length of data < 1 in prediction for project '{project_name}' and model {model_name}")
-            return PredictionDataSet(
-                time_range=sensor_data.time_range, data=None, meta_data=meta_data
-            )
+            return PredictionDataSet(time_range=sensor_data.time_range, data=None, meta_data=meta_data)
         client = self.gordo_pool.allocate_instance(project_name)
         if not client:
-            raise Exception(
-                f"No gordo client found for project '{project_name}' in gordo.execute_prediction()"
-            )
+            raise Exception(f"No gordo client found for project '{project_name}' in gordo.execute_prediction()")
         print_client_debug(client)
-
         try:
             result = client.predict(
-                start=sensor_data.time_range.from_time, end=sensor_data.time_range.to_time, targets=[model_name]
+                start=sensor_data.time_range.from_time,
+                end=sensor_data.time_range.to_time,
+                targets=[model_name],
+                revision=revision,
             )
         except KeyError as e:
-            raise NoTagDataInDataLake(project_name, model_name, sensor_data.time_range.from_time,
-                                      sensor_data.time_range.to_time, e)
+            raise NoTagDataInDataLake(
+                project_name, model_name, sensor_data.time_range.from_time, sensor_data.time_range.to_time, e
+            )
 
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
-        return PredictionDataSet(
-            meta_data=meta_data,
-            time_range=sensor_data.time_range,
-            data=result,
-        )
-
+        return PredictionDataSet(meta_data=meta_data, time_range=sensor_data.time_range, data=result)

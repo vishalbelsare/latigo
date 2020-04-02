@@ -1,7 +1,9 @@
 """Dataclasses for Time Series ID metadata for sending to the Metadata API."""
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import List, Union
+
+from latigo.types import PredictionDataSet
 
 
 @dataclass
@@ -22,8 +24,11 @@ class OutputTag:
     """Info about tag(sensor). Prediction results metadata.
 
     Dataclass attributes:
-        name (optional): name of the tag(sensor). Example: "1903.R-29TE3001.MA_Y".
-            It'll be None for such predictions as 'total-anomaly-scaled', 'total-anomaly-confidence', etc.
+        name: tag(sensor) name that was composed for Time Series ID in Latigo (not tag name itself).
+            Examples:
+                - "1903.INDICATOR|3c22-b5a0-4a76-99-59c4-9999|total-anomaly-confidence".
+                - "1903.R-00AAA0000.MA_Y|3c22-b5a0-4a76-99-59c4-9999|model-output".
+            First part is "asset.INDICATOR" for predictions as 'total-anomaly-scaled', 'total-anomaly-confidence', etc.
         time_series_id: id from Time Series API where prediction results were written to.
         type: prediction results type. Could be one of: "aggregated" OR "derived".
         description (optional): short description of the prediction.
@@ -31,15 +36,34 @@ class OutputTag:
             It'll be None for such predictions as 'total-anomaly-scaled', 'total-anomaly-confidence', etc.
     """
 
+    name: str
     time_series_id: str
     type: str
-    name: str = None
     description: str = None
     derived_from: str = None
 
     def __post_init__(self):
         if self.type not in ["aggregated", "derived"]:
             raise ValueError("'type' attribute can be one of the 'aggregated' or 'derived' values.")
+
+    @staticmethod
+    def make_output_tag_type(original_tag_name: str) -> str:
+        """Make 'type' for output_tag metadata.
+
+        Args:
+            original_tag_name: original tag name that we got from the prediction results.
+        """
+        return "derived" if original_tag_name else "aggregated"
+
+    @staticmethod
+    def make_output_tag_derived_from(tag_name: str) -> Union[str, None]:
+        """Make 'derived_from' for output_tag metadata."""
+        return tag_name or None
+
+    @staticmethod
+    def make_output_tag_description(operation: str, tag_name: str) -> str:
+        """Make description for output_tag."""
+        return f"Gordo {operation} - {tag_name}"
 
 
 @dataclass
@@ -69,3 +93,12 @@ class TimeSeriesIdMetadata:
     description: str = None
     status: str = "not_defined"
     labels: List[str] = None
+
+    @staticmethod
+    def make_prediction_metadata_description(prediction_data: PredictionDataSet) -> str:
+        """Make description for prediction metadata."""
+        return (
+            f"Gordo prediction for project '{prediction_data.meta_data.project_name}', "
+            f"model '{prediction_data.meta_data.model_name}'. "
+            f"Prediction period: from '{prediction_data.time_range.from_time}' : to '{prediction_data.time_range.to_time}'"
+        )
