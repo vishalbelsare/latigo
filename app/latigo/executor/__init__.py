@@ -366,7 +366,7 @@ class PredictionExecutor:
                                     datetime.datetime.now() - task_fetch_start
                                 )
                                 logger.info(
-                                    f"Prediction stored after {human_delta(prediction_storage_interval)}\n"
+                                    f"Prediction stored after {human_delta(prediction_storage_interval)}\n\n"
                                 )
                                 self.idle_count(True)
                             else:

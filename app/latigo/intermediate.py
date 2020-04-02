@@ -1,3 +1,4 @@
+# TODO remove this file. It's probable redundant.
 import logging
 import pprint
 
@@ -129,6 +130,7 @@ class IntermediateFormat:
     def to_gordo_dataframe(
         self, tags: typing.List[SensorTag], target_tags: typing.List[SensorTag]
     ) -> typing.Iterable[pd.Series]:
+        """"NOTE! this method was causing bug. do not use it!"""
         out: typing.List = []
         series_len = len(self.data_frame_data["value"])
         for tag in tags:

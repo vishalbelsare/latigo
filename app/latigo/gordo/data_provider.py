@@ -1,9 +1,10 @@
+import time
 import typing
 import logging
 import pandas as pd
 from datetime import datetime
 
-from latigo.types import TimeRange, LatigoSensorTag
+from latigo.types import TimeRange, LatigoSensorTag, SensorDataSet
 from latigo.sensor_data import SensorDataProviderInterface
 from latigo.types import SensorDataSpec
 
@@ -94,13 +95,12 @@ class LatigoDataProvider(GordoBaseDataProvider):
         if not sensor_data.data:
             logger.error(f"No data.data")
             return
-        data = sensor_data.data.to_gordo_dataframe(tags=tag_list, target_tags=[])
-        if not data:
+
+        if not sensor_data.data:
             logger.error(f"No gordo data")
             return
-        # logger.info(data)
-        for d in data:
-            d = d[((d.index >= train_start_date) & (d.index <= train_end_date))]
+
+        for d in sensor_data.data:
             yield d
         return
 

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json, DataClassJsonMixin
 from gordo.machine.dataset.sensor_tag import SensorTag
 
-from latigo.utils import rfc3339_from_datetime
+from latigo.utils import rfc3339_from_datetime, local_datetime_to_utc
 from latigo.intermediate import IntermediateFormat
 
 
@@ -50,13 +50,10 @@ class SensorDataSpec:
 @dataclass
 class SensorDataSet:
     time_range: TimeRange
-    data: typing.Optional[IntermediateFormat]
+    data: typing.List[pd.Series]
     meta_data: typing.Dict = field(default_factory=dict)
 
     def ok(self):
-        # logger.warning(f"TIME:{self.time_range}")
-        # logger.warning(f"META:{self.meta_data}")
-        # logger.warning(f"DATA:{self.data}")
         if not self.data:
             return False
         if len(self.data) < 1:
@@ -66,9 +63,55 @@ class SensorDataSet:
     def __str__(self):
         return f"SensorDataSet(time_range={self.time_range}, data={self.data}, meta_data={self.meta_data})"
 
+    @staticmethod
+    def to_gordo_dataframe(
+        data: typing.List[typing.Dict[str, typing.Any]], prediction_start_date: datetime, prediction_end_date: datetime
+    ) -> typing.List[pd.Series]:
+        """Format data for the DataFrames as Gordo required for the predictions.
+
+        This function will filter incoming data and skip that is out of prediction time period.
+
+        Args:
+            data: taken from Time Series API income-tag`s data for making predictions on.
+            prediction_start_date: start time of the prediction data.
+            prediction_end_date: end time of the prediction data.
+
+        Return:
+            DataFrames for predictions (might be filtered).
+        """
+        dataframes: typing.List = []
+        start_date = local_datetime_to_utc(prediction_start_date)
+        end_date = local_datetime_to_utc(prediction_end_date)
+
+        for tag_data in data:
+            values = []
+            index = []
+            datapoints = tag_data["datapoints"]
+            tag_name = tag_data["name"]
+
+            for point in datapoints:
+                point_time = point["time"]
+                point_value = point["value"]
+
+                # skip data points that are out of prediction time range.
+                if start_date > point_time or point_time > end_date:
+                    logger.warning(
+                        f"Skipped value before sending for prediction '{point_value}' with time {point_time}. "
+                        f"From {start_date} to {end_date}. Tag {tag_name}"
+                    )
+                    continue
+                values.append(point_value)
+                index.append(point_time)
+
+            index = pd.to_datetime(index, infer_datetime_format=True, utc=True)
+            s = pd.Series(data=values, index=index, name=tag_name)
+            dataframes.append(s)
+        return dataframes
+
 
 class ModelTrainingPeriod(typing.NamedTuple):
     """Training period of the model that is in the yaml file (not the period of the prediction)."""
+
     train_start_date: datetime
     train_end_date: datetime
 
@@ -84,6 +127,7 @@ class PredictionDataSetMetadata:
         model_start_training: datetime = None
 
     """
+
     project_name: str
     model_name: str
     model_training_period: ModelTrainingPeriod
