@@ -17,8 +17,8 @@ def test_get(metadata_client: MetadataAPIClient):
 #     'output_tags': [{'name': 'string', 'time_series_id': 'string', 'type': 'aggregated', 'derived_from': 'string',
 #                      'description': 'string'}],
 #     'model_id': 1}
-
-
+#
+#
 # def test_send_time_series_id_metadata(metadata_client: MetadataAPIClient):
-#     res = metadata_client.send_time_series_id_metadata()
+#     res = metadata_client.send_time_series_id_metadata(None)
 #     assert res is None

@@ -71,15 +71,11 @@ class TimeSeriesAPIPredictionStorageProvider(
                 unit=unit,
                 external_id=external_id,
             )
-            if not meta and not err:
-                err = "Meta mising with no error"
-            if err:
-                logger.error(f"Could not create/find id for name {output_tag_name}: {err}")
-                continue
+            if (not meta and not err) or err:
+                raise ValueError(f"Could not create/find id for name {output_tag_name}, {col}, {meta}, {err}")
             time_series_id = get_time_series_id_from_response(meta)
             if not time_series_id:
-                logger.error(f"Could not get ID for {output_tag_name}")
-                continue
+                raise ValueError(f"Could not get ID for {output_tag_name}, {col}, {meta}, {err}")
             output_tag_names[col] = output_tag_name
             output_time_series_ids[col] = time_series_id
         failed_tags = 0
