@@ -9,7 +9,6 @@ import pytz
 
 from latigo.utils import (
     merge,
-    # load_config,
     load_yaml,
     save_yaml,
     parse_event_hub_connection_string,
@@ -142,7 +141,7 @@ def test_parse_event_hub_connection_string():
     assert output == output_expected
 
 
-EXPECTED_DATETIME = "2020-04-03T05:00:07.086149"
+EXPECTED_DATETIME = "2020-04-03T05:00:07.086149+00:00"
 NOW_UTC_DATETIME = "2020-04-03T10:00:00.000000"
 
 
