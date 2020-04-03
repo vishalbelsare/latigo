@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json, DataClassJsonMixin
 from gordo.machine.dataset.sensor_tag import SensorTag
 
-from latigo.utils import rfc3339_from_datetime, local_datetime_to_utc
+from latigo.utils import rfc3339_from_datetime, datetime_to_utc_as_str
 from latigo.intermediate import IntermediateFormat
 
 
@@ -80,8 +80,8 @@ class SensorDataSet:
             DataFrames for predictions (might be filtered).
         """
         dataframes: typing.List = []
-        start_date = local_datetime_to_utc(prediction_start_date)
-        end_date = local_datetime_to_utc(prediction_end_date)
+        start_date = datetime_to_utc_as_str(prediction_start_date)
+        end_date = datetime_to_utc_as_str(prediction_end_date)
 
         for tag_data in data:
             values = []

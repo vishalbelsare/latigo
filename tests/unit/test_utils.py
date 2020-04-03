@@ -1,13 +1,18 @@
 import pprint
 import logging
 import os
+from datetime import datetime
+from unittest import mock
+
+import pytest
+import pytz
+
 from latigo.utils import (
     merge,
-    load_config,
     load_yaml,
     save_yaml,
     parse_event_hub_connection_string,
-)
+    datetime_to_utc_as_str, local_datetime_to_utc_as_str)
 
 logger = logging.getLogger("latigo.utils")
 
@@ -89,6 +94,7 @@ def test_save_load_yaml():
     assert original_config == config
 
 
+@pytest.mark.skip
 def test_load_config():
     config_filename = writable_working_dir + "test_config_load_config.yaml"
     # fmt: off
@@ -133,3 +139,51 @@ def test_parse_event_hub_connection_string():
         "shared_access_key_name": "some-key-name",
     }
     assert output == output_expected
+
+
+EXPECTED_DATETIME = "2020-04-03T05:00:07.086149+00:00"
+NOW_UTC_DATETIME = "2020-04-03T10:00:00.000000"
+
+
+@pytest.mark.parametrize(
+    "target, now_resp, is_pytz",
+    [
+        ("2020-04-03T05:00:07.086149+00:00", "2020-04-03T04:00:00.000000", False),
+        ("2020-04-03T05:00:07.086149", "2020-04-03T14:00:00.000000", False),
+        ("2020-04-03T08:00:07.086149+03:00", "2020-04-03T13:00:00.000000", False),
+        ("2020-04-02T23:00:07.086149-06:00", "2020-04-03T04:00:00.000000", False),
+        ("2020-04-02T23:00:07.086149-06:00", "", True),
+    ],
+)
+@mock.patch("latigo.utils.datetime.datetime")
+def test_local_datetime_to_utc_as_str(datetime_mocked, target: str, now_resp: str, is_pytz: bool):
+    target = datetime.fromisoformat(target)
+
+    if is_pytz:
+        target = target.astimezone(pytz.utc)
+    else:
+        datetime_mocked.utcnow.return_value = datetime.fromisoformat(NOW_UTC_DATETIME)
+        datetime_mocked.now.return_value = datetime.fromisoformat(now_resp)
+
+    res = local_datetime_to_utc_as_str(target)
+    assert res == EXPECTED_DATETIME
+
+
+@pytest.mark.parametrize(
+    "target, is_pytz",
+    [
+        ("2020-04-03T05:00:07.086149+00:00", False),
+        ("2020-04-03T05:00:07.086149", False),
+        ("2020-04-03T10:00:07.086149+05:00", False),
+        ("2020-04-02T23:00:07.086149-06:00", False),
+        ("2020-04-02T23:00:07.086149-06:00", True),
+    ],
+)
+def test_datetime_to_utc_as_str(target: str, is_pytz: bool):
+    target = datetime.fromisoformat(target)
+
+    if is_pytz:
+        target = target.astimezone(pytz.utc)
+
+    res = datetime_to_utc_as_str(target)
+    assert res == EXPECTED_DATETIME

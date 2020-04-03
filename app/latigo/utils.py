@@ -275,17 +275,37 @@ def format_error(e):
     return traceback.format_exception(type(e), e, e.__traceback__)
 
 
-def local_datetime_to_utc(target: datetime) -> str:
-    """Make datetime string representation in UTC.
+def local_datetime_to_utc_as_str(target: datetime) -> str:
+    """Make datetime string representation in UTC timezone. Use it just for local time!
 
     Return:
          String representation of without and taking into the account time zone formatted in UTC timezone.
             Do not make changes if already in UTC timezone or does not have any.
     """
-    if target.tzinfo is None or dateutil.tz.tzutc() or target.tzinfo == pytz.utc:
+    if target.tzinfo is None or not target.utcoffset() or target.tzinfo == pytz.utc:
+        target = target.replace(tzinfo=datetime.timezone.utc)
         return target.isoformat()
 
     utc_offset_timedelta = datetime.datetime.utcnow() - datetime.datetime.now()
-    target = target.replace(tzinfo=None)
+    target = target.replace(tzinfo=datetime.timezone.utc)
     result_utc_datetime = target + utc_offset_timedelta
     return result_utc_datetime.isoformat()
+
+
+def datetime_to_utc_as_str(target: datetime) -> str:
+    """Make datetime string representation in UTC timezone.
+
+    Return:
+        String representation of without and taking into the account time zone formatted in UTC timezone.
+            If no timezone - UTC timezone will be added.
+        Examples:
+            - 2020-04-03 05:00:07.086149+00:00 -> 2020-04-03 05:00:07.086149+00:00
+            - 2020-04-03 05:00:07.086149+02:00 -> 2020-04-03 03:00:07.086149+00:00
+    """
+    if target.tzinfo is None or not target.utcoffset() or target.tzinfo == pytz.utc:
+        target = target.replace(tzinfo=datetime.timezone.utc)
+        return target.isoformat()
+
+    # to this part we should get only datetime with particular timezone offset
+    res = target.astimezone(pytz.utc).replace(tzinfo=datetime.timezone.utc)
+    return res.isoformat()

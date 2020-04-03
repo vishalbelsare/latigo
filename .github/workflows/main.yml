@@ -45,6 +45,10 @@ jobs:
         pip install -r app/requirements.txt
         pip install -r app/test_requirements.txt
 
+    - name: Run Unit Tests
+      run: |
+        make tests_unit
+
     - name: Run Integration Tests
       run: |
         make tests_integration
