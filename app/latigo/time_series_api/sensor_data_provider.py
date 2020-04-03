@@ -151,14 +151,10 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
                 return None, f"ID missing for {missing_id} tags"
         if not data:
             logger.warning("No gordo data")
-        info = IntermediateFormat()
+
         if completed == len(spec.tag_list):
-            info.from_time_series_api(data)
-            rows = len(info)
-            if rows > 0:
-                logger.info(f"Completed fetching {rows} rows from {completed} tags")
-            else:
-                return None, f"No rows found in {completed} tags"
+            dataframes = SensorDataSet.to_gordo_dataframe(data, time_range.from_time, time_range.to_time)
         else:
             return None, f"Not all tags fetched ({completed}/{len(spec.tag_list)})"
-        return SensorDataSet(time_range=time_range, data=info), None
+
+        return SensorDataSet(time_range=time_range, data=dataframes), None

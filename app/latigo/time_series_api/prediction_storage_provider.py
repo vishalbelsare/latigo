@@ -88,12 +88,14 @@ class TimeSeriesAPIPredictionStorageProvider(
         stored_values = 0
         logger.info(f"Storing {len(df.columns)} predictions:")
         for key, item in df.items():
-            operation, tag_name = key
+            operation, tag_name, *_ = key
             if operation in INVALID_OPERATIONS:
                 continue
             datapoints = []
-            id = output_time_series_ids[key]
-            # logger.info(f"Key({key}) id={id}")
+            time_series_id = output_time_series_ids[key]
+            if not time_series_id:
+                raise ValueError(f"Time Series ID for prediction storing was not found: key - '{key}'")
+
             for time, value in item.items():
                 stored_values += 1
                 # logger.info(f"  Item({time}, {value})")
@@ -104,7 +106,7 @@ class TimeSeriesAPIPredictionStorageProvider(
                 datapoints.append(
                     {"time": rfc3339_from_datetime(time), "value": value, "status": "0"}
                 )
-            res, err = self._store_data_for_id(id=id, datapoints=datapoints)
+            res, err = self._store_data_for_id(id=time_series_id, datapoints=datapoints)
             if not res or err:
                 logger.error(f" Could not store data: {err}")
                 failed_tags += 1
@@ -112,7 +114,8 @@ class TimeSeriesAPIPredictionStorageProvider(
                 stored_tags += 1
 
         logger.info(
-            f"  {stored_values} values stored, {skipped_values} NaNs skipped. {stored_tags} tags stored, {failed_tags} tags failed"
+            f"  {stored_values} values stored, {skipped_values} NaNs skipped. "
+            f"{stored_tags} tags stored, {failed_tags} tags failed"
         )
 
         return output_tag_names, output_time_series_ids

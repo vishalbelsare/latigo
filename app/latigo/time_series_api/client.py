@@ -112,12 +112,18 @@ class TimeSeriesAPIClient:
     def _fetch_data_for_id(
         self, id: str, time_range: TimeRange
     ) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+        """Fetch data points for tag id.
+
+        Note:
+            if "includeOutsidePoints" is True then -> points immediately prior to and following the time window will
+                be included in result and following data filtering before sending for the prediction should be made.
+        """
         url = f"{self.base_url}/{id}/data"
         params = {
             "startTime": time_range.rfc3339_from(),
             "endTime": time_range.rfc3339_to(),
             "limit": 100000,
-            "includeOutsidePoints": True,
+            "includeOutsidePoints": False,
         }
         res = self._get(url=url, params=params)
         return _parse_request_json(res)

@@ -57,7 +57,7 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         client = self.gordo_pool.allocate_instance(project_name)
         if not client:
             raise Exception(f"No gordo client found for project '{project_name}' in gordo.execute_prediction()")
-        print_client_debug(client)
+        # print_client_debug(client)
         try:
             result = client.predict(
                 start=sensor_data.time_range.from_time,

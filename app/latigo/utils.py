@@ -270,3 +270,15 @@ def read_file(fname, strip=True):
 
 def format_error(e):
     return traceback.format_exception(type(e), e, e.__traceback__)
+
+
+def local_datetime_to_utc(target: datetime) -> str:
+    """Make datetime string representation in UTC.
+
+    Return:
+         String representation of without and taking into the account time zone formatted in UTC timezone.
+    """
+    utc_offset_timedelta = datetime.datetime.utcnow() - datetime.datetime.now()
+    target = target.replace(tzinfo=None)
+    result_utc_datetime = target + utc_offset_timedelta
+    return result_utc_datetime.isoformat()
