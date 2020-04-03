@@ -95,7 +95,7 @@ class SensorDataSet:
 
                 # skip data points that are out of prediction time range.
                 if start_date > point_time or point_time > end_date:
-                    logger.warning(
+                    logger.error(
                         f"Skipped value before sending for prediction '{point_value}' with time {point_time}. "
                         f"From {start_date} to {end_date}. Tag {tag_name}"
                     )

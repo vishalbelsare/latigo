@@ -2,6 +2,9 @@ import re
 import pprint
 import logging
 import datetime
+
+import dateutil
+import pytz
 import yaml
 import typing
 import sys
@@ -277,7 +280,11 @@ def local_datetime_to_utc(target: datetime) -> str:
 
     Return:
          String representation of without and taking into the account time zone formatted in UTC timezone.
+            Do not make changes if already in UTC timezone or does not have any.
     """
+    if target.tzinfo is None or dateutil.tz.tzutc() or target.tzinfo == pytz.utc:
+        return target.isoformat()
+
     utc_offset_timedelta = datetime.datetime.utcnow() - datetime.datetime.now()
     target = target.replace(tzinfo=None)
     result_utc_datetime = target + utc_offset_timedelta
