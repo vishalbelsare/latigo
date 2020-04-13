@@ -6,7 +6,7 @@ import sys
 import pprint
 import typing
 
-from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
+from confluent_kafka import Producer, Consumer, KafkaException, KafkaError, TopicPartition
 from confluent_kafka.admin import AdminClient, NewTopic
 from latigo.utils import parse_event_hub_connection_string, sleep
 from latigo.task_queue import (
@@ -24,20 +24,6 @@ logger_confluent = logging.getLogger(__name__ + ".confluent")
 def stats_callback(stats_json_str):
     stats_json = json.loads(stats_json_str)
     logger.info("\nKAFKA Stats: {}\n".format(pprint.pformat(stats_json)))
-
-
-def delivery_callback(err, msg):
-    if err:
-        logger.warning(
-            f"Message failed delivery: {err} ({msg.topic()} [{msg.partition()}] @ {msg.offset()})"
-        )
-    else:
-        pass
-        # logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] @ {msg.offset()}")
-
-
-def print_assignment(consumer, partitions):
-    print("Assignment:", partitions)
 
 
 def prepare_kafka_config(
@@ -90,6 +76,7 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
 
         # Create Producer instance
         self.producer = Producer(self.config)
+        logger.info(f"Producer will send messages to the topic - '{config['connection_string'].split('=')[-1]}'.")
 
         # Wait until all messages have been delivered
         logger.info(f"Waiting for {len(self.producer)} deliveries")
@@ -101,10 +88,10 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
 
     def send_event(self, msg: typing.Optional[bytes]):
         try:
-            self.producer.produce(self.topic, msg, callback=delivery_callback)
+            self.producer.produce(self.topic, msg, on_delivery=self.delivery_callback)
         except BufferError as e:
             logger.info(
-                f"Local producer queue is full ({len(self.producer)} messages awaiting delivery): try again"
+                f"Local producer queue is full ({len(self.producer)} messages awaiting delivery): try again. {e}"
             )
         # self.producer.poll(0)
 
@@ -120,6 +107,17 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
             raise Exception("Could not serialize task")
         self.send_event(task_bytes)
 
+    @staticmethod
+    def delivery_callback(err, msg):
+        """This is called only when self.producer.poll(0) will be called.
+
+        To test it: call self.producer.poll(0) from 'send_event' func.
+        """
+        if err:
+            logger.error(f"Message failed delivery: {err} ({msg.topic()} [{msg.partition()}] @ {msg.offset()})")
+        else:
+            logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] @ {msg.offset()}")
+
 
 class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
     def __init__(self, config: dict):
@@ -134,21 +132,61 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         # Create Consumer instance
         self.consumer = Consumer(self.config)
         # Subscribe to topics
-        self.consumer.subscribe([self.topic], on_assign=print_assignment)
+        self.subscribe_to_topic()
 
     def __del__(self):
         if self.consumer:
             self.consumer.close()
 
-    def receive_event(self, timeout=5) -> typing.Optional[bytes]:
-        msg = None
+    def subscribe_to_topic(self):
+        """Make a call to subscribe to the topic and do not wait for the response.
+
+        Notes:
+            "on_assign" is called when partition will be assigned or another consumer is already subscribed;
+            "on_revoke" is called when re-balancing is made or subscription was revoked.
+        """
+        logger.info(
+            f"[Subscribing] to the topic '{self.topic}'. Results of the subscription will be available through "
+            f"the callback functions after 'poll()' func will be called."
+        )
+        self.consumer.subscribe([self.topic], on_assign=self.on_assignment_callback, on_revoke=self.on_revoke_callback)
+
+    @staticmethod
+    def on_assignment_callback(consumer, partitions: typing.List):
+        """Callback for the subscription call.
+
+        Notes:
+            If there's already another consumer assigned to the partition we will get empty 'partitions';
+            This func will be called after poll() will be called (not right after 'subscribe' call).
+        """
+        if not partitions:
+            logger.warning("[Empty subscription].")
+        else:
+            logger.info(f"[Subscribed successfully]: partitions - {partitions}.")
+
+    @staticmethod
+    def on_revoke_callback(consumer, partitions):
+        """Callback for the subscription call.
+
+        Note:
+            This func will be called after poll() will be called (not right after 'subscribe' call).
+            After this function call re-subscription might be automatically made from the Kafka on some conditions.
+        """
+        logger.warning(
+            f"[REVOKED subscription(s)] for partition(s) - {partitions}. "
+            "If another consumer will unsubscribe - subscription will be renewed automatically."
+        )
+
+    def _receive_event(self, timeout=5) -> typing.Optional[bytes]:
         try:
+            logger.debug("Start polling the message from queue...")
             msg = self.consumer.poll(timeout=timeout)
+            logger.debug("Pooling was ended, checking returned data...")
         except Exception as e:
             logger.warning(f"Error polling: {e}")
             return None
         if msg is None:
-            logger.warning(f"Polling timed out after {timeout} sec")
+            logger.warning(f"Polling timed out after {timeout} sec. No queue message was received.")
             return None
         if msg.error():
             # Error or event
@@ -159,26 +197,49 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
                 )
             else:
                 # Error
-                ke = KafkaException(msg.error())
-                # raise e
-                logger.error(f"Error occurred: {ke}")
+                kafka_error = msg.error()
+                ke = KafkaException(kafka_error)
+
+                if kafka_error.code() in [KafkaError._TIMED_OUT_QUEUE, KafkaError._TIMED_OUT]:
+                    # ordinary error messages when no message was received.
+                    logger.warning(
+                        f"[TIMED_OUT errors] no messages were consumed throughout timeout - {timeout} sec: {ke}"
+                    )
+                elif kafka_error.code() == KafkaError._TRANSPORT:
+                    # when 'transport' was broken. Usually it'll be renewed automatically, but not all the time.
+                    logger.error(f"[Broker transport failure] Calling to re-subscribe. Error: {ke}")
+
+                    self.subscribe_to_topic()  # This is not 100% needed but it's better to have it here for now.
+                else:
+                    ke = KafkaException(kafka_error)
+                    logger.error(f"Error occurred: {ke}")
             return None
         else:
             # Proper message
             return msg.value()
 
-    def receive_event_with_backoff(
-        self, timeout=100, backoff=1000
-    ) -> typing.Optional[Task]:
-        task_bytes = self.receive_event(timeout=timeout)
+    def _receive_event_with_backoff(self, timeout_sec=300, backoff_sec=60) -> typing.Optional[Task]:
+        """Poll queue for the Message with passed timeout.
+
+        Args:
+            timeout_sec: Maximum time to block waiting from queue for message, event or callback (seconds);
+            backoff_sec: Time for Thread to sleep before next try to receive the Message from queue.
+        """
         task: typing.Optional[Task] = None
+        task_bytes = self._receive_event(timeout=timeout_sec)
+
         if not task_bytes:
-            sleep(backoff)
+            logger.info(
+                f"No bytes in the message after polling with timeout - {timeout_sec} seconds. "
+                f"Sleeping for backoff - {backoff_sec} seconds."
+            )
+            sleep(backoff_sec)
         else:
             task = deserialize_task(task_bytes)
-        if not task:
-            logger.error(f"Could not deserialize task\n Task bytes:{str(task_bytes)}")
+            if not task:
+                logger.error(f"Could not deserialize task\n Task bytes:{str(task_bytes)}")
+
         return task
 
     def get_task(self) -> typing.Optional[Task]:
-        return self.receive_event_with_backoff(timeout=self.poll_timeout_sec)
+        return self._receive_event_with_backoff(timeout_sec=self.poll_timeout_sec)
