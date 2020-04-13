@@ -15,6 +15,10 @@ sys.path.insert(0, "/private/lroll/Desktop/ioc_client/latigo/app")
 from .mock_classes import MockSensorDataProvider
 
 
+SCHEDULER_PREDICTION_DELAY = 1  # days
+SCHEDULER_PREDICTION_INTERVAL = 90  # minutes
+
+
 @pytest.fixture
 def auth_config():
     return {
@@ -23,6 +27,29 @@ def auth_config():
         "authority_host_url": "dummy-authority",
         "client_id": "dummy-client",
         "client_secret": "dummy-secret",
+    }
+
+
+@pytest.fixture
+def schedule_config(auth_config):
+    return {
+        "scheduler": {
+            "continuous_prediction_start_time": "08:00",
+            "continuous_prediction_interval": f"{SCHEDULER_PREDICTION_INTERVAL}m",
+            "continuous_prediction_delay": f"{SCHEDULER_PREDICTION_DELAY}d",
+            "projects": ["pr-2020"],
+            "back_fill_max_interval": "7d",
+            "restart_interval_sec": 0,
+            "run_at_once": True,
+        },
+        "model_info": {
+            "auth": auth_config,
+        },
+        "task_queue": {
+            "type": "kafka",
+            "connection_string": "Endpoint=sb://sb/;SharedAccessKeyName=name;SharedAccessKey=yd;EntityPath=path",
+            "topic": "latigo_topic",
+        }
     }
 
 

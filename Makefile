@@ -52,7 +52,7 @@ tests:
 
 tests_unit:
 	# TODO enable all the tests and replace this command
-	cd "${TESTS_DIR}" && make utils
+	cd "${TESTS_DIR}" && make utils && make scheduler
 
 tests_integration:
 	cd "${TESTS_DIR}" && make integration_metadata_api

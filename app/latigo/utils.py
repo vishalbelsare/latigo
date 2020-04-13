@@ -309,3 +309,8 @@ def datetime_to_utc_as_str(target: datetime) -> str:
     # to this part we should get only datetime with particular timezone offset
     res = target.astimezone(pytz.utc).replace(tzinfo=datetime.timezone.utc)
     return res.isoformat()
+
+
+def get_datetime_now_in_utc() -> datetime.datetime:
+    """Make local datetime in UTC timezone. Example: 2020-04-06 11:04:00.000000+00:00."""
+    return datetime.datetime.now(datetime.timezone.utc)

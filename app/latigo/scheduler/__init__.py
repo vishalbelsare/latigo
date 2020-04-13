@@ -9,7 +9,7 @@ from latigo.types import Task
 from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.clock import OnTheClockTimer
-from latigo.utils import human_delta, sleep
+from latigo.utils import human_delta, sleep, get_datetime_now_in_utc
 from latigo.auth import auth_check
 
 logger = logging.getLogger(__name__)
@@ -158,13 +158,11 @@ class Scheduler:
         stats_models_ok = {}
         stats_projects_bad = {}
         stats_models_bad = {}
-        stats_start_time = datetime.datetime.now()
-        prediction_start_time = (
-            datetime.datetime.now() - self.continuous_prediction_delay
-        )
-        prediction_end_time = (
-            prediction_start_time + self.continuous_prediction_interval
-        )
+        stats_start_time_utc = get_datetime_now_in_utc()
+        # 'prediction_start_time' and 'prediction_end_time' should be in UTC time cause Queue will ignore timezone.
+        prediction_start_time_utc = stats_start_time_utc - self.continuous_prediction_delay
+        prediction_end_time_utc = prediction_start_time_utc + self.continuous_prediction_interval
+
         for model in self.models:
             project_name = model.project_name
             if not project_name:
@@ -179,8 +177,8 @@ class Scheduler:
             task = Task(
                 project_name=project_name,
                 model_name=model_name,
-                from_time=prediction_start_time,
-                to_time=prediction_end_time,
+                from_time=prediction_start_time_utc,
+                to_time=prediction_end_time_utc,
             )
             try:
                 self.task_queue.put_task(task)
@@ -200,7 +198,7 @@ class Scheduler:
                     stats_models_bad.get(model_name, "") + f", {e}"
                 )
                 raise e
-        stats_interval = datetime.datetime.now() - stats_start_time
+        stats_interval = get_datetime_now_in_utc() - stats_start_time_utc
         logger.info(
             f"Scheduled {len(stats_models_ok)} models over {len(stats_projects_ok)} projects in {human_delta(stats_interval)}"
         )

@@ -22,6 +22,9 @@ clock:
 executor:
 	py.test -vv unit/test_executor.py
 
+scheduler:
+	py.test -vv unit/test_scheduler.py
+
 integration:
 	py.test -vv integration
 
