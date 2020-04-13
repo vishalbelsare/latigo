@@ -452,7 +452,7 @@ Both scheduler and executor has a task_queue configuration. It describes their c
 | client.id | "latigo_scheduler" | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
 | request.timeout.ms | 10000 | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
 | session.timeout.ms | 10000 | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
-| default.topic.config | {"auto.offset.reset": "smallest"} | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
+| default.topic.config | {"auto.offset.reset": "earliest"} | See [Kafka docs](https://kafka.apache.org/documentation.html#newconsumerconfigs). |
 | debug | "fetch" | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
 | topic | "latigo_topic" | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
 | enable.auto.commit | true | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |

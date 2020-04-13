@@ -24,7 +24,7 @@ def _get_config():
         "client.id": "latigo_scheduler",
         "request.timeout.ms": 10000,
         "session.timeout.ms": 10000,
-        "default.topic.config": {"auto.offset.reset": "smallest"},
+        "default.topic.config": {"auto.offset.reset": "earliest"},
         "debug": "fetch",
         "topic": "latigo_topic",
         "enable.auto.commit": True,

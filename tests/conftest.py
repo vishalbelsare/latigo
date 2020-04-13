@@ -67,7 +67,7 @@ def config(auth_config):
             "client.id": "executor",
             "request.timeout.ms": 10000,
             "session.timeout.ms": 10000,
-            "default.topic.config": {"auto.offset.reset": "smallest"},
+            "default.topic.config": {"auto.offset.reset": "earliest"},
             "debug": "fetch",
             "topic": "latigo_topic",
             "enable.auto.commit": True,
