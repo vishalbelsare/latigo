@@ -1,7 +1,7 @@
 """Dataclasses for Time Series ID metadata for sending to the Metadata API."""
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Union
+from typing import List, Union, Optional
 
 from latigo.types import PredictionDataSet
 
@@ -11,8 +11,8 @@ class InputTag:
     """Info about tag(sensor). That tag`s data was taken for the prediction.
 
     Dataclass attributes:
-        name: name if the tag(sensor). Example: "1903.R-29TE3001.MA_Y".
-        time_series_id: id from Time Series API of the data for prediction was taken.
+        name: input tag(sensor) name. Example: "1903.R-29TE3001.MA_Y".
+        time_series_id: id from Time Series API of the taken data for prediction. Example: "d489d3-208b-4dc3-9393-5271".
     """
 
     name: str
@@ -39,8 +39,8 @@ class OutputTag:
     name: str
     time_series_id: str
     type: str
-    description: str = None
-    derived_from: str = None
+    description: str = ""
+    derived_from: str = ""
 
     def __post_init__(self):
         if self.type not in ["aggregated", "derived"]:
@@ -56,9 +56,9 @@ class OutputTag:
         return "derived" if original_tag_name else "aggregated"
 
     @staticmethod
-    def make_output_tag_derived_from(tag_name: str) -> Union[str, None]:
+    def make_output_tag_derived_from(tag_name: str) -> str:
         """Make 'derived_from' for output_tag metadata."""
-        return tag_name or None
+        return tag_name or ""
 
     @staticmethod
     def make_output_tag_description(operation: str, tag_name: str) -> str:
@@ -90,9 +90,9 @@ class TimeSeriesIdMetadata:
     training_time_to: datetime
     input_tags: List[InputTag]
     output_tags: List[OutputTag]
-    description: str = None
+    description: str = ""
     status: str = "not_defined"
-    labels: List[str] = None
+    labels: Optional[List[str]] = None
 
     @staticmethod
     def make_prediction_metadata_description(prediction_data: PredictionDataSet) -> str:

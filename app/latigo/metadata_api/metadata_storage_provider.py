@@ -69,7 +69,7 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
             description=TimeSeriesIdMetadata.make_prediction_metadata_description(prediction_data),
             training_time_from=model_training_period.train_start_date,
             training_time_to=model_training_period.train_end_date,
-            labels=["string-label"],  # TODO Alex remove this after adjusting the API
+            labels=None,
             input_tags=metadata_api_input_tags,
             output_tags=metadata_api_output_tags,
         )
@@ -77,5 +77,6 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
         if res.status_code != 200:
             raise Exception(f"[METADATA_STORING_ERROR]: {res.status_code} - {res.text}.")
 
-        logger.info(f"[MODEL_ID] Prediction metadata was stored to the Metadata API. "
-                    f"Record ID - '{res.json()['model_id']}'")
+        logger.info(
+            f"[MODEL_ID] Prediction metadata was stored to the Metadata API. " f"Record ID - '{res.json()['model_id']}'"
+        )
