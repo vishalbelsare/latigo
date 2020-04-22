@@ -1,6 +1,7 @@
 FROM python:3.7-stretch
 LABEL maintainer="Lennart Rolland <lroll@equinor.com>"
-RUN apt-get update && apt-get install -y debconf-utils locales
+RUN echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes
+RUN apt-get update && apt-get upgrade && apt-get install debconf-utils locales
 RUN locale-gen en_US.UTF-8
 RUN update-locale
 
@@ -24,4 +25,3 @@ COPY --chown=$USER_NAME:$USER_NAME deploy/ ./deploy
 RUN python setup.py install --user
 WORKDIR $HOME/latigo
 COPY --chown=$USER_NAME:$USER_NAME README.md app/VERSION LICENSE ./
-

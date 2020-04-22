@@ -5,7 +5,7 @@ APP_DIR:="${ROOT_DIR}/app"
 TESTS_DIR:="${ROOT_DIR}/tests"
 CODE_QUALITY_DIR:="${ROOT_DIR}/code_quality"
 GORDO_CLUSTER_NAME:="ioc07jsv"
-LATIGO_CLUSTER_NAME:="aurora48"
+LATIGO_CLUSTER_NAME:="aurora15"
 CLUSTER_SUBSCRIPTION="019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
 COMPUTED_ENV="${ROOT_DIR}/set_env.py"
 LATIGO_BASE_IMAGE_NAME:="latigo-base"
@@ -155,6 +155,31 @@ build:
 		echo "Unknown branch!";\
 		docker build . -f Dockerfile.base -t "${LATIGO_BASE_IMAGE_NAME}";\
 	fi;\
+
+
+############### Scan docker images ####################
+
+
+scan:
+	@uname_S=$(shell uname -s 2>/dev/null || echo not); \
+	trivy=$(shell which trivy); \
+	if [ -z "$$trivy" ]; then \
+		if [ "$$uname_S" == 'Darwin' ]; then \
+			machine="macOS"; \
+		elif [ "$$uname_S"  == 'Linux' ]; then \
+			machine="Linux"; \
+		else \
+			echo "Unable to determine platform '$$uname_S'"; exit 1; \
+		fi; \
+		TRIVY_VERSION=$(shell curl --silent "https://api.github.com/repos/aquasecurity/trivy/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/'); \
+		echo "Downloading trivy.."; \
+		[ -n "$$TRIVY_VERSION" ] && [ -n "$$machine" ] && curl -Ls "https://github.com/aquasecurity/trivy/releases/download/v$${TRIVY_VERSION}/trivy_$${TRIVY_VERSION}_$${machine}-64bit.tar.gz" | tar zx --wildcards '*trivy' || { echo "Download or extract failed for '$${machine}' version '$${TRIVY_VERSION}'."; exit 1; }; \
+		trivy="./trivy"; \
+	else \
+		TRIVY_VERSION=$(shell trivy -v 2>/dev/null | head -1 | cut -d ' ' -f 2); \
+	fi; \
+	echo "Trivy version is $${TRIVY_VERSION} and platform is $${uname_S}"; \
+	$$trivy --clear-cache && $$trivy --exit-code 1 -severity HIGH,CRITICAL --light --no-progress --ignore-unfixed ${LATIGO_BASE_IMAGE_NAME}:latest
 
 
 ############### Push docker images ####################
