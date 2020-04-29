@@ -342,7 +342,6 @@ class PredictionExecutor:
                             f"[Prediction_task_info] {self.make_prediction_task_info(task)}. "
                             f"Task fetched after {human_delta(task_fetch_interval)}"
                         )
-                        task.model_name = "asdasd"
                         revision = self.model_info_provider.get_project_latest_revisions(task.project_name)
 
                         sensor_data = self._fetch_sensor_data(task)
