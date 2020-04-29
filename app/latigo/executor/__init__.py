@@ -2,6 +2,8 @@ import datetime
 import traceback
 import typing
 import logging
+
+from gordo.client.io import ResourceGone, NotFound
 from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringError
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
@@ -27,12 +29,15 @@ from latigo.model_info import model_info_provider_factory
 from latigo.utils import sleep, human_delta
 from latigo.auth import auth_check
 
+EXCEPTIONS_TO_HANDLE = (Exception, ResourceGone, NotFound)
+
 logger = logging.getLogger(__name__)
 
 
 class PredictionExecutor:
     def __init__(self, config: dict):
         self.good_to_go = True
+        self.task_fetch_start = None
         self.config = config
         self._prepare_task_queue()
         self._prepare_sensor_data_provider()
@@ -246,12 +251,14 @@ class PredictionExecutor:
         try:
             # store predictions
             output_tag_names, output_time_series_ids = self.prediction_storage_provider.put_prediction(prediction_data)
+            self._log_task_execution_time(label="stored to TS API", chars_to_append="")
 
             # store predictions metadata
             input_time_series_ids = self._get_tags_time_series_ids_for_model(prediction_data)
             self.prediction_metadata_storage_provider.put_prediction_metadata(
                 prediction_data, output_tag_names, output_time_series_ids, input_time_series_ids
             )
+            self._log_task_execution_time(label="stored to Metadata API", chars_to_append="")
 
         except Exception as e:
             logger.error(
@@ -327,30 +334,30 @@ class PredictionExecutor:
                 iteration_number += 1
                 try:
                     # logger.info("Fetching task...")
-                    task_fetch_start = datetime.datetime.now()
+                    self.task_fetch_start = datetime.datetime.now()
                     task = self._fetch_task()
                     if task:
-                        task_fetch_interval = datetime.datetime.now() - task_fetch_start
+                        task_fetch_interval = datetime.datetime.now() - self.task_fetch_start
                         logger.info(
-                            f"Processing task fetched after {human_delta(task_fetch_interval)} starting "
-                            f"{task.from_time} lasting {task.to_time - task.from_time} for '{task.model_name}' "
-                            f"in '{task.project_name}'"
+                            f"[Prediction_task_info] {self.make_prediction_task_info(task)}. "
+                            f"Task fetched after {human_delta(task_fetch_interval)}"
                         )
-                        logger.info(f"[Prediction_task_info] {self.make_prediction_task_info(task)}")
-
+                        task.model_name = "asdasd"
                         revision = self.model_info_provider.get_project_latest_revisions(task.project_name)
 
                         sensor_data = self._fetch_sensor_data(task)
-                        data_fetch_interval = datetime.datetime.now() - task_fetch_start
+                        data_fetch_interval = datetime.datetime.now() - self.task_fetch_start
                         logger.info(
                             f"Got data after {human_delta(data_fetch_interval)}"
                         )
+
+                        self._log_task_execution_time(label="fetched sensor data", chars_to_append="")
                         if sensor_data and sensor_data.ok():
                             prediction_data = None
                             try:
                                 prediction_data = self._execute_prediction(task, sensor_data, revision)
 
-                                prediction_execution_interval = (datetime.datetime.now() - task_fetch_start)
+                                prediction_execution_interval = (datetime.datetime.now() - self.task_fetch_start)
                                 logger.info(
                                     f"Prediction completed after {human_delta(prediction_execution_interval)}"
                                 )
@@ -359,14 +366,15 @@ class PredictionExecutor:
                                     "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
                                     f"{self.make_prediction_task_info(task)}. Error: {e}"
                                 )
+                            self._log_task_execution_time(label="Got the predictions", chars_to_append="")
 
                             if prediction_data and prediction_data.ok():
                                 self._store_prediction_data_and_metadata(task, prediction_data)
                                 prediction_storage_interval = (
-                                    datetime.datetime.now() - task_fetch_start
+                                    datetime.datetime.now() - self.task_fetch_start
                                 )
                                 logger.info(
-                                    f"Prediction stored after {human_delta(prediction_storage_interval)}\n\n"
+                                    f"Prediction stored after {human_delta(prediction_storage_interval)}"
                                 )
                                 self.idle_count(True)
                             else:
@@ -382,14 +390,18 @@ class PredictionExecutor:
                         logger.warning(f"No task")
                         self.idle_count(False)
                         sleep(1)
-                except Exception as e:
+
+                    self._log_task_execution_time(task)
+
+                except EXCEPTIONS_TO_HANDLE as e:
                     error_number += 1
                     logger.error("-----------------------------------")
-                    logger.error(f"Error occurred in executor: {e}")
+                    logger.error(f"Error occurred in executor: {type(e)} {e}")
                     traceback.print_exc()
-                    logger.error("")
                     logger.error("-----------------------------------")
                     sleep(1)
+                    self._log_task_execution_time()
+
             executor_interval = datetime.datetime.now() - executor_start
             if 0 < self.restart_interval_sec < executor_interval.total_seconds():
                 logger.info("Terminating executor for teraputic restart")
@@ -402,3 +414,9 @@ class PredictionExecutor:
     def make_prediction_task_info(task: Task) -> str:
         """Make info about prediction task for logging."""
         return f"'{task.project_name}.{task.model_name}', prediction: from '{task.from_time}' to '{task.to_time}'"
+
+    def _log_task_execution_time(
+            self, task: Task = None, label: str = "Total task execution time", chars_to_append: str = "\n\n"
+    ):
+        logger.info(f"[TIMEIT: {label}] {human_delta(datetime.datetime.now() - self.task_fetch_start)}."
+                    f"{self.make_prediction_task_info(task) if task else ''}{chars_to_append}")
