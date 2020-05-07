@@ -1,6 +1,8 @@
 import logging
 import inspect
 
+from opencensus.ext.azure.log_exporter import AzureLogHandler
+
 
 once = False
 
@@ -51,6 +53,8 @@ def setup_logging(filename, log_level=logging.INFO):
 
         logger = logging.getLogger("")
         logger.setLevel(log_level)
+        #logger.addHandler(AzureLogHandler(
+        #    connection_string='InstrumentationKey=xxxx'))
 
     log_filename = inspect.stack()[1][1]
     logger = logging.getLogger(log_filename)

@@ -16,3 +16,4 @@ dataclasses-json~=0.3.5
 tonyg-rfc3339
 multiprocessing-logging~=0.3.0
 setuptools~=41.0.0
+opencensus-ext-azure~=1.0.2
