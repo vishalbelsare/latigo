@@ -10,6 +10,7 @@ import distutils.util
 import os
 import typing
 from latigo.log import setup_logging
+from latigo.log import add_azure_logging
 from latigo import __version__ as latigo_version
 
 logger = setup_logging("latigo.app.executor")
@@ -34,6 +35,7 @@ instance_name = config.get("executor", {}).get(
     "instance_name", f"latigo-executor-{latigo_version}-{socket.getfqdn()}"
 )
 threading.current_thread().name = instance_name
+add_azure_logging(logger, config.get("executor", {}).get("azure_monitor_logging_enabled"), config.get("executor", {}).get("azure_monitor_instrumentation_key"))
 
 
 def wrap_executor(executor):
