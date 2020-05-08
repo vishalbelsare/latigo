@@ -10,6 +10,7 @@ import distutils.util
 import os
 import typing
 from latigo.log import setup_logging
+from latigo.log import add_azure_logging
 from latigo import __version__ as latigo_version
 
 logger = setup_logging("latigo.app.executor")
@@ -18,7 +19,7 @@ import multiprocessing_logging
 
 multiprocessing_logging.install_mp_handler()
 
-from latigo.utils import load_configs, sleep
+from latigo.utils import load_configs, sleep, get_nested_config_value
 from latigo.executor import PredictionExecutor
 
 config, err = load_configs(
@@ -34,6 +35,8 @@ instance_name = config.get("executor", {}).get(
     "instance_name", f"latigo-executor-{latigo_version}-{socket.getfqdn()}"
 )
 threading.current_thread().name = instance_name
+add_azure_logging(logger, get_nested_config_value(config, "executor", "azure_monitor_logging_enabled"), 
+    get_nested_config_value(config, "executor", "azure_monitor_instrumentation_key"))
 
 
 def wrap_executor(executor):
