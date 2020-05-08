@@ -29,7 +29,7 @@ from latigo.model_info import model_info_provider_factory
 from latigo.utils import sleep, human_delta
 from latigo.auth import auth_check
 
-EXCEPTIONS_TO_HANDLE = (Exception, ResourceGone, NotFound)
+EXCEPTIONS_TO_HANDLE = (Exception, ResourceGone, NotFound, BadGordoRequest)
 
 logger = logging.getLogger(__name__)
 

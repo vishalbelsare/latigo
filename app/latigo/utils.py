@@ -299,8 +299,8 @@ def datetime_to_utc_as_str(target: datetime) -> str:
         String representation of without and taking into the account time zone formatted in UTC timezone.
             If no timezone - UTC timezone will be added.
         Examples:
-            - 2020-04-03 05:00:07.086149+00:00 -> 2020-04-03 05:00:07.086149+00:00
-            - 2020-04-03 05:00:07.086149+02:00 -> 2020-04-03 03:00:07.086149+00:00
+            - 2020-04-03 05:00:07.086149+00:00 -> 2020-04-03T05:00:07.086149+00:00
+            - 2020-04-03 05:00:07.086149+02:00 -> 2020-04-03T03:00:07.086149+00:00
     """
     if target.tzinfo is None or not target.utcoffset() or target.tzinfo == pytz.utc:
         target = target.replace(tzinfo=datetime.timezone.utc)
