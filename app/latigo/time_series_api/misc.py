@@ -118,7 +118,7 @@ def get_common_asset_id(columns: MultiIndex) -> str:
         if tag_name:
             return tag_name.split(".")[0]
     raise Exception(
-        f"Not common asset found in dataframe columns. Parsed data: " + "; ".join(col[1] for col in columns.values)
+        f"No common asset found in dataframe columns. Parsed data: " + "; ".join(col[1] for col in columns.values)
     )
 
 
