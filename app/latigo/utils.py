@@ -14,6 +14,8 @@ import typing
 import traceback
 
 import latigo.rfc3339
+from typing import Dict
+from functools import reduce
 
 
 logger = logging.getLogger(__name__)
@@ -314,3 +316,6 @@ def datetime_to_utc_as_str(target: datetime) -> str:
 def get_datetime_now_in_utc() -> datetime.datetime:
     """Make local datetime in UTC timezone. Example: 2020-04-06 11:04:00.000000+00:00."""
     return datetime.datetime.now(datetime.timezone.utc)
+
+def get_nested_config_value(dictionary: Dict, *keys):
+    return reduce(lambda d, key: d.get(key) if d else None, keys, dictionary)
