@@ -35,8 +35,11 @@ instance_name = config.get("executor", {}).get(
     "instance_name", f"latigo-executor-{latigo_version}-{socket.getfqdn()}"
 )
 threading.current_thread().name = instance_name
-add_azure_logging(logger, get_nested_config_value(config, "executor", "azure_monitor_logging_enabled"), 
-    get_nested_config_value(config, "executor", "azure_monitor_instrumentation_key"))
+add_azure_logging(
+    logger,
+    get_nested_config_value(config, "executor", "azure_monitor_logging_enabled"),
+    get_nested_config_value(config, "executor", "azure_monitor_instrumentation_key")
+)
 
 
 def wrap_executor(executor):

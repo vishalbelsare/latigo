@@ -3,7 +3,7 @@ import traceback
 import typing
 import logging
 
-from gordo.client.io import ResourceGone, NotFound
+from gordo.client.io import ResourceGone, NotFound, BadGordoRequest
 from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringError
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version

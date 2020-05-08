@@ -59,10 +59,12 @@ def setup_logging(filename, log_level=logging.INFO):
     logger.info(f"Log started for {log_filename}")
     return logger
 
+
 def add_azure_logging(logger, enable_azure_logging=False, azure_monitor_instrumentation_key=None):
+    """Enable sensing logs to Azure logger."""
     if enable_azure_logging:
         if not azure_monitor_instrumentation_key:
             raise ValueError("'azure_monitor_instrumentation_key' can not be empty if Azure logging is enabled")
 
-            logger.addHandler(AzureLogHandler(connection_string='InstrumentationKey=' + azure_monitor_instrumentation_key))
-            logger.info("AzureLogHandler was enabled.")
+        logger.addHandler(AzureLogHandler(connection_string='InstrumentationKey=' + azure_monitor_instrumentation_key))
+        logger.info("AzureLogHandler was enabled.")
