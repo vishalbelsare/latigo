@@ -14,6 +14,10 @@
     * [Login to docker](#Login-to-docker)
     * [Access Kubernetes](#Access-Kubernetes)
   * [Requirement pinning](#Requirement-pinning)
+  * [How to update Latigo on the k8s cluster](#How-to-update-Latigo-on-the-k8s-cluster)
+    * [Make new Latigo version](#Make-new-Latigo-version)
+    * [Run new image version on the k8s](#Run-new-image-version-on-the-k8s)
+    * [Update secrets on the k8s](#Update-secrets-on-the-k8s)
 * [Latigo configurations](#Latigo-configurations)
   * [Configuration files](#Configuration-files)
   * [Available parameter sections](#Available-parameter-sections)
@@ -165,6 +169,41 @@ We use ```requirements.in``` and ```requirements.txt``` files to keep track of d
 # Update to latest versions and rebuild requirements.txt from requirements.in
 make req
 ```
+
+### How to update Latigo on the k8s cluster
+
+Note: this repo has CI as the GitHub actions that are in the `.github/workflows/` folder.
+
+#### Make new Latigo version
+If you want to push your changes to k8s:
+- increase version in `VERSION` file along with your PR;
+- merge PR to `master`;
+- wait until GitHub actions will build and push the new image.
+
+#### Change version of Latigo in k8s configs
+After new image will be pushed to the docker registry replace old version with the new one in this [repo](https://github.com/equinor/latigo-k8s) in following files:
+- `latigo-executor.yaml`
+- `latigo-scheduler.yaml`
+
+#### Run new image version on the k8s
+Changes that were made on the previous step are automatically picked up by Aurora but not automatically deployed to the cluster.  
+To update new version on the k8s:
+- goto [Aurora](https://dashboard.internal.aurora.equinor.com/applications/aurora15-latigo) and click on `SYNC`;
+- after this you should see how new pods starting creating;
+- NOTE: check logs each time you update Latigo on the k8s to make sure that it's up and running.
+
+#### Update secrets on the k8s
+If you need to update secrets like `scheduler_secret.yaml` and `executor_secret.yaml` do following:
+- get current secrets from cluster:
+```shell script
+# Note: you should be logged to the `make login-azure` and `make login-latigo`
+make get-secrets
+```
+- make needed changes with this filed and then:
+```shell script
+make set-secrets
+```
+- after recreate the executor and scheduler pods to fetch new secrets.
 
 
 ## Latigo configurations
