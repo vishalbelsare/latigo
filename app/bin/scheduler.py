@@ -27,7 +27,6 @@ threading.current_thread().name = config.get("scheduler", {}).get(
     "instance_name", f"latigo-scheduler-{latigo_version}-{socket.getfqdn()}"
 )
 add_azure_logging(
-    logger,
     get_nested_config_value(config, "scheduler", "azure_monitor_logging_enabled"),
     get_nested_config_value(config, "scheduler", "azure_monitor_instrumentation_key")
 )
