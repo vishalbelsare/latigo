@@ -66,5 +66,7 @@ def add_azure_logging(enable_azure_logging=False, azure_monitor_instrumentation_
         if not azure_monitor_instrumentation_key:
             raise ValueError("'azure_monitor_instrumentation_key' can not be empty if Azure logging is enabled")
 
-        logging.getLogger().addHandler(AzureLogHandler(connection_string='InstrumentationKey=' + azure_monitor_instrumentation_key))
+        logging.getLogger().addHandler(
+            AzureLogHandler(connection_string='InstrumentationKey=' + azure_monitor_instrumentation_key)
+        )
         logging.getLogger().info("AzureLogHandler was enabled.")
