@@ -105,6 +105,8 @@ cryptography==2.8         # via adal, azure-cosmosdb-table, azure-keyvault, azur
 cycler==0.10.0            # via matplotlib
 dataclasses-json==0.3.8   # via -r r.in, gordo
 dictdiffer==0.8.1         # via gordo
+factory-boy==2.12.0       # via -r r.in
+faker==4.1.0              # via factory-boy
 flask-restplus==0.13.0    # via gordo
 flask==1.1.1              # via flask-restplus, gordo
 gast==0.2.2               # via tensorflow
@@ -158,7 +160,7 @@ pycparser==2.20           # via cffi
 pyjwt[crypto]==1.7.1      # via adal, msal
 pyparsing==2.4.6          # via matplotlib
 pyrsistent==0.15.7        # via jsonschema
-python-dateutil==2.8.1    # via adal, azure-cosmosdb-table, azure-storage-common, gordo, influxdb, matplotlib, pandas
+python-dateutil==2.8.1    # via adal, azure-cosmosdb-table, azure-storage-common, faker, gordo, influxdb, matplotlib, pandas
 pytz==2019.3              # via flask-restplus, google-api-core, influxdb, pandas
 pyyaml==5.3               # via -r r.in, gordo
 requests-ms-auth==0.2.2   # via -r r.in
@@ -175,6 +177,7 @@ tensorboard==2.1.1        # via tensorflow
 tensorflow-estimator==2.1.0  # via tensorflow
 tensorflow==2.1.0         # via gordo
 termcolor==1.1.0          # via tensorflow
+text-unidecode==1.3       # via faker
 tonyg-rfc3339==0.1        # via -r r.in
 typing-extensions==3.7.4.1  # via -r r.in, gordo, typing-inspect
 typing-inspect==0.5.0     # via dataclasses-json
