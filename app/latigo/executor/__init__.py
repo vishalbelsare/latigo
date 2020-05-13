@@ -215,8 +215,7 @@ class PredictionExecutor:
             )
         return sensor_data
 
-    def _execute_prediction(self, task: Task, sensor_data: SensorDataSet, revision: str) \
-            -> typing.Optional[PredictionDataSet]:
+    def _execute_prediction(self, task: Task, revision: str) -> typing.Optional[PredictionDataSet]:
         """
         This internal helper executes prediction on one bulk of data
         """
@@ -226,9 +225,7 @@ class PredictionExecutor:
             )
 
             prediction_data = self.prediction_executor_provider.execute_prediction(
-                project_name=task.project_name,
-                model_name=task.model_name,
-                sensor_data=sensor_data,
+                task=task,
                 revision=revision,
                 model_training_period=model_training_period,
             )
@@ -344,46 +341,40 @@ class PredictionExecutor:
                         )
                         revision = self.model_info_provider.get_project_latest_revisions(task.project_name)
 
-                        sensor_data = self._fetch_sensor_data(task)
                         data_fetch_interval = datetime.datetime.now() - self.task_fetch_start
                         logger.info(
                             f"Got data after {human_delta(data_fetch_interval)}"
                         )
 
                         self._log_task_execution_time(label="fetched sensor data", chars_to_append="")
-                        if sensor_data and sensor_data.ok():
-                            prediction_data = None
-                            try:
-                                prediction_data = self._execute_prediction(task, sensor_data, revision)
+                        prediction_data = None
+                        try:
+                            prediction_data = self._execute_prediction(task, revision)
 
-                                prediction_execution_interval = (datetime.datetime.now() - self.task_fetch_start)
-                                logger.info(
-                                    f"Prediction completed after {human_delta(prediction_execution_interval)}"
-                                )
-                            except InsufficientDataAfterRowFilteringError as e:
-                                logger.warning(
-                                    "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
-                                    f"{self.make_prediction_task_info(task)}. Error: {e}"
-                                )
-                            self._log_task_execution_time(label="Got the predictions", chars_to_append="")
+                            prediction_execution_interval = (datetime.datetime.now() - self.task_fetch_start)
+                            logger.info(
+                                f"Prediction completed after {human_delta(prediction_execution_interval)}"
+                            )
+                        except InsufficientDataAfterRowFilteringError as e:
+                            logger.warning(
+                                "[Skipping the prediction 'InsufficientDataAfterRowFilteringError']: "
+                                f"{self.make_prediction_task_info(task)}. Error: {e}"
+                            )
+                        self._log_task_execution_time(label="Got the predictions", chars_to_append="")
 
-                            if prediction_data and prediction_data.ok():
-                                self._store_prediction_data_and_metadata(task, prediction_data)
-                                prediction_storage_interval = (
-                                    datetime.datetime.now() - self.task_fetch_start
-                                )
-                                logger.info(
-                                    f"Prediction stored after {human_delta(prediction_storage_interval)}"
-                                )
-                                self.idle_count(True)
-                            else:
-                                logger.warning(
-                                    f"Skipping store due to bad prediction: "
-                                    f"{prediction_data.data if prediction_data else 'empty'}"
-                                )
+                        if prediction_data and prediction_data.ok():
+                            self._store_prediction_data_and_metadata(task, prediction_data)
+                            prediction_storage_interval = (
+                                datetime.datetime.now() - self.task_fetch_start
+                            )
+                            logger.info(
+                                f"Prediction stored after {human_delta(prediction_storage_interval)}"
+                            )
+                            self.idle_count(True)
                         else:
                             logger.warning(
-                                f"Skipping prediction due to bad data: {sensor_data}"
+                                f"Skipping store due to bad prediction: "
+                                f"{prediction_data.data if prediction_data else 'empty'}"
                             )
                     else:
                         logger.warning(f"No task")

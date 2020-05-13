@@ -1,5 +1,5 @@
 # This setup is necessary as "tests/" folder is not inside "app/"
-
+import logging
 import os
 import sys
 from unittest import mock
@@ -17,6 +17,17 @@ from .mock_classes import MockSensorDataProvider
 
 SCHEDULER_PREDICTION_DELAY = 1  # days
 SCHEDULER_PREDICTION_INTERVAL = 90  # minutes
+
+
+def setup_single_log_level(level: int = logging.INFO):
+    """Set new level of logging for root logger.
+
+    Needed to disable lots DEBUG messages from multiple loggers.
+    """
+    logging.getLogger().setLevel(level)
+
+
+setup_single_log_level()
 
 
 @pytest.fixture
@@ -88,7 +99,7 @@ def config(auth_config):
             "mock_data": [pd.Series(data=[1, 2, 3, 4, 5])],
         },
         "model_info": {
-            "type": "mock",
+            "type": "gordo",
             "connection_string": "dummy",
             "projects": ["project-1", "project-2"],
             "target": None,
@@ -103,8 +114,8 @@ def config(auth_config):
             "auth": auth_config,
         },
         "predictor": {
-            "type": "mock",
-            "connection_string": "dummy",
+            "type": "gordo",
+            "connection_string": "https://base_url/gordo/v1/",
             "target": None,
             "metadata": None,
             "batch_size": 1000,

@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Task(DataClassJsonMixin):
-    project_name: str = "unknown"
-    model_name: str = "unknown"
-    from_time: datetime = datetime.now() - timedelta(0, 20)
-    to_time: datetime = datetime.now()
+    project_name: str
+    model_name: str
+    from_time: datetime
+    to_time: datetime
 
 
 @dataclass

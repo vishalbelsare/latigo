@@ -1,5 +1,5 @@
 from latigo.gordo.gordo_exceptions import NoTagDataInDataLake
-from latigo.types import ModelTrainingPeriod, PredictionDataSetMetadata
+from latigo.types import ModelTrainingPeriod, PredictionDataSetMetadata, Task
 
 from .client_pool import *
 from .misc import *
@@ -27,19 +27,12 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         return f"GordoPredictionExecutionProvider({self.projects})"
 
     def execute_prediction(
-        self,
-        project_name: str,
-        model_name: str,
-        sensor_data: SensorDataSet,
-        revision: str,
-        model_training_period: ModelTrainingPeriod,
+        self, task: Task, revision: str, model_training_period: ModelTrainingPeriod,
     ) -> PredictionDataSet:
-        if not project_name:
-            raise Exception("No project_name in gordo.execute_prediction()")
-        if not model_name:
-            raise Exception("No model_name in gordo.execute_prediction()")
-        if not sensor_data:
-            raise Exception("No sensor_data in gordo.execute_prediction()")
+        project_name = task.project_name
+        model_name = task.model_name
+        from_time = task.from_time
+        to_time = task.to_time
 
         meta_data = PredictionDataSetMetadata(
             project_name=project_name,
@@ -48,28 +41,17 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
             model_training_period=model_training_period,
         )
 
-        if not sensor_data.data:
-            logger.warning(f"No data in prediction for project '{project_name}' and model {model_name}")
-            return PredictionDataSet(time_range=sensor_data.time_range, data=None, meta_data=meta_data)
-        if len(sensor_data.data) < 1:
-            logger.warning(f"Length of data < 1 in prediction for project '{project_name}' and model {model_name}")
-            return PredictionDataSet(time_range=sensor_data.time_range, data=None, meta_data=meta_data)
         client = self.gordo_pool.allocate_instance(project_name)
         if not client:
             raise Exception(f"No gordo client found for project '{project_name}' in gordo.execute_prediction()")
-        # print_client_debug(client)
+
         try:
-            result = client.predict(
-                start=sensor_data.time_range.from_time,
-                end=sensor_data.time_range.to_time,
-                targets=[model_name],
-                revision=revision,
-            )
+            result = client.predict(start=from_time, end=to_time, targets=[model_name], revision=revision)
         except KeyError as e:
-            raise NoTagDataInDataLake(
-                project_name, model_name, sensor_data.time_range.from_time, sensor_data.time_range.to_time, e
-            )
+            raise NoTagDataInDataLake(project_name, model_name, from_time, to_time, e)
 
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
-        return PredictionDataSet(meta_data=meta_data, time_range=sensor_data.time_range, data=result)
+        return PredictionDataSet(
+            meta_data=meta_data, time_range=TimeRange(from_time=from_time, to_time=to_time), data=result
+        )

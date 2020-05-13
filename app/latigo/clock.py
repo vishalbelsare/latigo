@@ -19,7 +19,6 @@ class OnTheClockTimer:
     def __init__(self, start_time: datetime.time, interval: datetime.timedelta):
         self.start_time = start_time
         self.interval = interval
-        # raise Exception("BALLS")
 
     def closest_start_time(
         self, now: datetime.datetime = datetime.datetime.now()
