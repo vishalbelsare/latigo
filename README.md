@@ -255,7 +255,6 @@ In this section we will give an overview of parameters for latigo scheduler and 
 #### executor
 | Parameter | Default | Description |
 |      ---: | :-----: | :---------- |
-| instance_count | 1 | The number of executor threads to start running in paralell. Should ideally be tweaked so that the app is just barely io/bound, so that kubernetes horizontal autoscaler can be confiured to look at CPU load for automatic scaling. |
 | restart_interval_sec | 21600 | An interval by which the program will restart, on opportunity, to clear any built up state. Disabled if set to any value below 1. Set to 6 hours for executor. |
 
 #### task_queue
