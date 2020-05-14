@@ -13,7 +13,7 @@ from latigo.utils import get_nested_config_value, load_configs
 logger = setup_logging(__name__)
 
 
-config, err = load_configs("../../deploy/scheduler_config.yaml", os.environ["LATIGO_SCHEDULER_CONFIG_FILE"] or None,)
+config, err = load_configs("../deploy/scheduler_config.yaml", os.environ["LATIGO_SCHEDULER_CONFIG_FILE"] or None,)
 if not config:
     # try to load config in another folder  # TODO remove this after repo will be reformatted from "library" way
     config, err = load_configs("../../deploy/scheduler_config.yaml", os.environ["LATIGO_SCHEDULER_CONFIG_FILE"] or None)
