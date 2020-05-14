@@ -23,7 +23,6 @@ if not config:
     logger.error(f"Could not load configuration for executor: {err}")
     sys.exit(1)
 
-instance_count = int(config.get("executor", {}).get("instance_count", 1))
 instance_name = config.get("executor", {}).get("instance_name", f"latigo-executor-{latigo_version}-{socket.getfqdn()}")
 threading.current_thread().name = instance_name
 add_azure_logging(

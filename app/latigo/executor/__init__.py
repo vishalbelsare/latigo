@@ -142,9 +142,6 @@ class PredictionExecutor:
         self.executor_config = self.config.get("executor", {})
         if not self.executor_config:
             self._fail("No executor config specified")
-        self.instance_count = self.executor_config.get("instance_count", 1)
-        if not self.instance_count:
-            self._fail("No instance count configured")
         self.restart_interval_sec = self.executor_config.get(
             "restart_interval_sec", 60 * 60 * 6
         )
