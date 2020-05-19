@@ -39,8 +39,6 @@ class TimeSeriesAPIPredictionStorageProvider(
         if len(data) > 1:
             raise Exception(f"Only one prediction could be passed for storing, but passed - '{len(data)}'")
 
-        logger.info("Start putting the predictions...")
-
         # output_tag_names: ('model-output', '1903.R-29L.MA_Y'): '1903.R-29LT.MA_Y|24ae-6d22-a6-b8-337-999|model-output'
         output_tag_names: Dict[Tuple[str, str], str] = {}
         # "output_time_series_ids": ('model-output', '1903.R-29LT1047.MA_Y'): '73ef5e6c-9142-4127-be64-a68e6916'
@@ -63,7 +61,6 @@ class TimeSeriesAPIPredictionStorageProvider(
             description = OutputTag.make_output_tag_description(operation, tag_name)
             # Units cannot be derrived easily. Should be provided by prediction execution provider or set to none
             unit = ""
-            # TODO: Should we generate some external_id?
             external_id = ""
             meta, err = self._create_id_if_not_exists(
                 name=output_tag_name,
@@ -109,9 +106,10 @@ class TimeSeriesAPIPredictionStorageProvider(
             else:
                 stored_tags += 1
 
-        logger.info(
-            f"  {stored_values} values stored, {skipped_values} NaNs skipped. "
-            f"{stored_tags} tags stored, {failed_tags} tags failed"
-        )
+        if skipped_values or failed_tags:
+            logger.warning(
+                f"[Not all data stored to TS API] {stored_values} values stored, {skipped_values} NaNs skipped. "
+                f"{stored_tags} tags stored, {failed_tags} tags failed"
+            )
 
         return output_tag_names, output_time_series_ids

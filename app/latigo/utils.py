@@ -235,7 +235,7 @@ def human_delta(td_object: datetime.timedelta, max: int = 0):
     strings = []
     ct: int = 0
     for period_name, period_ms in periods:
-        if ms > period_ms:
+        if ms >= period_ms:
             period_value, ms = divmod(ms, period_ms)
             # has_s = "s" if period_value > 1 else ""
             # strings.append("%s %s%s" % (period_value, period_name, has_s))

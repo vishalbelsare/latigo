@@ -3,7 +3,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 h: help
 
-all: unit integration load
+all: utils scheduler executor
 
 devops: unit
 

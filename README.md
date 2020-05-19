@@ -9,6 +9,7 @@
     * [Executor](#Executor)
   * [Proxy setup](#Proxy-setup)
   * [How to run locally (pain part..)](#How-to-run-locally-(pain-part..))
+  * [How to run image locally](#How-to-run-image-locally)
   * [How to login to different resources](#How-to-login-to-different-resources)
     * [Login to azure](#Login-to-azure)
     * [Login to docker](#Login-to-docker)
@@ -111,6 +112,22 @@ P.S. such approach of starting the development for newcomers can be fixed by "cl
 
 Also, for available commands check [Makefile](/equinor/latigo/blob/master/Makefile). But be aware that they might do not work as designed.
 
+
+### How to run image locally
+Few things to take into account:
+- certificate path `ssl.ca.location` in the `*_local.yaml` config files for `task_queue` should be:
+  - for running locally: `"/usr/local/etc/openssl/cert.pem"`;
+  - for running in the container: `"/etc/ssl/certs/ca-certificates.crt"`.
+- following env variables should be exported:
+```shell script
+export LATIGO_EXECUTOR_CONFIG_FILE=../executor_local.yaml
+export LATIGO_SCHEDULER_CONFIG_FILE../scheduler_local.yaml
+```
+- run:
+```shell script
+docker-compose build --no-cache .
+docker-compose up -d --remove-orphans
+```
 
 ### How to login to different resources
 
@@ -256,6 +273,8 @@ In this section we will give an overview of parameters for latigo scheduler and 
 | Parameter | Default | Description |
 |      ---: | :-----: | :---------- |
 | restart_interval_sec | 21600 | An interval by which the program will restart, on opportunity, to clear any built up state. Disabled if set to any value below 1. Set to 6 hours for executor. |
+| azure_monitor_logging_enabled | false | Determine if logs will be additionally sent to the Azure monitor. |
+| log_debug_enabled | false | Determine if prediction execution detailed log with time measurement will be written to log. |
 
 #### task_queue
 
