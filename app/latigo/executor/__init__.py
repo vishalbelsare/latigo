@@ -1,5 +1,6 @@
 import datetime
 import logging
+import sys
 import typing
 
 from gordo import __version__ as gordo_version
@@ -28,6 +29,7 @@ GORDO_EXCEPTIONS = (ResourceGone, NotFound, BadGordoRequest, HttpUnprocessableEn
 GORDO_ERROR_IDENTIFIER = "Gordo error"
 IOC_DATA_EXCEPTIONS = (InsufficientDataAfterRowFilteringError, InsufficientDataError, NoTagDataInDataLake)
 IOC_ERROR_IDENTIFIER = "Data error"
+TASK_LOG_VISUAL_SEPARATOR = "\n\n"
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ class PredictionExecutor:
     @staticmethod
     def _fail(message: str):
         logger.error(message)
-        raise Exception(message)
+        raise sys.exit(message)
 
     # Inflate model info connection from config
     def _prepare_model_info(self):
@@ -183,7 +185,6 @@ class PredictionExecutor:
             output_tag_names, output_time_series_ids = self.prediction_storage_provider.put_prediction(prediction_data)
             self._log_task_execution_time(label="stored to TS API")
         except NoCommonAssetFound as e:
-            # raise e
             logger.error(self.format_error_message("Prediction was not stored", e=e, task=task))
             return
 
@@ -284,11 +285,10 @@ class PredictionExecutor:
         if not self.log_debug_enabled and not force_log_writing:
             return
 
-        task_visual_separator = "\n\n"
         logger.info(
             f"[TIMEIT: {label}] {human_delta(datetime.datetime.now() - self.task_fetch_start)}."
             f"{self.make_prediction_task_info(task) if task else ''}"
-            f"{task_visual_separator if add_new_line else ''}"
+            f"{TASK_LOG_VISUAL_SEPARATOR if add_new_line else ''}"
         )
 
     @classmethod
