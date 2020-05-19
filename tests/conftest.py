@@ -2,17 +2,17 @@
 import logging
 import os
 import sys
-from unittest import mock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
 
 latigo_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../app/"))
 sys.path.insert(0, latigo_path)
-sys.path.insert(0, "/private/lroll/Desktop/ioc_client/latigo/app/latigo")
-sys.path.insert(0, "/private/lroll/Desktop/ioc_client/latigo/app")
 
 from .mock_classes import MockSensorDataProvider
+from latigo.executor import PredictionExecutor
+from latigo.gordo import GordoModelInfoProvider
 
 
 SCHEDULER_PREDICTION_DELAY = 1  # days
@@ -67,7 +67,7 @@ def schedule_config(auth_config):
 @pytest.fixture
 def config(auth_config):
     return {
-        "executor": {"instance_count": 1},
+        "executor": {"instance_count": 1, "log_debug_enabled": False},
         "task_queue": {
             "type": "mock",
             "connection_string": "dummy",
@@ -139,3 +139,29 @@ def sensor_data_provider(config):
 @pytest.fixture
 def prediction_forwarder(MockPredictionStorageProvider):
     return MockPredictionStorageProvider(config.get("prediction_storage"))
+
+
+@pytest.fixture
+@patch(
+    "latigo.executor.model_info_provider_factory", new=MagicMock(side_effect=MagicMock(spec_set=GordoModelInfoProvider))
+)
+@patch("latigo.gordo.prediction_execution_provider.GordoClientPool", new=MagicMock())
+@patch("latigo.executor.PredictionExecutor._perform_auth_checks", new=MagicMock())
+def basic_executor(config, request) -> PredictionExecutor:
+    if hasattr(request, "param") and request.param:
+        # patch "_is_ready" to be able to stop the loop execution
+        setattr(PredictionExecutor, '_is_ready', property(fget=is_executor_ready(), fset=lambda x, y: x))
+
+    return PredictionExecutor(config=config)
+
+
+def is_executor_ready():
+    """Need to quit from the loop.
+
+    First time return True to run the loop, second False to quit the loop.
+    """
+    executor_statuses = [False, True]  # pop() will be used -> order starts from the end of the List
+
+    def inner(self) -> bool:
+        return executor_statuses.pop()
+    return inner

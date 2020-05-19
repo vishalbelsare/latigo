@@ -8,7 +8,8 @@ all: utils scheduler executor
 devops: unit
 
 unit:
-	py.test -vv unit
+	# TODO refactor and add here all unit test
+	py.test -vv unit/test_utils.py unit/test_executor.py unit/test_scheduler.py
 
 utils:
 	py.test -vv unit/test_utils.py

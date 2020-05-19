@@ -51,7 +51,7 @@ tests:
 	cd "${TESTS_DIR}" && make all
 
 tests_unit:
-	cd "${TESTS_DIR}" && make all
+	cd "${TESTS_DIR}" && make unit
 
 tests_integration:
 	cd "${TESTS_DIR}" && make integration_metadata_api

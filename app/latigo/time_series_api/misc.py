@@ -119,7 +119,7 @@ def get_common_asset_id(columns: MultiIndex) -> str:
     for operation, tag_name in columns:
         if tag_name:
             return tag_name.split(".")[0]
-    raise NoCommonAssetFound(columns)
+    raise NoCommonAssetFound(columns.values)
 
 
 def find_in_time_series_resp(res, x):

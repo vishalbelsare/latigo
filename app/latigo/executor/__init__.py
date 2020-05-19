@@ -25,13 +25,16 @@ from latigo.types import PredictionDataSet, SensorDataSpec, Task
 from latigo.utils import human_delta
 
 GORDO_EXCEPTIONS = (ResourceGone, NotFound, BadGordoRequest, HttpUnprocessableEntity)
+GORDO_ERROR_IDENTIFIER = "Gordo error"
 IOC_DATA_EXCEPTIONS = (InsufficientDataAfterRowFilteringError, InsufficientDataError, NoTagDataInDataLake)
+IOC_ERROR_IDENTIFIER = "Data error"
 
 logger = logging.getLogger(__name__)
 
 
 class PredictionExecutor:
     def __init__(self, config: dict):
+        self._is_ready = True  # might be needed to exit execution-loop
         self.task_fetch_start = None
         self.config = config
         self._prepare_task_queue()
@@ -161,10 +164,10 @@ class PredictionExecutor:
                 task=task, revision=revision, model_training_period=model_training_period,
             )
         except IOC_DATA_EXCEPTIONS as e:
-            logger.warning(self.format_error_message("Data error", e=e, task=task))
+            logger.warning(self.format_error_message(IOC_ERROR_IDENTIFIER, e=e, task=task))
             return
         except GORDO_EXCEPTIONS as e:
-            logger.error(self.format_error_message("Gordo error", e=e, task=task))
+            logger.warning(self.format_error_message(GORDO_ERROR_IDENTIFIER, e=e, task=task))
             return
 
         return prediction_data
@@ -232,7 +235,7 @@ class PredictionExecutor:
 
     def run(self):
         """Execute models predictions on by one in the loop."""
-        while True:
+        while self._is_ready:
             try:
                 self.process_one_prediction_task()
             except Exception as e:
@@ -278,7 +281,7 @@ class PredictionExecutor:
 
         Note: 'self.task_fetch_start' should be initialized previously.
         """
-        if not self.log_debug_enabled and not force_log_writing:  # TODO Alex test this
+        if not self.log_debug_enabled and not force_log_writing:
             return
 
         task_visual_separator = "\n\n"
