@@ -3,7 +3,6 @@ from typing import Dict, Tuple
 
 from latigo.metadata_api.client import MetadataAPIClient
 from latigo.metadata_api.data_structures import InputTag, OutputTag, TimeSeriesIdMetadata
-from latigo.metadata_api.metadata_exceptions import MetadataStoringError
 from latigo.metadata_storage import MetadataStorageProviderInterface
 from latigo.time_series_api.misc import DATES_OPERATIONS, MODEL_INPUT_OPERATION
 from latigo.types import PredictionDataSet
@@ -75,8 +74,7 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
             output_tags=metadata_api_output_tags,
         )
         res = self.send_time_series_id_metadata(ts_metadata)
-        if res.status_code != 200:
-            raise MetadataStoringError(f"{res.status_code} - {res.text}.")
+        res.raise_for_status()
 
         logger.info(
             f"[MODEL_ID] Prediction metadata was stored to the Metadata API. " f"Record ID - '{res.json()['model_id']}'"

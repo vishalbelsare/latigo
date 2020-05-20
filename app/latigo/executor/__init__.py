@@ -7,12 +7,12 @@ from gordo import __version__ as gordo_version
 from gordo.client.io import BadGordoRequest, HttpUnprocessableEntity, NotFound, ResourceGone
 from gordo.machine.dataset.base import InsufficientDataError
 from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringError
+from requests import HTTPError
 from requests_ms_auth import __version__ as auth_version
 
 from latigo import __version__ as latigo_version
 from latigo.auth import auth_check
 from latigo.gordo import NoTagDataInDataLake
-from latigo.metadata_api.metadata_exceptions import MetadataStoringError
 from latigo.metadata_storage import prediction_metadata_storage_provider_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.prediction_execution import prediction_execution_provider_factory
@@ -195,7 +195,7 @@ class PredictionExecutor:
                 prediction_data, output_tag_names, output_time_series_ids, input_time_series_ids
             )
             self._log_task_execution_time(label="stored to Metadata API")
-        except MetadataStoringError as e:
+        except HTTPError as e:
             logger.error(self.format_error_message("Metadata was not stored", e=e, task=task))
             return
 

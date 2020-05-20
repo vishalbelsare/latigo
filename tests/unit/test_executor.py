@@ -1,6 +1,7 @@
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
+from requests import HTTPError
 
 from latigo.executor import (
     GORDO_ERROR_IDENTIFIER,
@@ -10,7 +11,6 @@ from latigo.executor import (
     PredictionExecutor,
 )
 from latigo.gordo import NoTagDataInDataLake
-from latigo.metadata_api.metadata_exceptions import MetadataStoringError
 from latigo.time_series_api.time_series_exceptions import NoCommonAssetFound
 from tests.factories.task import TaskFactory
 
@@ -104,7 +104,7 @@ def test_store_prediction_data_and_metadata_no_common_asset(logger_error, basic_
 def test_store_prediction_data_and_metadata_metadata_error(logger_error, basic_executor):
     task = TaskFactory()
 
-    exception = MetadataStoringError("Metadata Error")
+    exception = HTTPError("Metadata Error")
     with patch.object(
         basic_executor.prediction_metadata_storage_provider, "put_prediction_metadata", side_effect=exception
     ):
