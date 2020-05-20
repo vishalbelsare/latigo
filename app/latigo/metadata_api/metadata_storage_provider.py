@@ -74,8 +74,7 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
             output_tags=metadata_api_output_tags,
         )
         res = self.send_time_series_id_metadata(ts_metadata)
-        if res.status_code != 200:
-            raise Exception(f"[METADATA_STORING_ERROR]: {res.status_code} - {res.text}.")
+        res.raise_for_status()
 
         logger.info(
             f"[MODEL_ID] Prediction metadata was stored to the Metadata API. " f"Record ID - '{res.json()['model_id']}'"

@@ -17,25 +17,11 @@ services:
       - LATIGO_SCHEDULER_CONFIG_FILE=${LATIGO_SCHEDULER_CONFIG_FILE}
     command: ["/app/bin/scheduler.py"]
 
-# First executor for executing tasks from scheduler
-  latigo-executor-1:
+# Executor for executing tasks from scheduler
+  latigo-executor:
     image: latigo-base
     restart: always
-    container_name: latigo-executor-1
-    build:
-      context: .
-      dockerfile: Dockerfile.base
-    volumes:
-      - ${PWD}/executor_local.yaml:/app/executor_local.yaml
-    environment:
-      - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
-    command: ["/app/bin/executor.py"]
-
-# Second executor for executing tasks from scheduler
-  latigo-executor-2:
-    image: latigo-base
-    restart: always
-    container_name: latigo-executor-2
+    container_name: latigo-executor
     build:
       context: .
       dockerfile: Dockerfile.base

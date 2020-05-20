@@ -6,6 +6,8 @@ import requests_ms_auth
 from pandas import MultiIndex
 from requests.exceptions import HTTPError
 
+from latigo.time_series_api.time_series_exceptions import NoCommonAssetFound
+
 logger = logging.getLogger(__name__)
 
 timeseries_client_auth_session: typing.Optional[requests.Session] = None
@@ -117,9 +119,7 @@ def get_common_asset_id(columns: MultiIndex) -> str:
     for operation, tag_name in columns:
         if tag_name:
             return tag_name.split(".")[0]
-    raise Exception(
-        f"No common asset found in dataframe columns. Parsed data: " + "; ".join(col[1] for col in columns.values)
-    )
+    raise NoCommonAssetFound(columns.values)
 
 
 def find_in_time_series_resp(res, x):

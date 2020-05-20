@@ -2,7 +2,7 @@
 
 Summary of the changes / which issue is fixed / etc.
 
-[Azure DevOps Link](https://dev.azure.com/EquinorASA/OMNIA%20Prevent/_sprints/taskboard/OMNIA%20Prevent%20Team/OMNIA%20Prevent/Sprint%207?workitem=16005)
+[Azure DevOps Link](https://dev.azure.com/EquinorASA/OMNIA%20Prevent/_workitems/edit/17188)
 
 ## Type of change
 

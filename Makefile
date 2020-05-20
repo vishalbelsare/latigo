@@ -17,7 +17,7 @@ LATIGO_STAGE_BRANCH:="stage"
 GITHUB_BRANCH:=$(patsubst refs/heads/%,%,${GITHUB_REF})
 GITHUB_TAG:=$(patsubst refs/tags/%,%,${GITHUB_REF})
 
-.PHONY: all code-quality test set-env setup up rebuild-req
+.PHONY: all code-quality tests set-env setup up rebuild-req
 
 all: help
 
@@ -51,8 +51,7 @@ tests:
 	cd "${TESTS_DIR}" && make all
 
 tests_unit:
-	# TODO enable all the tests and replace this command
-	cd "${TESTS_DIR}" && make utils scheduler executor
+	cd "${TESTS_DIR}" && make unit
 
 tests_integration:
 	cd "${TESTS_DIR}" && make integration_metadata_api
@@ -93,12 +92,12 @@ login-azure:
 	az account show
 
 login-gordo:
-	az aks get-credentials --overwrite-existing --resource-group ${GORDO_CLUSTER_NAME} --name ${GORDO_CLUSTER_NAME} --admin
+	az aks get-credentials --overwrite-existing --resource-group ${GORDO_CLUSTER_NAME} --name ${GORDO_CLUSTER_NAME}
 	kubectl config set-context --current --namespace=kubeflow
 	kubectl get gordos
 
 login-latigo:
-	az aks get-credentials --overwrite-existing --resource-group ${LATIGO_CLUSTER_NAME} --name ${LATIGO_CLUSTER_NAME} --admin
+	az aks get-credentials --overwrite-existing --resource-group ${LATIGO_CLUSTER_NAME} --name ${LATIGO_CLUSTER_NAME}
 	kubectl config set-context --current --namespace=latigo
 	kubectl get all
 
