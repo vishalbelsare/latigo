@@ -252,11 +252,6 @@ def list_loggers():
         logger.info(f"LOGGER: {l}")
 
 
-def sleep(time_sec):
-    time.sleep(time_sec)
-    # await asyncio.sleep async
-
-
 def print_process_info():
     if hasattr(os, "getppid"):
         print(f"Parent process:{os.getppid()}")
@@ -311,11 +306,6 @@ def datetime_to_utc_as_str(target: datetime) -> str:
     # to this part we should get only datetime with particular timezone offset
     res = target.astimezone(pytz.utc).replace(tzinfo=datetime.timezone.utc)
     return res.isoformat()
-
-
-def get_datetime_now_in_utc() -> datetime.datetime:
-    """Make local datetime in UTC timezone. Example: 2020-04-06 11:04:00.000000+00:00."""
-    return datetime.datetime.now(datetime.timezone.utc)
 
 
 def get_nested_config_value(dictionary: Dict, *keys):

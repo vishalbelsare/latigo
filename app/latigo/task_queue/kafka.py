@@ -1,14 +1,11 @@
-import sys
-import getopt
 import json
 import logging
-import sys
 import pprint
 import typing
+from time import sleep
 
-from confluent_kafka import Producer, Consumer, KafkaException, KafkaError, TopicPartition
-from confluent_kafka.admin import AdminClient, NewTopic
-from latigo.utils import parse_event_hub_connection_string, sleep
+from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
+
 from latigo.task_queue import (
     deserialize_task,
     serialize_task,
@@ -16,6 +13,7 @@ from latigo.task_queue import (
     TaskQueueReceiverInterface,
 )
 from latigo.types import Task
+from latigo.utils import parse_event_hub_connection_string
 
 logger = logging.getLogger(__name__)
 logger_confluent = logging.getLogger(__name__ + ".confluent")

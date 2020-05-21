@@ -1,9 +1,8 @@
 import datetime
-import typing
-import pprint
 import math
-import asyncio
-from latigo.utils import sleep, human_delta
+from time import sleep
+
+from latigo.utils import human_delta
 
 import logging
 

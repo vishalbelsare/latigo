@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 
 import pytest
@@ -15,23 +16,24 @@ MODELS = [Model(model_name="model", project_name="project", tag_list=[], target_
 @patch("latigo.task_queue.kafka.Producer", new=MagicMock())
 @patch("latigo.scheduler.Scheduler._prepare_model_info", new=MagicMock())
 @patch("latigo.scheduler.Scheduler._perform_auth_checks", new=MagicMock())
-def scheduler(schedule_config, monkeypatch) -> Scheduler:
-    monkeypatch.setattr("latigo.scheduler.get_datetime_now_in_utc", MagicMock(return_value=DATETIME_UTC_NOW))
+def scheduler(schedule_config) -> Scheduler:
     scheduler = Scheduler(schedule_config)
     scheduler.models = MODELS
     return scheduler
 
 
-def test_perform_prediction_step_put_task(scheduler: Scheduler):
+@pytest.mark.parametrize("microsecond", [0, 987654, 1])
+def test_perform_prediction_step_put_task(scheduler, microsecond):
     """Validates task serialisation and using UTC time."""
-    with patch.object(scheduler.task_queue, "send_event") as send_event_mock:
+    with patch("latigo.scheduler.datetime") as mock_dt, patch.object(scheduler.task_queue, "send_event") as send_event:
+        mock_dt.datetime.now.return_value = DATETIME_UTC_NOW.replace(microsecond=microsecond)
         scheduler.perform_prediction_step()
 
-        from_datetime = DATETIME_UTC_NOW + timedelta(days=-SCHEDULER_PREDICTION_DELAY)
-        from_time = from_datetime.timestamp()
-        to_time = (from_datetime + timedelta(minutes=+SCHEDULER_PREDICTION_INTERVAL)).timestamp()
-        dumped_task = '{{"project_name": "project", "model_name": "model", ' '"from_time": {}, "to_time": {}}}'.format(
-            from_time, to_time
-        )
+    from_datetime = DATETIME_UTC_NOW + timedelta(days=-SCHEDULER_PREDICTION_DELAY)
+    from_time = from_datetime.timestamp()
+    to_time = (from_datetime + timedelta(minutes=+SCHEDULER_PREDICTION_INTERVAL)).timestamp()
+    dumped_task = json.dumps(
+        {"project_name": "project", "model_name": "model", "from_time": from_time, "to_time": to_time}
+    )
 
-        send_event_mock.assert_called_once_with(dumped_task)
+    send_event.assert_called_once_with(dumped_task)

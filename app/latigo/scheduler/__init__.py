@@ -2,6 +2,10 @@ import traceback
 import logging
 import pandas as pd
 import datetime
+from time import sleep
+
+from pytz import utc
+
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
 from requests_ms_auth import __version__ as auth_version
@@ -9,7 +13,7 @@ from latigo.types import Task
 from latigo.task_queue import task_queue_sender_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.clock import OnTheClockTimer
-from latigo.utils import human_delta, sleep, get_datetime_now_in_utc
+from latigo.utils import human_delta
 from latigo.auth import auth_check
 
 logger = logging.getLogger(__name__)
@@ -158,10 +162,13 @@ class Scheduler:
         stats_models_ok = {}
         stats_projects_bad = {}
         stats_models_bad = {}
-        stats_start_time_utc = get_datetime_now_in_utc()
-        # 'prediction_start_time' and 'prediction_end_time' should be in UTC time cause Queue will ignore timezone.
-        prediction_start_time_utc = stats_start_time_utc - self.continuous_prediction_delay
-        prediction_end_time_utc = prediction_start_time_utc + self.continuous_prediction_interval
+
+        stats_start_time_utc = datetime.datetime.now(utc)
+
+        # Use UTC time cause Queue will ignore timezone.
+        # Also Gordo client ignores microseconds, so round them to 0
+        prediction_start_time_utc = stats_start_time_utc.replace(microsecond=0) - self.continuous_prediction_delay
+        prediction_end_time_utc = prediction_start_time_utc.replace(microsecond=0) + self.continuous_prediction_interval
 
         for model in self.models:
             project_name = model.project_name
@@ -198,7 +205,7 @@ class Scheduler:
                     stats_models_bad.get(model_name, "") + f", {e}"
                 )
                 raise e
-        stats_interval = get_datetime_now_in_utc() - stats_start_time_utc
+        stats_interval = datetime.datetime.now(utc) - stats_start_time_utc
         logger.info(
             f"Scheduled {len(stats_models_ok)} models over {len(stats_projects_ok)} projects in {human_delta(stats_interval)}"
         )
