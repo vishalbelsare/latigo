@@ -1,72 +1,84 @@
 import logging
-import inspect
+import os
+import socket
+from logging.config import dictConfig
 
+import latigo
+
+import pylogctx
+from colorlog import ColoredFormatter
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 
+LOGS_TO_SUPPRESS = (
+    "requests",
+    "tensorboard",
+    "urllib3",
+    "aiohttp.access",
+    "uamqp",
+    "adal-python",
+    "matplotlib.font_manager",
+    "gordo",
+)
+logger = logging.getLogger(__name__)
 
-once = False
+
+class LatigoFormatter(ColoredFormatter):
+    """Formatter that adds extra logging info."""
+
+    def format(self, record):
+        """Add extra context to the record."""
+        context = {}
+
+        if record.exc_info:
+            context["exception"] = record.exc_info[0].__name__
+
+        context.update(pylogctx.context.as_dict())
+
+        if context:
+            context_str = ", ".join(f"{ k }:{ v }" for k, v in context.items())
+            record.msg = f"{ record.msg } ({ context_str })"
+
+        return super().format(record)
 
 
-def setup_logging(filename, log_level=logging.INFO):
+def setup_logging(name, *, enable_azure_logging=False, azure_monitor_instrumentation_key=None):
     """Set up the logging."""
-    global once
-    if not once:
-        once = True
-        logging.basicConfig(level=log_level)
-        fmt = "%(asctime)s %(levelname)s (%(threadName)s) " "[%(name)s] %(message)s"
-        colorfmt = "%(log_color)s{}%(reset)s".format(fmt)
-        datefmt = "%Y-%m-%d %H:%M:%S"
+    log_level = os.getenv("LOG_LEVEL", "INFO")
+    process_info = f"{ name }-{ latigo.__version__ }-{ socket.getfqdn() }"
 
-        # Suppress overly verbose output that isn't helpful from some libraries we depend on
-        for key in [
-            "requests",
-            "tensorboard",
-            "urllib3",
-            "aiohttp.access",
-            "uamqp",
-            "adal-python",
-            "matplotlib.font_manager",
-            "gordo",
-        ]:
-            logging.getLogger(key).setLevel(logging.WARNING)
+    config = {
+        "version": 1,
+        "disable_existing_loggers": True,
+        "formatters": {
+            "default": {
+                "()": LatigoFormatter,
+                "fmt": f"%(log_color)s %(asctime)s %(levelname)s ({ process_info }) [%(name)s] %(message)s %(reset)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "log_colors": {
+                    "DEBUG": "cyan",
+                    "INFO": "green",
+                    "WARNING": "yellow",
+                    "ERROR": "red",
+                    "CRITICAL": "red",
+                },
+            }
+        },
+        "handlers": {"default": {"class": "logging.StreamHandler", "level": log_level, "formatter": "default"}},
+        "loggers": {"latigo": {"level": log_level}, **{k: {"level": "WARNING"} for k in LOGS_TO_SUPPRESS}},
+        "root": {"level": log_level, "handlers": ["default"]},
+    }
 
-        logging.getLogger("gordo.client").setLevel(logging.DEBUG)
-        try:
-            from colorlog import ColoredFormatter
-
-            logging.getLogger().handlers[0].setFormatter(
-                ColoredFormatter(
-                    colorfmt,
-                    datefmt=datefmt,
-                    reset=True,
-                    log_colors={
-                        "DEBUG": "cyan",
-                        "INFO": "green",
-                        "WARNING": "yellow",
-                        "ERROR": "red",
-                        "CRITICAL": "red",
-                    },
-                )
-            )
-        except ImportError:
-            pass
-
-        logger = logging.getLogger("")
-        logger.setLevel(log_level)
-
-    log_filename = inspect.stack()[1][1]
-    logger = logging.getLogger(log_filename)
-    logger.info(f"Log started for {log_filename}")
-    return logger
-
-
-def add_azure_logging(enable_azure_logging=False, azure_monitor_instrumentation_key=None):
-    """Enable sensing logs to Azure logger."""
     if enable_azure_logging:
         if not azure_monitor_instrumentation_key:
             raise ValueError("'azure_monitor_instrumentation_key' can not be empty if Azure logging is enabled")
 
-        logging.getLogger().addHandler(
-            AzureLogHandler(connection_string='InstrumentationKey=' + azure_monitor_instrumentation_key)
-        )
-        logging.getLogger().info("AzureLogHandler was enabled.")
+        config["handlers"]["azure_monitor"] = {
+            "()": AzureLogHandler,
+            "connection_string": f"InstrumentationKey={ azure_monitor_instrumentation_key }",
+        }
+        config["root"]["handlers"].append("azure_monitor")
+
+    dictConfig(config)
+
+    if enable_azure_logging:
+        logger.info("AzureLogHandler was enabled.")

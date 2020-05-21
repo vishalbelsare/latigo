@@ -139,14 +139,14 @@ def load_configs(
     base_filename: str = None,
     overlay_config: dict = None,
     output: bool = False,
-) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+) -> typing.Tuple[typing.Dict, typing.Optional[str]]:
 
     defaults_config = None
     if defaults_filename:
         defaults_config, defaults_failure = load_yaml(defaults_filename, output)
         if not defaults_config:
             return (
-                None,
+                {},
                 f"Could not load defaults configuration from {defaults_filename}: {defaults_failure}",
             )
 
@@ -155,7 +155,7 @@ def load_configs(
         base_config, base_failure = load_yaml(base_filename, output)
         if not base_config:
             return (
-                None,
+                {},
                 f"Could not load base configuration from {base_filename}: {base_failure}",
             )
 
@@ -244,12 +244,6 @@ def human_delta(td_object: datetime.timedelta, max: int = 0):
             if max > 0 and ct > max:
                 break
     return sign + ", ".join(strings)  # + f"({td_object}, {ms})"
-
-
-def list_loggers():
-    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-    for l in loggers:
-        logger.info(f"LOGGER: {l}")
 
 
 def print_process_info():
