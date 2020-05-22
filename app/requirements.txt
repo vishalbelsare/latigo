@@ -8,7 +8,7 @@ absl-py==0.9.0            # via tensorboard, tensorflow
 adal==1.2.2               # via azure-datalake-store, msrestazure, requests-ms-auth
 aniso8601==8.0.0          # via flask-restplus
 astor==0.8.1              # via tensorflow
-attrs==19.3.0             # via jsonschema
+attrs==19.3.0             # via -r r.in, jsonschema
 azure-common==1.1.25      # via azure-eventhub, azure-storage-blob, azure-storage-common
 azure-datalake-store==0.0.48  # via gordo
 azure-eventhub==1.3.3     # via -r r.in
