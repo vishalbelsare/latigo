@@ -43,15 +43,8 @@ def test_measure_decorator(advance, caplog):
     # Create decorator, wrap the function and call it.
     result = measure("test_measure")(advance)(123.45, lambda: sentinel.return_value)
     assert result == sentinel.return_value
-
-    assert caplog.record_tuples == [
-        ("latigo.log.measurement", logging.INFO, "Starting measurement."),
-        ("latigo.log.measurement", logging.INFO, "Measured operation finished."),
-    ]
-
-    setup_record, teardown_record = caplog.records
-    assert setup_record.context == {"operation_id": "test_measure"}
-    assert teardown_record.context == {"delta": 123.45, "operation_id": "test_measure"}
+    assert caplog.record_tuples == [("latigo.log.measurement", logging.INFO, "Measured operation finished.")]
+    assert caplog.records[0].context == {"delta": 123.45, "operation_id": "test_measure"}
 
 
 def test_measure_decorator_call_twice(advance, caplog):
@@ -61,19 +54,12 @@ def test_measure_decorator_call_twice(advance, caplog):
     decorated_func(50)
 
     assert caplog.record_tuples == [
-        ("latigo.log.measurement", logging.INFO, "Starting measurement."),
         ("latigo.log.measurement", logging.INFO, "Measured operation finished."),
-        ("latigo.log.measurement", logging.INFO, "Starting measurement."),
         ("latigo.log.measurement", logging.INFO, "Measured operation finished."),
     ]
 
     contexts = [r.context for r in caplog.records]
-    assert contexts == [
-        {"operation_id": "test_measure"},
-        {"delta": 100, "operation_id": "test_measure"},
-        {"operation_id": "test_measure"},
-        {"delta": 50, "operation_id": "test_measure"},
-    ]
+    assert contexts == [{"delta": 100, "operation_id": "test_measure"}, {"delta": 50, "operation_id": "test_measure"}]
 
 
 def test_measure_decorator_fails(advance, caplog):
@@ -81,28 +67,24 @@ def test_measure_decorator_fails(advance, caplog):
     with pytest.raises(KeyError, match=r":-\)"):
         measure("test_measure")(advance)(123.45, Mock(side_effect=KeyError(":-)")))
 
-    assert caplog.record_tuples == [
-        ("latigo.log.measurement", logging.INFO, "Starting measurement."),
-        ("latigo.log.measurement", logging.INFO, "Measured operation failed."),
-    ]
-
-    setup_record, teardown_record = caplog.records
-    assert setup_record.context == {"operation_id": "test_measure"}
-    assert teardown_record.context == {"delta": 123.45, "operation_id": "test_measure"}
+    assert caplog.record_tuples == [("latigo.log.measurement", logging.INFO, "Measured operation failed.")]
+    assert caplog.records[0].context == {"delta": 123.45, "operation_id": "test_measure"}
 
 
 def test_measure_context_manager(advance, caplog):
     with measure("test_measure"):
         advance(123.45)
 
-    assert caplog.record_tuples == [
-        ("latigo.log.measurement", logging.INFO, "Starting measurement."),
-        ("latigo.log.measurement", logging.INFO, "Measured operation finished."),
-    ]
+    assert caplog.record_tuples == [("latigo.log.measurement", logging.INFO, "Measured operation finished.")]
+    assert caplog.records[0].context == {"delta": 123.45, "operation_id": "test_measure"}
 
-    setup_record, teardown_record = caplog.records
-    assert setup_record.context == {"operation_id": "test_measure"}
-    assert teardown_record.context == {"delta": 123.45, "operation_id": "test_measure"}
+
+def test_measure_round_delta(advance, caplog):
+    with measure("test_measure"):
+        advance(123.4567890)
+
+    assert caplog.record_tuples == [("latigo.log.measurement", logging.INFO, "Measured operation finished.")]
+    assert caplog.records[0].context == {"delta": 123.457, "operation_id": "test_measure"}
 
 
 def test_measure_context_manager_failure(advance, caplog):
@@ -110,28 +92,16 @@ def test_measure_context_manager_failure(advance, caplog):
         advance(123.45)
         raise RuntimeError
 
-    assert caplog.record_tuples == [
-        ("latigo.log.measurement", logging.INFO, "Starting measurement."),
-        ("latigo.log.measurement", logging.INFO, "Measured operation failed."),
-    ]
-
-    setup_record, teardown_record = caplog.records
-    assert setup_record.context == {"operation_id": "test_measure"}
-    assert teardown_record.context == {"delta": 123.45, "operation_id": "test_measure"}
+    assert caplog.record_tuples == [("latigo.log.measurement", logging.INFO, "Measured operation failed.")]
+    assert caplog.records[0].context == {"delta": 123.45, "operation_id": "test_measure"}
 
 
 def test_measure_custom_logger(advance, caplog):
     with measure("test_measure", logger=logging.getLogger("latigo.test-logger")):
         advance(123.45)
 
-    assert caplog.record_tuples == [
-        ("latigo.test-logger", logging.INFO, "Starting measurement."),
-        ("latigo.test-logger", logging.INFO, "Measured operation finished."),
-    ]
-
-    setup_record, teardown_record = caplog.records
-    assert setup_record.context == {"operation_id": "test_measure"}
-    assert teardown_record.context == {"delta": 123.45, "operation_id": "test_measure"}
+    assert caplog.record_tuples == [("latigo.test-logger", logging.INFO, "Measured operation finished.")]
+    assert caplog.records[0].context == {"delta": 123.45, "operation_id": "test_measure"}
 
 
 def test_measure_custom_level(advance, caplog):
@@ -139,14 +109,8 @@ def test_measure_custom_level(advance, caplog):
     with measure("test_measure", level=logging.DEBUG):
         advance(123.45)
 
-    assert caplog.record_tuples == [
-        ("latigo.log.measurement", logging.DEBUG, "Starting measurement."),
-        ("latigo.log.measurement", logging.DEBUG, "Measured operation finished."),
-    ]
-
-    setup_record, teardown_record = caplog.records
-    assert setup_record.context == {"operation_id": "test_measure"}
-    assert teardown_record.context == {"delta": 123.45, "operation_id": "test_measure"}
+    assert caplog.record_tuples == [("latigo.log.measurement", logging.DEBUG, "Measured operation finished.")]
+    assert caplog.records[0].context == {"delta": 123.45, "operation_id": "test_measure"}
 
 
 def test_measure_two_functions(advance, caplog):
@@ -156,12 +120,11 @@ def test_measure_two_functions(advance, caplog):
         advance(67.89)
 
     assert caplog.record_tuples == [
-        ("latigo.log.measurement", logging.INFO, "Starting measurement."),
         ("root", logging.INFO, "Intermediate log."),
         ("latigo.log.measurement", logging.INFO, "Measured operation finished."),
     ]
 
-    setup_record, intermediate_record, teardown_record = caplog.records
-    assert setup_record.context == {"operation_id": "test_measure"}
+    intermediate_record, teardown_record = caplog.records
+
     assert teardown_record.context == {"delta": 191.34, "operation_id": "test_measure"}
     assert not hasattr(intermediate_record, "context")

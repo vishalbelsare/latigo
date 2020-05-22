@@ -2,8 +2,9 @@ import json
 from datetime import datetime, timedelta
 
 import pytest
-from mock import MagicMock, patch
+from mock import MagicMock, patch, Mock
 
+from latigo.gordo import GordoModelInfoProvider
 from latigo.model_info import Model
 from latigo.scheduler import Scheduler
 from tests.conftest import SCHEDULER_PREDICTION_DELAY, SCHEDULER_PREDICTION_INTERVAL
@@ -18,7 +19,8 @@ MODELS = [Model(model_name="model", project_name="project", tag_list=[], target_
 @patch("latigo.scheduler.Scheduler._perform_auth_checks", new=MagicMock())
 def scheduler(schedule_config) -> Scheduler:
     scheduler = Scheduler(schedule_config)
-    scheduler.models = MODELS
+    scheduler.model_info_provider = Mock(spec=GordoModelInfoProvider)
+    scheduler.model_info_provider.get_all_models.return_value = MODELS
     return scheduler
 
 

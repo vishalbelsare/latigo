@@ -4,6 +4,7 @@ from typing import Dict, Tuple
 
 from latigo.metadata_api.data_structures import OutputTag
 from latigo.prediction_storage import PredictionStorageProviderInterface
+from latigo.log import measure
 from latigo.types import PredictionDataSet
 from latigo.utils import rfc3339_from_datetime
 
@@ -23,6 +24,7 @@ class TimeSeriesAPIPredictionStorageProvider(
     def __str__(self):
         return f"TimeSeriesAPIPredictionStorageProvider({self.base_url})"
 
+    @measure("storing_prediction_data")
     def put_prediction(self, prediction_data: PredictionDataSet):
         """Store prediction data in time series api.
 

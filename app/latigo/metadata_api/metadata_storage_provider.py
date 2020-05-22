@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Tuple
 
+from latigo.log import measure
 from latigo.metadata_api.client import MetadataAPIClient
 from latigo.metadata_api.data_structures import InputTag, OutputTag, TimeSeriesIdMetadata
 from latigo.metadata_storage import MetadataStorageProviderInterface
@@ -14,6 +15,7 @@ class MetadataAPIMetadataStorageProvider(MetadataAPIClient, MetadataStorageProvi
     def __str__(self):
         return f"<{ type(self).__name__ }: { self.base_url }>"
 
+    @measure("store_prediction_metadata")
     def put_prediction_metadata(
         self,
         prediction_data: PredictionDataSet,

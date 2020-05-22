@@ -1,8 +1,11 @@
+import logging
+
 from latigo.gordo.gordo_exceptions import NoTagDataInDataLake
+from latigo.log import measure
 from latigo.types import ModelTrainingPeriod, PredictionDataSetMetadata, Task
 
-from .client_pool import *
-from .misc import *
+from .client_pool import PredictionExecutionProviderInterface, GordoClientPool, PredictionDataSet, TimeRange
+from .misc import expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,7 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
     def __str__(self):
         return f"GordoPredictionExecutionProvider({self.projects})"
 
+    @measure("execute_prediction")
     def execute_prediction(
         self, task: Task, revision: str, model_training_period: ModelTrainingPeriod,
     ) -> PredictionDataSet:

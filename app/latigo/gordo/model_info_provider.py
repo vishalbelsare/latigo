@@ -1,33 +1,11 @@
-import typing
 import logging
-import pprint
-import pandas as pd
-import requests
-import copy
-from datetime import datetime
-import latigo.utils
-from latigo.prediction_execution import PredictionExecutionProviderInterface
+import typing
 
-from latigo.types import (
-    TimeRange,
-    SensorDataSpec,
-    SensorDataSet,
-    PredictionDataSet,
-    LatigoSensorTag,
-    ModelTrainingPeriod)
-from latigo.sensor_data import SensorDataProviderInterface
-
-from latigo.model_info import ModelInfoProviderInterface, Model
-
-from gordo.client.client import Client
-from gordo.machine import Machine
-from gordo.machine.dataset.data_provider.base import GordoBaseDataProvider
-from gordo.machine.dataset.sensor_tag import SensorTag
-from gordo.util.utils import capture_args
-
-from .misc import *
-from .client_pool import *
+from latigo.types import ModelTrainingPeriod
+from latigo.log import measure
+from .client_pool import ModelInfoProviderInterface, GordoClientPool, Machine, Model, SensorDataSpec
 from .data_provider import _gordo_to_latigo_tag_list
+from .misc import expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +63,12 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
                 )
                 if model:
                     models.append(model)
+
+        if models:
+            logger.info("Found %s models", len(models))
+        else:
+            logger.warning("No models found")
+
         return models
 
     def get_machine_by_key(

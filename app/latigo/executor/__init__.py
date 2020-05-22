@@ -1,18 +1,19 @@
 import datetime
 import logging
-import sys
 import typing
 
+import pylogctx
+import sys
 from gordo import __version__ as gordo_version
 from gordo.client.io import BadGordoRequest, HttpUnprocessableEntity, NotFound, ResourceGone
 from gordo.machine.dataset.base import InsufficientDataError
 from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringError
-from requests import HTTPError
 from requests_ms_auth import __version__ as auth_version
 
 from latigo import __version__ as latigo_version
 from latigo.auth import auth_check
 from latigo.gordo import NoTagDataInDataLake
+from latigo.log import measure
 from latigo.metadata_storage import prediction_metadata_storage_provider_factory
 from latigo.model_info import model_info_provider_factory
 from latigo.prediction_execution import prediction_execution_provider_factory
@@ -22,14 +23,10 @@ from latigo.task_queue import task_queue_receiver_factory
 from latigo.time_series_api import get_time_series_id_from_response
 from latigo.time_series_api.misc import MODEL_INPUT_OPERATION
 from latigo.time_series_api.time_series_exceptions import NoCommonAssetFound
-from latigo.types import PredictionDataSet, SensorDataSpec, Task
-from latigo.utils import human_delta
+from latigo.types import PredictionDataSet, Task
 
 GORDO_EXCEPTIONS = (ResourceGone, NotFound, BadGordoRequest, HttpUnprocessableEntity)
-GORDO_ERROR_IDENTIFIER = "Gordo error"
 IOC_DATA_EXCEPTIONS = (InsufficientDataAfterRowFilteringError, InsufficientDataError, NoTagDataInDataLake)
-IOC_ERROR_IDENTIFIER = "Data error"
-TASK_LOG_VISUAL_SEPARATOR = "\n\n"
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +34,6 @@ logger = logging.getLogger(__name__)
 class PredictionExecutor:
     def __init__(self, config: dict):
         self._is_ready = True  # might be needed to exit execution-loop
-        self.task_fetch_start = None
         self.config = config
         self._prepare_task_queue()
         self._prepare_sensor_data_provider()
@@ -142,16 +138,7 @@ class PredictionExecutor:
             f"  Auth Version:     {auth_version}\n"
         )
 
-    def fetch_spec(self, project_name: str, model_name: str) -> SensorDataSpec:
-        return self.model_info_provider.get_spec(project_name=project_name, model_name=model_name)
-
-    def _fetch_task(self) -> typing.Optional[Task]:
-        """Fetch one task from event hub.
-
-        The task describes what the executor is supposed to do.
-        """
-        return self.task_queue.get_task()
-
+    @measure("execute_prediction")
     def execute_prediction_for_task(self, task: Task, revision: str) -> typing.Optional[PredictionDataSet]:
         """Execute prediction for the given model and time range.
 
@@ -161,43 +148,24 @@ class PredictionExecutor:
             project_name=task.project_name, model_name=task.model_name, revision=revision
         )
 
-        try:
-            prediction_data = self.prediction_executor_provider.execute_prediction(
-                task=task, revision=revision, model_training_period=model_training_period,
-            )
-        except IOC_DATA_EXCEPTIONS as e:
-            logger.warning(self.format_error_message(IOC_ERROR_IDENTIFIER, e=e, task=task))
-            return
-        except GORDO_EXCEPTIONS as e:
-            logger.warning(self.format_error_message(GORDO_ERROR_IDENTIFIER, e=e, task=task))
-            return
+        return self.prediction_executor_provider.execute_prediction(
+            task=task, revision=revision, model_training_period=model_training_period,
+        )
 
-        return prediction_data
-
-    def store_prediction_data_and_metadata(self, task: Task, prediction_data: PredictionDataSet):
+    @measure("store_prediction_data_and_metadata")
+    def store_prediction_data_and_metadata(self, prediction_data: PredictionDataSet):
         """Store prediction data (what represents the result of performing predictions on sensor data) and its metadata.
 
         1. Store just one bulk of prediction data. Do not send predictions for different models at ones.
         2. Store metadata of the prediction.
         """
-        # store predictions
-        try:
-            output_tag_names, output_time_series_ids = self.prediction_storage_provider.put_prediction(prediction_data)
-            self._log_task_execution_time(label="stored to TS API")
-        except NoCommonAssetFound as e:
-            logger.error(self.format_error_message("Prediction was not stored", e=e, task=task))
-            return
 
-        # store predictions metadata
+        output_tag_names, output_time_series_ids = self.prediction_storage_provider.put_prediction(prediction_data)
         input_time_series_ids = self._get_tags_time_series_ids_for_model(prediction_data)
-        try:
-            self.prediction_metadata_storage_provider.put_prediction_metadata(
-                prediction_data, output_tag_names, output_time_series_ids, input_time_series_ids
-            )
-            self._log_task_execution_time(label="stored to Metadata API")
-        except HTTPError as e:
-            logger.error(self.format_error_message("Metadata was not stored", e=e, task=task))
-            return
+
+        self.prediction_metadata_storage_provider.put_prediction_metadata(
+            prediction_data, output_tag_names, output_time_series_ids, input_time_series_ids
+        )
 
     def _get_tags_time_series_ids_for_model(self, prediction_data: PredictionDataSet) -> typing.Dict[str, str]:
         """Fetch 'Time Series IDs' to the relevant 'input_tags'.
@@ -217,7 +185,10 @@ class PredictionExecutor:
                 # save tag names for further fetching its Time Series IDs
                 input_time_series_ids[tag_name] = ""
 
-        spec = self.fetch_spec(prediction_data.meta_data.project_name, prediction_data.meta_data.model_name)
+        spec = self.model_info_provider.get_spec(
+            project_name=prediction_data.meta_data.project_name,
+            model_name=prediction_data.meta_data.model_name,
+        )
 
         for tag in spec.tag_list:
             if tag.name in input_time_series_ids.keys():
@@ -236,65 +207,35 @@ class PredictionExecutor:
 
     def run(self):
         """Execute models predictions on by one in the loop."""
+        pylogctx.context.clear()
+
         while self._is_ready:
             try:
                 self.process_one_prediction_task()
-            except Exception as e:
-                logger.error(self.format_error_message("[Unknown error]", e=e), stack_info=True)
+            except IOC_DATA_EXCEPTIONS as err:
+                logger.warning("Data error: %r", err)
+            except GORDO_EXCEPTIONS as err:
+                logger.warning("Gordo error: %r", err)
+            except NoCommonAssetFound as err:
+                logger.warning("Prediction was not stored: %r", err)
+            except Exception:
+                logger.exception("Unknown error")
+            finally:
+                pylogctx.context.clear()
 
+    @measure("process_prediction_task", logger=logger)
     def process_one_prediction_task(self):
         """Fetch and make prediction for one model from queue."""
-        self.task_fetch_start = datetime.datetime.now()
-        task = self._fetch_task()
+        task = self.task_queue.get_task()
         if not task:
             logger.warning(f"[No task was received from queue] Will re-fetch.")
             return
 
-        self._log_task_execution_time(label="Prediction_task_info", task=task, force_log_writing=True)
+        pylogctx.context.update(task=task)
+        logger.info("Starting task processing.")
 
         revision = self.model_info_provider.get_project_latest_revisions(task.project_name)
+        pylogctx.context.update(revision=revision)
 
         prediction_data = self.execute_prediction_for_task(task, revision)
-        if prediction_data is None:
-            return
-        self._log_task_execution_time(label="Got the predictions")
-
-        self.store_prediction_data_and_metadata(task, prediction_data)
-        self._log_task_execution_time(
-            label="Total task execution time", task=task, force_log_writing=True, add_new_line=True
-        )
-
-    @staticmethod
-    def make_prediction_task_info(task: Task) -> str:
-        """Make info about prediction task for logging."""
-        return f"'{task.project_name}.{task.model_name}', prediction: from '{task.from_time}' to '{task.to_time}'"
-
-    def _log_task_execution_time(
-        self, label: str, task: Task = None, force_log_writing: bool = False, add_new_line: bool = False
-    ):
-        """Log time from the beginning of the task execution.
-
-        Args:
-            - label: identifier for logs for future search;
-            - task: task to be additionally logged;
-            - force_log_writing: if True log will be written despite "self.log_debug_enabled";
-            - add_new_line: add `task_visual_separator` to the end of log.
-
-        Note: 'self.task_fetch_start' should be initialized previously.
-        """
-        if not self.log_debug_enabled and not force_log_writing:
-            return
-
-        logger.info(
-            f"[TIMEIT: {label}] {human_delta(datetime.datetime.now() - self.task_fetch_start)}."
-            f"{self.make_prediction_task_info(task) if task else ''}"
-            f"{TASK_LOG_VISUAL_SEPARATOR if add_new_line else ''}"
-        )
-
-    @classmethod
-    def format_error_message(cls, label: str, e: Exception, task: Task = None) -> str:
-        """Format error message for log."""
-        return (
-            f"[{label}] [{type(e).__name__}] "
-            f"{f'Model: {cls.make_prediction_task_info(task)}' if task else ''}. Error: '{e}'."
-        )
+        self.store_prediction_data_and_metadata(prediction_data)

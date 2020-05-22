@@ -12,15 +12,17 @@ from opencensus.ext.azure.log_exporter import AzureLogHandler
 __all__ = ["setup_logging"]
 
 LOGS_TO_SUPPRESS = (
+    "adal-python",
+    "aiohttp.access",
+    "gordo",
+    "matplotlib.font_manager",
+    "opencensus.ext.azure.common.transport",
     "requests",
     "tensorboard",
-    "urllib3",
-    "aiohttp.access",
     "uamqp",
-    "adal-python",
-    "matplotlib.font_manager",
-    "gordo",
+    "urllib3",
 )
+DEBUG_LOGGERS = ("latigo.log.measurement",)
 logger = logging.getLogger(__name__)
 
 
@@ -43,10 +45,11 @@ class LatigoFormatter(ColoredFormatter):
         return super().format(record)
 
 
-def setup_logging(name, *, enable_azure_logging=False, azure_monitor_instrumentation_key=None):
+def setup_logging(name, *, enable_azure_logging=False, azure_monitor_instrumentation_key=None, log_debug_enabled=False):
     """Set up the logging."""
     log_level = os.getenv("LOG_LEVEL", "INFO")
     process_info = f"{ name }-{ latigo.__version__ }-{ socket.getfqdn() }"
+    logs_to_suppress = LOGS_TO_SUPPRESS if log_debug_enabled else LOGS_TO_SUPPRESS + DEBUG_LOGGERS
 
     config = {
         "version": 1,
@@ -66,7 +69,7 @@ def setup_logging(name, *, enable_azure_logging=False, azure_monitor_instrumenta
             }
         },
         "handlers": {"default": {"class": "logging.StreamHandler", "level": log_level, "formatter": "default"}},
-        "loggers": {"latigo": {"level": log_level}, **{k: {"level": "WARNING"} for k in LOGS_TO_SUPPRESS}},
+        "loggers": {"latigo": {"level": log_level}, **{k: {"level": "WARNING"} for k in logs_to_suppress}},
         "root": {"level": log_level, "handlers": ["default"]},
     }
 
@@ -84,3 +87,5 @@ def setup_logging(name, *, enable_azure_logging=False, azure_monitor_instrumenta
 
     if enable_azure_logging:
         logger.info("AzureLogHandler was enabled.")
+    else:
+        logger.info("Logs are configured without AzureLogHandler")

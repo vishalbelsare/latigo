@@ -77,7 +77,7 @@ class DevNullTaskQueue(TaskQueueSenderInterface, TaskQueueReceiverInterface):
         pass
 
     def get_task(self) -> Task:
-        return Task("null")
+        return Task(None, None, None, None)
 
     def put_task(self, task: Task):
         pass
