@@ -9,6 +9,8 @@ import pylogctx
 from colorlog import ColoredFormatter
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 
+__all__ = ["setup_logging"]
+
 LOGS_TO_SUPPRESS = (
     "requests",
     "tensorboard",
@@ -27,7 +29,7 @@ class LatigoFormatter(ColoredFormatter):
 
     def format(self, record):
         """Add extra context to the record."""
-        context = {}
+        context = getattr(record, "context", {})
 
         if record.exc_info:
             context["exception"] = record.exc_info[0].__name__
