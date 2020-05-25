@@ -261,6 +261,8 @@ In this section we will give an overview of parameters for latigo scheduler and 
 
 | Parameter | Default | Description |
 |      ---: | :-----: | :---------- |
+| azure_monitor_instrumentation_key | \<key> | Instrumentation key for connecting to Azure monitor. |
+| azure_monitor_logging_enabled | false | Determine if logs will be additionally sent to the Azure monitor. |
 | continuous_prediction_start_time | "08:00" | The start time of scheduling. See [scheduling algorithm](#scheduling-algorithm) for details. |
 | continuous_prediction_interval | "30m" | The interval of scheduling. See [scheduling algorithm](#scheduling-algorithm) for details. |
 | continuous_prediction_delay | "3h" | The prediction delay of scheduling. See [scheduling algorithm](#scheduling-algorithm) for details. |
@@ -272,8 +274,9 @@ In this section we will give an overview of parameters for latigo scheduler and 
 #### executor
 | Parameter | Default | Description |
 |      ---: | :-----: | :---------- |
-| restart_interval_sec | 21600 | An interval by which the program will restart, on opportunity, to clear any built up state. Disabled if set to any value below 1. Set to 6 hours for executor. |
 | azure_monitor_logging_enabled | false | Determine if logs will be additionally sent to the Azure monitor. |
+| azure_monitor_instrumentation_key | \<key> | Instrumentation key for connecting to Azure monitor. |
+| restart_interval_sec | 21600 | An interval by which the program will restart, on opportunity, to clear any built up state. Disabled if set to any value below 1. Set to 6 hours for executor. |
 | log_debug_enabled | false | Determine if prediction execution detailed log with time measurement will be written to log. |
 
 #### task_queue

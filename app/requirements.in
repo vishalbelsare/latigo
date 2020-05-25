@@ -6,6 +6,7 @@ numpy~=1.18
 pandas~=1.0
 psycopg2~=2.8
 pyyaml~=5.3
+pylogctx~=1.12
 requests~=2.20
 requests_oauthlib~=1.2.0
 requests_ms_auth>=0.2.2
