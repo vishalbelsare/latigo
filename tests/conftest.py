@@ -148,11 +148,13 @@ def prediction_forwarder(MockPredictionStorageProvider):
 @patch("latigo.gordo.prediction_execution_provider.GordoClientPool", new=MagicMock())
 @patch("latigo.executor.PredictionExecutor._perform_auth_checks", new=MagicMock())
 def basic_executor(config, request) -> PredictionExecutor:
+    # Create a new class to avoid shared state
+    cls = type("TestPredictionExecutor", (PredictionExecutor,), {})
     if hasattr(request, "param") and request.param:
         # patch "_is_ready" to be able to stop the loop execution
-        setattr(PredictionExecutor, '_is_ready', property(fget=is_executor_ready(), fset=lambda x, y: x))
+        setattr(cls, '_is_ready', property(fget=is_executor_ready(), fset=lambda x, y: x))
 
-    return PredictionExecutor(config=config)
+    return cls(config=config)
 
 
 def is_executor_ready():
@@ -160,8 +162,8 @@ def is_executor_ready():
 
     First time return True to run the loop, second False to quit the loop.
     """
-    executor_statuses = [False, True]  # pop() will be used -> order starts from the end of the List
+    executor_statuses = iter([True])
 
     def inner(self) -> bool:
-        return executor_statuses.pop()
+        return next(executor_statuses, False)
     return inner

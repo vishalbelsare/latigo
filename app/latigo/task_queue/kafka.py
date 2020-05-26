@@ -6,6 +6,7 @@ from time import sleep
 
 from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
+from latigo.log import measure
 from latigo.task_queue import (
     deserialize_task,
     serialize_task,
@@ -239,5 +240,6 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
 
         return task
 
+    @measure("get_task")
     def get_task(self) -> typing.Optional[Task]:
         return self._receive_event_with_backoff(timeout_sec=self.poll_timeout_sec)

@@ -22,6 +22,9 @@ class Task(DataClassJsonMixin):
     from_time: datetime
     to_time: datetime
 
+    def __str__(self):
+        return f"'model: {self.project_name}.{self.model_name}', prediction: from '{self.from_time}' to '{self.to_time}'"
+
 
 @dataclass
 class TimeRange:
