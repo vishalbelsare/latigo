@@ -1,7 +1,9 @@
 import logging
 import os
 import socket
+import traceback
 from logging.config import dictConfig
+from pathlib import Path
 
 import latigo
 
@@ -23,6 +25,8 @@ LOGS_TO_SUPPRESS = (
     "urllib3",
 )
 DEBUG_LOGGERS = ("latigo.log.measurement",)
+ROOT = Path(__file__).parent.parent.parent.parent
+TRACEBACK_ANALYSE_LIMIT = 20
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +38,8 @@ class LatigoFormatter(ColoredFormatter):
         context = getattr(record, "context", {})
 
         if record.exc_info:
-            context["exception"] = record.exc_info[0].__name__
+            exc_type, exc_value, exc_tb = record.exc_info
+            context.update({"exc_type": exc_type.__name__, "exc_val": exc_value, **self._extract_exc_location(exc_tb)})
 
         context.update(pylogctx.context.as_dict())
 
@@ -43,6 +48,30 @@ class LatigoFormatter(ColoredFormatter):
             record.msg = f"{ record.msg } ({ context_str })"
 
         return super().format(record)
+
+    @staticmethod
+    def _extract_exc_location(exc_tb):
+        """Lookup traceback for the lowest line of Latigo source code.
+
+        Provide extra context if a line is found within the limit.
+        """
+        local_code_frame = None
+        local_code_path = None
+
+        for frame in traceback.extract_tb(exc_tb, limit=TRACEBACK_ANALYSE_LIMIT):
+            frame_path = Path(frame.filename)
+            if ROOT not in frame_path.parents:
+                break
+            local_code_frame, local_code_path = frame, frame_path
+
+        if not local_code_frame:
+            return {}
+
+        module = local_code_path.relative_to(ROOT)
+        return {
+            "location": ".".join(module.parts[:-1] + (module.stem, local_code_frame.name)),
+            "line": repr(local_code_frame.line),
+        }
 
 
 def setup_logging(name, *, enable_azure_logging=False, azure_monitor_instrumentation_key=None, log_debug_enabled=False):
