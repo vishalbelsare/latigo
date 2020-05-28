@@ -131,7 +131,7 @@ def test_time_series_api_get_meta_by_name():
     }
     tsac = TimeSeriesAPIClient(config=_get_config())
     for name, id in items.items():
-        meta, err = tsac._get_meta_by_name(name)
+        meta, err = tsac.get_meta_by_name(name)
         if meta:
             found_id = _id_in_data(meta)
         if not id:
@@ -176,7 +176,7 @@ def test_get_meta_by_name():
     logger.info("WITH: ")
     logger.info(pprint.pformat(input))
     # res = tsac._get_id_by_name(name=input.get("name"), asset_id=input.get("asset_id"))
-    meta = tsac._get_meta_by_name(name=input.get("name"))
+    meta = tsac.get_meta_by_name(name=input.get("name"))
     logger.info("GOT: ")
     logger.info(pprint.pformat(meta))
 

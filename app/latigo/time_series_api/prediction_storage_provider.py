@@ -61,14 +61,10 @@ class TimeSeriesAPIPredictionStorageProvider(
                 continue
             output_time_series_ids[col] = ""
             description = OutputTag.make_output_tag_description(operation, tag_name)
-            # Units cannot be derrived easily. Should be provided by prediction execution provider or set to none
-            unit = ""
-            external_id = ""
             meta, err = self._create_id_if_not_exists(
                 name=output_tag_name,
                 description=description,
-                unit=unit,
-                external_id=external_id,
+                asset_id=common_asset_id,
             )
             if (not meta and not err) or err:
                 raise ValueError(f"Could not create/find id for name {output_tag_name}, {col}, {meta}, {err}")

@@ -74,7 +74,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         return f"TimeSeriesAPISensorDataProvider({self.base_url})"
 
     def supports_tag(self, tag: LatigoSensorTag) -> bool:
-        meta, err = self._get_meta_by_name(name=tag.name, asset_id=tag.asset)
+        meta, err = self.get_meta_by_name(name=tag.name, asset_id=tag.asset)
         if meta and _itemes_present(meta):
             return True
         return False
@@ -111,7 +111,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             asset_id = tag.asset
             if not asset_id:
                 return None, f"Invalid tag asset_id={asset_id}"
-            meta, err = self._get_meta_by_name(name=name, asset_id=asset_id)
+            meta, err = self.get_meta_by_name(name=name, asset_id=asset_id)
             # logger.info(f" O '{meta}, {err}'")
             if not meta:
                 missing_meta += 1

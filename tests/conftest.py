@@ -4,8 +4,11 @@ import os
 import sys
 from unittest.mock import MagicMock, patch
 
+import fakeredis
+import inject
 import pandas as pd
 import pytest
+from redis import StrictRedis
 
 latigo_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../app/"))
 sys.path.insert(0, latigo_path)
@@ -13,6 +16,7 @@ sys.path.insert(0, latigo_path)
 from .mock_classes import MockSensorDataProvider
 from latigo.executor import PredictionExecutor
 from latigo.gordo import GordoModelInfoProvider
+from latigo.time_series_api import TimeSeriesAPIClient
 
 
 SCHEDULER_PREDICTION_DELAY = 1  # days
@@ -35,7 +39,7 @@ def auth_config():
     return {
         "resource": "dummy-resource",
         "tenant": "dummy-tenant",
-        "authority_host_url": "dummy-authority",
+        "authority_host_url": "https://dummy-authority",
         "client_id": "dummy-client",
         "client_secret": "dummy-secret",
     }
@@ -85,8 +89,8 @@ def config(auth_config):
             "auto.commit.interval.ms": 1000,
         },
         "sensor_data": {
-            "type": "mock",
-            "base_url": "dummy",
+            "type": "time_series_api",
+            "base_url": "https://api/timeseries/v0",
             "async": False,
             "auth": auth_config,
             "mock_data": [pd.Series(data=[1, 2, 3, 4, 5])],
@@ -147,6 +151,7 @@ def prediction_forwarder(MockPredictionStorageProvider):
 )
 @patch("latigo.gordo.prediction_execution_provider.GordoClientPool", new=MagicMock())
 @patch("latigo.executor.PredictionExecutor._perform_auth_checks", new=MagicMock())
+@patch("latigo.time_series_api.client.get_auth_session", new=MagicMock())
 def basic_executor(config, request) -> PredictionExecutor:
     # Create a new class to avoid shared state
     cls = type("TestPredictionExecutor", (PredictionExecutor,), {})
@@ -167,3 +172,18 @@ def is_executor_ready():
     def inner(self) -> bool:
         return next(executor_statuses, False)
     return inner
+
+
+@pytest.fixture(autouse=True)
+def configure_dependencies():
+    inject.clear_and_configure(
+        lambda binder: binder.bind(StrictRedis, fakeredis.FakeStrictRedis()), bind_in_runtime=False
+    )
+    yield
+    inject.clear()
+
+
+@pytest.fixture
+@patch("latigo.time_series_api.client.get_auth_session", new=MagicMock())
+def time_series_api_client(config) -> TimeSeriesAPIClient:
+    return TimeSeriesAPIClient(config["sensor_data"])

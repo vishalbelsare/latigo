@@ -23,7 +23,7 @@ from latigo.sensor_data import SensorDataProviderInterface
 from latigo.prediction_storage import PredictionStorageProviderInterface
 from latigo.utils import rfc3339_from_datetime
 
-from .misc import _get_auth_session, _parse_request_json
+from .misc import get_auth_session, _parse_request_json
 from .cache import *
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class IMSSubscriptionAPIClient:
 
     def _parse_auth_config(self):
         self.auth_config = self.config.get("ims_subscription_auth", dict())
-        self.session = _get_auth_session(self.auth_config)
+        self.session = get_auth_session(self.auth_config)
 
     def __init__(self, config: dict):
         self.config = config

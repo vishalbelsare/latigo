@@ -43,6 +43,7 @@ h5py==2.10.0              # via gordo, keras-applications
 idna==2.9                 # via requests
 importlib-metadata==1.5.0  # via jsonschema
 influxdb==5.2.3           # via gordo
+inject==4.2.0             # via -r r.in
 isodate==0.6.0            # via msrest
 itsdangerous==1.1.0       # via flask
 jinja2==2.11.1            # via flask, gordo
@@ -83,6 +84,7 @@ pyrsistent==0.15.7        # via jsonschema
 python-dateutil==2.8.1    # via adal, azure-storage-common, gordo, influxdb, matplotlib, pandas
 pytz==2019.3              # via flask-restplus, google-api-core, influxdb, pandas
 pyyaml==5.3               # via -r r.in, gordo
+redis==3.5.2              # via -r r.in
 requests-ms-auth==0.2.2   # via -r r.in
 requests-oauthlib==1.2.0  # via -r r.in, google-auth-oauthlib, msrest, requests-ms-auth
 requests==2.23.0          # via -r r.in, adal, azure-datalake-store, azure-storage-common, google-api-core, gordo, influxdb, msal, msrest, opencensus-ext-azure, requests-ms-auth, requests-oauthlib, tensorboard
@@ -101,6 +103,7 @@ tonyg-rfc3339==0.1        # via -r r.in
 typing-extensions==3.7.4.1  # via -r r.in, gordo, typing-inspect
 typing-inspect==0.5.0     # via dataclasses-json
 uamqp==1.2.6              # via azure-eventhub
+ujson==2.0.3              # via -r r.in
 urllib3==1.25.8           # via gordo, requests
 werkzeug==0.16.1          # via flask, gordo, tensorboard
 wheel==0.34.2             # via tensorboard, tensorflow

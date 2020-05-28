@@ -96,7 +96,7 @@ class Scheduler:
                 f"Could not parse '{cpsc}' into continuous_prediction_interval: {e}"
             )
         try:
-            cpd = self.scheduler_config.get("continuous_prediction_delay", "1d")
+            cpd = self.scheduler_config.get("continuous_prediction_delay", "3h")
             self.continuous_prediction_delay = pd.to_timedelta(cpd)
         except Exception as e:
             self._fail(f"Could not parse '{cpd}' into continuous_prediction_delay: {e}")

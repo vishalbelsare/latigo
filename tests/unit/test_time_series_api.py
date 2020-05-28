@@ -1,15 +1,7 @@
 import logging
-import pprint
-import typing
-from latigo.time_series_api import (
-    _x_in_data,
-    _itemes_present,
-    _id_in_data,
-    _x_in_data,
-    transform_from_timeseries_to_gordo,
-    _get_items,
-    MetaDataCache,
-)
+from unittest.mock import patch
+
+from latigo.time_series_api.misc import _itemes_present
 
 logger = logging.getLogger(__name__)
 
@@ -64,10 +56,6 @@ tsapi_datas = [
     },
 ]
 
-# TODO: transform_from_timeseries_to_gordo
-
-# TODO: transform_from_gordo_to_timeseries
-
 
 def test_itemes_present():
     assert False == _itemes_present(None)
@@ -77,65 +65,15 @@ def test_itemes_present():
     assert True == _itemes_present({"data": {"items": ["something"]}})
 
 
-def test_x_in_data():
-    x = "X"
-    not_x = "not_x"
-    y = "DATA"
-    assert None == _x_in_data(None, x)
-    assert None == _x_in_data(False, x)
-    assert None == _x_in_data({}, x)
-    assert None == _x_in_data({"data": None}, x)
-    assert None == _x_in_data({"data": False}, x)
-    assert None == _x_in_data({"data": {}}, x)
-    assert None == _x_in_data({"data": {"items": None}}, x)
-    assert None == _x_in_data({"data": {"items": False}}, x)
-    assert None == _x_in_data({"data": {"items": []}}, x)
-    assert None == _x_in_data({"data": {"items": [x]}}, x)
-    assert None == _x_in_data({"data": {"items": [[x]]}}, x)
-    assert y == _x_in_data({"data": {"items": [{x: y}]}}, x)
-    assert None == _x_in_data({"data": {"items": [{x: y}]}}, not_x)
+def test_get_meta_by_name(time_series_api_client):
+    tag_name = "1901.A-21T.MA_Y"
+    asset_id = "1901"
+    tag_metadata = {"data": []}
 
+    assert time_series_api_client._tag_metadata_cache.get_metadata(tag_name, asset_id) is None
 
-def test_id_in_data():
-    assert None == _id_in_data(None)
-    assert None == _id_in_data({})
-    assert None == _id_in_data({"data": None})
-    assert None == _id_in_data({"data": {}})
-    assert None == _id_in_data({"data": {"bob": "lol"}})
-    assert None == _id_in_data({"data": {"items": None}})
-    assert None == _id_in_data({"data": {"items": []}})
-    assert None == _id_in_data({"data": {"items": [{"ba": "bla"}]}})
-    assert None == _id_in_data({"data": {"items": [{"id": None}]}})
-    assert "ok" == _id_in_data({"data": {"items": [{"id": "ok"}]}})
-    # Also tests _id_in_data
+    with patch.object(time_series_api_client, "_get_metadata_from_api", return_value=(tag_metadata, None)):
+        res = time_series_api_client.get_meta_by_name(tag_name, asset_id)
 
-
-def test_get_items():
-    items = _get_items(tsapi_data)
-    # logger.info(pprint.pformat(tsapi_data))
-    # logger.info(pprint.pformat(items))
-
-
-def test_transform_from_timeseries_to_gordo():
-    gordo_data = transform_from_timeseries_to_gordo(tsapi_datas)
-    # logger.info("FROM -------------------------")
-    # logger.info(pprint.pformat(tsapi_datas))
-    # logger.info("TO ---------------------------")
-    # logger.info(pprint.pformat(gordo_data))
-    expected_gordo_data = {"X": [[69.69, 42], [42.69, 420], [1337.69, 420]]}
-    assert gordo_data == expected_gordo_data
-
-
-def test_meta_data_cache():
-    meta_data_cache = MetaDataCache()
-    name = "my_name"
-    asset_id = "my_asset_id"
-    meta = meta_data_cache.get_meta(name=name, asset_id=asset_id)
-    assert meta == None
-    inserted_meta = {"blob": "glob"}
-    meta_data_cache.set_meta(name=name, asset_id=asset_id, meta=inserted_meta)
-    extracted_meta = meta_data_cache.get_meta(name=name, asset_id=asset_id)
-    assert inserted_meta == extracted_meta
-    meta_data_cache.set_meta(name=name, asset_id=asset_id, meta=None)
-    extracted_meta = meta_data_cache.get_meta(name=name, asset_id=asset_id)
-    assert None == extracted_meta
+    assert res == (tag_metadata, None)
+    assert time_series_api_client._tag_metadata_cache.get_metadata(tag_name, asset_id) == tag_metadata

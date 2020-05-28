@@ -53,7 +53,7 @@ def _itemes_present(res: dict) -> bool:
     return True
 
 
-def _get_auth_session(auth_config: dict, force: bool = False):
+def get_auth_session(auth_config: dict, force: bool = False):
     global timeseries_client_auth_session
     if not timeseries_client_auth_session or force:
         timeseries_client_auth_session = requests_ms_auth.MsRequestsSession(

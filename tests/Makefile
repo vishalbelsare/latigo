@@ -3,14 +3,13 @@ ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 h: help
 
-all: utils scheduler executor
+all: unit integration
 
 devops: unit
 
 unit:
 	# TODO refactor and add here all unit test
-	py.test -vv unit/test_utils.py unit/test_executor.py unit/test_scheduler.py unit/log
-
+	py.test -vv unit/test_utils.py unit/test_executor.py unit/test_scheduler.py unit/log unit/test_time_series_api.py
 utils:
 	py.test -vv unit/test_utils.py
 

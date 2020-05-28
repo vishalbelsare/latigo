@@ -101,6 +101,16 @@ In short to run Latigo you have to do few points:
     task_queue:
         connection_string: <Your event hub connection string>
     ```
+- set credentials for [Azure Redis cache](https://github.com/Azure/open-service-broker-azure/blob/master/docs/modules/rediscache.md):
+  - to determine what if particular Redis for DEV or PROD env: got to `Tag` tab in Redis on Azure portal and see `ENV` tag:
+    - in case you need to get keys for connection - run `kubectl -n latigo get secret dev-azure-rediscache-instance-secret -o yaml`. Then decode needed value `echo password | base64 -D`.
+  - how to get credentials [article](https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/cache-how-to-redis-cli-tool)
+  - export proper variables:  
+  ```shell script
+  export CACHE_HOST=REPLACE_ME
+  export CACHE_PASSWORD=REPLACE_ME
+  export CACHE_PORT=REPLACE_ME
+  ```
 - install the requirements (almost never works from first time);
 - dig into code to understand the "magic" and why Makefile commands or other commands do not see the config files;
 - as the result you should see in logs that:
@@ -123,6 +133,14 @@ Few things to take into account:
 export LATIGO_EXECUTOR_CONFIG_FILE=../executor_local.yaml
 export LATIGO_SCHEDULER_CONFIG_FILE../scheduler_local.yaml
 ```
+Add credentials for cache:
+```docker
+# put this to docker-compose.yaml to `environment` section file or export them as you wish
+- CACHE_HOST=REPLACE_ME
+- CACHE_PASSWORD=REPLACE_ME
+- CACHE_PORT=REPLACE_ME
+```
+
 - run:
 ```shell script
 docker-compose build --no-cache .
