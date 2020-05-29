@@ -70,15 +70,15 @@ class TimeSeriesAPIPredictionStorageProvider(
                     asset_id=common_asset_id,
                 )
             except HTTPError as error:
-                if error.response.status_code == 409:
-                    # if such tag_name might already exists in the TS try to get/create once more.
-                    meta, err = self.replace_cached_metadata_with_new(
-                        tag_name=output_tag_name, asset_id=common_asset_id, description=description
-                    )
-                else:
+                if error.response.status_code != 409:
                     raise
 
-            if (not meta and not err) or err:
+                # if such tag_name might already exists in the TS try to get/create once more.
+                meta, err = self.replace_cached_metadata_with_new(
+                    tag_name=output_tag_name, asset_id=common_asset_id, description=description
+                )
+
+            if err or not meta:
                 raise ValueError(f"Could not create/find id for name {output_tag_name}, {col}, {meta}, {err}")
             time_series_id = get_time_series_id_from_response(meta)
             if not time_series_id:
