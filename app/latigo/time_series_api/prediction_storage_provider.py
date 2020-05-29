@@ -2,6 +2,8 @@ import logging
 import math
 from typing import Dict, Tuple
 
+from requests.exceptions import HTTPError
+
 from latigo.metadata_api.data_structures import OutputTag
 from latigo.prediction_storage import PredictionStorageProviderInterface
 from latigo.log import measure
@@ -61,11 +63,21 @@ class TimeSeriesAPIPredictionStorageProvider(
                 continue
             output_time_series_ids[col] = ""
             description = OutputTag.make_output_tag_description(operation, tag_name)
-            meta, err = self._create_id_if_not_exists(
-                name=output_tag_name,
-                description=description,
-                asset_id=common_asset_id,
-            )
+            try:
+                meta, err = self._create_id_if_not_exists(
+                    name=output_tag_name,
+                    description=description,
+                    asset_id=common_asset_id,
+                )
+            except HTTPError as error:
+                if error.response.status_code == 409:
+                    # if such tag_name might already exists in the TS try to get/create once more.
+                    meta, err = self.replace_cached_metadata_with_new(
+                        tag_name=output_tag_name, asset_id=common_asset_id, description=description
+                    )
+                else:
+                    raise
+
             if (not meta and not err) or err:
                 raise ValueError(f"Could not create/find id for name {output_tag_name}, {col}, {meta}, {err}")
             time_series_id = get_time_series_id_from_response(meta)

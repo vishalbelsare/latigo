@@ -134,11 +134,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             ts, err = self._fetch_data_for_id(id, time_range)
             # logger.info(f" D '{ts}, {err}'")
             if err or not ts:
-                if ts:
-                    msg = ts.get("latigo-ok", "Unknown failure")
-                else:
-                    msg = "No ts"
-                return None, err or msg
+                return None, err or "No ts"
             data.extend(_get_items(ts))
             completed += 1
         if missing_meta > 0:

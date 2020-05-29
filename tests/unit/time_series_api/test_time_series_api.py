@@ -1,4 +1,5 @@
 import logging
+from time import sleep
 from unittest.mock import patch
 
 from latigo.time_series_api.misc import _itemes_present
@@ -77,3 +78,18 @@ def test_get_meta_by_name(time_series_api_client):
 
     assert res == (tag_metadata, None)
     assert time_series_api_client._tag_metadata_cache.get_metadata(tag_name, asset_id) == tag_metadata
+
+
+def test_value_in_cache_is_expired(time_series_api_client):
+    tag_name = "1901.A-21T.MA_Y"
+    asset_id = "1901"
+    tag_metadata = {"data": []}
+    seconds_to_expire = 1
+    cache = time_series_api_client._tag_metadata_cache
+    cache.CACHE_TIME_TO_LIVE = seconds_to_expire
+
+    cache.set_metadata(tag_name, asset_id, tag_metadata)
+    assert cache.get_metadata(tag_name, asset_id) == tag_metadata
+
+    sleep(seconds_to_expire)
+    assert cache.get_metadata(tag_name, asset_id) is None

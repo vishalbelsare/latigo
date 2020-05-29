@@ -96,11 +96,10 @@ def config(auth_config):
             "mock_data": [pd.Series(data=[1, 2, 3, 4, 5])],
         },
         "prediction_storage": {
-            "type": "mock",
-            "base_url": "dummy",
+            "type": "time_series_api",
+            "base_url": "https://api/timeseries/v1.5",
             "async": False,
             "auth": auth_config,
-            "mock_data": [pd.Series(data=[1, 2, 3, 4, 5])],
         },
         "model_info": {
             "type": "gordo",

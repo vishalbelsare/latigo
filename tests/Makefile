@@ -9,7 +9,7 @@ devops: unit
 
 unit:
 	# TODO refactor and add here all unit test
-	py.test -vv unit/test_utils.py unit/test_executor.py unit/test_scheduler.py unit/log unit/test_time_series_api.py
+	py.test -vv unit/test_utils.py unit/test_executor.py unit/test_scheduler.py unit/log unit/time_series_api
 utils:
 	py.test -vv unit/test_utils.py
 
