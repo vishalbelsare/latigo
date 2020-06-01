@@ -12,6 +12,22 @@ logger = logging.getLogger(__name__)
 
 
 class TimeSeriesAPIClient:
+    """Client to connect with Time Series API.
+
+    Info: "Historian" is the on-premises TS database ("source") that TS
+        export data from and make it available in the TA API.
+        This is where most of the data from TS API is coming from.
+
+        So the TS names you see in the API are defined in the Historian.
+        The names can change for many reasons:
+            - a TS record was created with a wrong name;
+            - changes in the engineering numbering systems;
+            - cleaning and improving the naming;
+            - etc.
+        An example: renamed from "name" to "name-old" /
+        "name-x" indicating that the TS record is not active anymore.
+    """
+
     def __str__(self):
         return f"TimeSeriesAPIClient({self.base_url})"
 
@@ -110,7 +126,6 @@ class TimeSeriesAPIClient:
     def get_meta_by_name(
         self, name: str, asset_id: str
     ) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
-        # try to get from cache
         meta = self._tag_metadata_cache.get_metadata(name, asset_id)
         if meta:
             return meta, None
@@ -153,3 +168,24 @@ class TimeSeriesAPIClient:
         url = f"{self.base_url}/{id}/data"
         res = self._post(url, json=body, params=None)
         return _parse_request_json(res)
+
+    def replace_cached_metadata_with_new(self, tag_name: str, asset_id: str, description: str):
+        """Fetch new tag metadata from TS API and replace it in cache.
+
+        Args:
+            - tag_name: name of the tag. Example: "1901.A-21TE28.MA_Y";
+            - asset_id: asset/project identifier. Example: "1000";
+            - description: tag description.
+        """
+        # get from TS API
+        meta, err = self._get_metadata_from_api(tag_name)
+        if not meta:
+            # if not exists create in TS
+            meta, err = self._create_id(asset_id, description, asset_id)
+
+        if not meta:
+            raise ValueError(f"Could not replace cached metadata for {tag_name}/{asset_id}/{description}")
+
+        # set in cache with new value
+        self._tag_metadata_cache.set_metadata(tag_name, asset_id, meta)
+        return meta, err
