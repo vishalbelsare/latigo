@@ -2,7 +2,6 @@ import logging
 import typing
 
 from latigo.types import ModelTrainingPeriod
-from latigo.log import measure
 from .client_pool import ModelInfoProviderInterface, GordoClientPool, Machine, Model, SensorDataSpec
 from .data_provider import _gordo_to_latigo_tag_list
 from .misc import expand_gordo_connection_string, expand_gordo_data_provider, expand_gordo_prediction_forwarder
@@ -30,22 +29,30 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
         return f"GordoModelInfoProvider()"
 
     def get_model_data(
-        self,
-        projects: typing.Optional[typing.List] = None,
-        model_names: typing.Optional[typing.List] = None,
+        self, projects: typing.List[str], model_names: typing.Optional[typing.List] = None,
     ) -> typing.List[Machine]:
         machines: typing.List[Machine] = []
         if not projects:
-            projects = self.config.get("projects", [])
-            if not isinstance(projects, list):
-                projects = [projects]
+            raise ValueError("'projects' can not be empty.")
         for project_name in projects:
-            # logger.info(f"LOOKING AT PROJECT {project_name}")
             client = self.gordo_pool.allocate_instance(project_name)
             if client:
-                machines += client._get_machines(machine_names=model_names)
+                try:
+                    machines += client._get_machines(machine_names=model_names)
+                except TypeError as e:
+                    if "byte indices must be integers or slices, not str" not in str(e):
+                        raise
+
+                    # this is case when "project_name" is invalid.
+                    # we will skip such project cause API might be not in sync with Gordo.
+                    logger.exception("Invalid project: %s", project_name)
+                    self.gordo_pool.delete_instance(project_name)  # delete invalid client from poll
+
             else:
                 logger.error(f"No client found for project '{project_name}', skipping")
+
+        if not machines:
+            raise ValueError(f"No models/machines were found for projects: {' ;'.join(projects)}.")
         return machines
 
     def get_all_models(self, projects: typing.List) -> typing.List[Model]:

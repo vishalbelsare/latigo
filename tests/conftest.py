@@ -42,6 +42,9 @@ def auth_config():
         "authority_host_url": "https://dummy-authority",
         "client_id": "dummy-client",
         "client_secret": "dummy-secret",
+        "auto_adding_headers": {
+            "Ocp-Apim-Subscription-Key": "key",
+        }
     }
 
 
@@ -64,6 +67,11 @@ def schedule_config(auth_config):
             "type": "kafka",
             "connection_string": "Endpoint=sb://sb/;SharedAccessKeyName=name;SharedAccessKey=yd;EntityPath=path",
             "topic": "latigo_topic",
+        },
+        "models_metadata_info": {
+            "type": "metadata_api",
+            "base_url": "https://metadata",
+            "auth": auth_config,
         }
     }
 
@@ -103,17 +111,7 @@ def config(auth_config):
         },
         "model_info": {
             "type": "gordo",
-            "connection_string": "dummy",
-            "projects": ["project-1", "project-2"],
-            "target": None,
-            "metadata": None,
-            "batch_size": 1000,
-            "parallelism": 10,
-            "forward_resampled_sensors": False,
-            "ignore_unhealthy_targets": True,
-            "n_retries": 5,
-            "data_provider": {"debug": True, "n_retries": 5},
-            "prediction_forwarder": {"debug": False, "n_retries": 5},
+            "connection_string": "https://api/gordo/v0/",
             "auth": auth_config,
         },
         "predictor": {
@@ -130,7 +128,11 @@ def config(auth_config):
             "prediction_forwarder": {"debug": False, "n_retries": 5},
             "auth": auth_config,
         },
-        "prediction_metadata_storage": {"type": "mock", "auth": auth_config},
+        "prediction_metadata_storage": {
+            "type": "metadata_api",
+            "base_url": "https://metadata",
+            "auth": auth_config,
+        },
     }
 
 
@@ -150,6 +152,7 @@ def prediction_forwarder(MockPredictionStorageProvider):
 )
 @patch("latigo.gordo.prediction_execution_provider.GordoClientPool", new=MagicMock())
 @patch("latigo.executor.PredictionExecutor._perform_auth_checks", new=MagicMock())
+@patch("latigo.metadata_api.client.MetadataAPIClient._create_session", new=MagicMock())
 @patch("latigo.time_series_api.client.get_auth_session", new=MagicMock())
 def basic_executor(config, request) -> PredictionExecutor:
     # Create a new class to avoid shared state

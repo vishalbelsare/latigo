@@ -2,7 +2,6 @@ scheduler:
     continuous_prediction_start_time: "08:00"
     continuous_prediction_interval: "30m"
     continuous_prediction_delay: "3h"
-    projects: []
     back_fill_max_interval: "7d"
     restart_interval_sec: 0
     azure_monitor_logging_enabled: false
@@ -49,3 +48,16 @@ model_info:
         authority_host_url: "set from env"
         client_id: "set from env"
         client_secret: "DO NOT PUT SECRETS IN THIS FILE"
+
+models_metadata_info:
+    type: "metadata_api"
+    base_url: "REPLACE"
+    auth:
+        resource: "REPLACE"
+        tenant: "REPLACE"
+        authority_host_url: "REPLACE"
+        client_id: "REPLACE"
+        client_secret: "REPLACE"
+        verification_url: "REPLACE"
+        auto_adding_headers:
+            Ocp-Apim-Subscription-Key: "REPLACE"

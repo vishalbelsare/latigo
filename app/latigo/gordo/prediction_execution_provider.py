@@ -11,11 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
-    def _prepare_projects(self):
-        self.projects = self.config.get("projects", [])
-        if not isinstance(self.projects, list):
-            self.projects = [self.projects]
-
     def __init__(self, sensor_data_provider, prediction_storage_provider, config):
         self.config = config
         if not self.config:
@@ -24,10 +19,9 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         expand_gordo_data_provider(self.config, sensor_data_provider=sensor_data_provider)
         expand_gordo_prediction_forwarder(self.config, prediction_storage_provider=prediction_storage_provider)
         self.gordo_pool = GordoClientPool(self.config)
-        self._prepare_projects()
 
     def __str__(self):
-        return f"GordoPredictionExecutionProvider({self.projects})"
+        return f"GordoPredictionExecutionProvider"
 
     @measure("execute_prediction")
     def execute_prediction(

@@ -77,7 +77,6 @@ class GordoClientPool:
         self.client_instances_by_hash: dict = {}
         self.client_instances_by_project: dict = {}
         self.client_auth_session: typing.Optional[requests.Session] = None
-        self.allocate_instances()
 
     def __repr__(self):
         return f"GordoClientPool()"
@@ -120,16 +119,12 @@ class GordoClientPool:
 
         return client
 
-    def allocate_instances(self):
-        projects = self.config.get("projects", [])
-        if not isinstance(projects, list):
-            projects = [projects]
-        for project in projects:
-            self.allocate_instance(project)
+    def delete_instance(self, project_name: str):
+        """Delete Gordo client instance from pool."""
+        self.client_instances_by_project.pop(project_name, None)
 
     def get_auth_session(self, auth_config: dict):
         if not self.client_auth_session:
-            # logger.info("CREATING SESSION:")
             self.client_auth_session = requests_ms_auth.MsRequestsSession(
                 requests_ms_auth.MsSessionConfig(**auth_config)
             )

@@ -2,7 +2,7 @@
 import json
 import logging
 from dataclasses import asdict
-from typing import Dict
+from typing import Dict, List
 
 import requests_ms_auth
 from requests import Response
@@ -74,6 +74,22 @@ class MetadataAPIClient:
 
         res = self.post(url=url, data=self._dump_data(asdict(time_series_ids_metadata)))
         return res
+
+    def get_projects(self) -> List[str]:
+        """Get all unique projects/assets.
+
+        Example of API response:
+            {
+                "projects": [
+                    "ioc-1000",
+                    "ioc-1099",
+                ]
+            }
+        """
+        url = f"{self.base_url}/projects"
+        res = self.get(url=url)
+        res.raise_for_status()
+        return res.json()["projects"]
 
     @staticmethod
     def _dump_data(data: Dict) -> str:

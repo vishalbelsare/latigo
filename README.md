@@ -284,7 +284,6 @@ In this section we will give an overview of parameters for latigo scheduler and 
 | continuous_prediction_start_time | "08:00" | The start time of scheduling. See [scheduling algorithm](#scheduling-algorithm) for details. |
 | continuous_prediction_interval | "30m" | The interval of scheduling. See [scheduling algorithm](#scheduling-algorithm) for details. |
 | continuous_prediction_delay | "3h" | The prediction delay of scheduling. See [scheduling algorithm](#scheduling-algorithm) for details. |
-| projects | ['lat-lit'] | Comma separated list of projects that scheduler will work on. lat-lit is a safe test project for verifying correct operation. |
 | back_fill_max_interval | "7d" | How long back to do back-filling. **NOTE: Backfilling is not implemented, this parameter will currently have no effect.** |
 | restart_interval_sec | 604800 | An interval by which the program will restart, on opportunity, to clear any built up state. Disabled if set to any value below 1. Set to 7 days for scheduler. |
 | run_at_once | False | A setting primarily used for debugging. When the scheduler program starts up, it normally will wait until a scheduling time before working. With run_at_once set to True it will always start by performing a scheduling on startup disregarding time. |
