@@ -66,7 +66,6 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         # Producer configuration
         # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
         # See https://github.com/edenhill/librdkafka/wiki/Using-SSL-with-librdkafka#prerequisites for SSL issues
-        self.poll_timeout_sec = config.get("poll_timeout_sec", 100)
         self.config, self.topic, err = prepare_kafka_config(config)
         if not self.config:
             raise Exception(f"No config parsed: {err}")
@@ -122,7 +121,6 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
     def __init__(self, config: dict):
         # Consumer configuration
         # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
-        self.poll_timeout_sec = config.get("poll_timeout_sec", 100)
         self.config, self.topic, err = prepare_kafka_config(config)
         if not self.config:
             raise Exception(f"No config parsed: {err}")
@@ -134,8 +132,14 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         self.subscribe_to_topic()
 
     def __del__(self):
-        if self.consumer:
+        self.close()
+
+    def close(self):
+        """Close the underlined client."""
+        try:
             self.consumer.close()
+        except RuntimeError:
+            pass
 
     def subscribe_to_topic(self):
         """Make a call to subscribe to the topic and do not wait for the response.
@@ -176,7 +180,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
             "If another consumer will unsubscribe - subscription will be renewed automatically."
         )
 
-    def _receive_event(self, timeout=5) -> typing.Optional[bytes]:
+    def _receive_event(self, timeout=1) -> typing.Optional[bytes]:
         try:
             logger.debug("Start polling the message from queue...")
             msg = self.consumer.poll(timeout=timeout)
@@ -184,8 +188,9 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         except Exception as e:
             logger.warning(f"Error polling: {e}")
             return None
+
         if msg is None:
-            logger.warning(f"Polling timed out after {timeout} sec. No queue message was received.")
+            logger.info("Polling timed out after %s sec. No queue message was received.", timeout)
             return None
         if msg.error():
             # Error or event
@@ -217,21 +222,17 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
             # Proper message
             return msg.value()
 
-    def _receive_event_with_backoff(self, timeout_sec=300, backoff_sec=60) -> typing.Optional[Task]:
+    def _receive_event_with_backoff(self, backoff_sec=60) -> typing.Optional[Task]:
         """Poll queue for the Message with passed timeout.
 
         Args:
-            timeout_sec: Maximum time to block waiting from queue for message, event or callback (seconds);
             backoff_sec: Time for Thread to sleep before next try to receive the Message from queue.
         """
         task: typing.Optional[Task] = None
-        task_bytes = self._receive_event(timeout=timeout_sec)
+        task_bytes = self._receive_event()
 
         if not task_bytes:
-            logger.info(
-                f"No bytes in the message after polling with timeout - {timeout_sec} seconds. "
-                f"Sleeping for backoff - {backoff_sec} seconds."
-            )
+            logger.info("No bytes in the message after polling. Sleeping for backoff - %s seconds.", backoff_sec)
             sleep(backoff_sec)
         else:
             task = deserialize_task(task_bytes)
@@ -242,4 +243,4 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
 
     @measure("get_task")
     def get_task(self) -> typing.Optional[Task]:
-        return self._receive_event_with_backoff(timeout_sec=self.poll_timeout_sec)
+        return self._receive_event_with_backoff()

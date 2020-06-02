@@ -71,6 +71,9 @@ class TaskQueueReceiverInterface:
         """
         raise NotImplementedError()
 
+    def close(self):
+        """Perform any required cleanup."""
+
 
 class DevNullTaskQueue(TaskQueueSenderInterface, TaskQueueReceiverInterface):
     def __init__(self, conf: dict):

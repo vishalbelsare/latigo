@@ -7,7 +7,6 @@ executor:
 task_queue:
     type: "kafka"
     connection_string: "CHANGE ME"
-    poll_timeout_sec: 100000
     security.protocol: "SASL_SSL"
     ssl.ca.location: "/etc/ssl/certs/ca-certificates.crt"
     sasl.mechanism: "PLAIN"

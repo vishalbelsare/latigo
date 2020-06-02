@@ -1,4 +1,3 @@
-import datetime
 import logging
 import typing
 
@@ -64,8 +63,6 @@ class PredictionExecutor:
         if not self.task_queue_config:
             self._fail("No task queue config specified")
         self.task_queue = task_queue_receiver_factory(self.task_queue_config)
-        self.idle_time = datetime.datetime.now()
-        self.idle_number = 0
         if not self.task_queue:
             self._fail("No task queue configured")
 
@@ -206,7 +203,13 @@ class PredictionExecutor:
         return input_time_series_ids
 
     def run(self):
-        """Execute models predictions on by one in the loop."""
+        """Execute models predictions one by one in the loop."""
+        try:
+            self._run()
+        finally:
+            self.task_queue.close()
+
+    def _run(self):
         pylogctx.context.clear()
 
         while self._is_ready:
@@ -220,6 +223,8 @@ class PredictionExecutor:
                 logger.warning("Prediction was not stored: %r", err)
             except Exception:
                 logger.exception("Unknown error")
+            except KeyboardInterrupt:
+                self._is_ready = False
             finally:
                 pylogctx.context.clear()
 

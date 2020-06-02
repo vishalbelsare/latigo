@@ -305,7 +305,6 @@ Both scheduler and executor has a task_queue configuration. It describes their c
 |      ---: | :-----: | :---------- |
 | type | "kafka" | Currently only kafka is supported. There has been "event_hub" and "postgres" in the past. |
 | connection_string | not shown | The full connection string as copied from event_hub panel in azure portal. |
-| poll_timeout_sec | 100000 | Kafka timeout when waiting for response in client. |
 | security.protocol | "SASL_SSL" | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
 | ssl.ca.location | "/etc/ssl/certs/ca-certificates.crt" | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
 | sasl.mechanism | "PLAIN" | See [confluent docs](https://docs.confluent.io/current/installation/configuration/consumer-configs.html). |
