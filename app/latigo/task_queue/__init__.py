@@ -1,34 +1,11 @@
 import logging
 import pickle
-import json
 import traceback
 import typing
-from dataclasses import dataclass
-from datetime import datetime, timedelta
+
 from latigo.types import Task
 
 logger = logging.getLogger(__name__)
-
-
-def serialize_task(task, mode="json") -> typing.Optional[bytes]:
-    """
-    Serialize a task to bytes
-    """
-    task_bytes = None
-    if mode == "pickle":
-        try:
-            task_bytes = pickle.dumps(task)
-        except pickle.PicklingError as e:
-            logger.error(f"Could not serialize task to json pickle: {e}")
-            traceback.print_exc()
-    else:
-        try:
-            # Rely on dataclass_json
-            task_bytes = task.to_json()
-        except Exception as e:
-            logger.error(f"Could not serialize task to json: {e}")
-            traceback.print_exc()
-    return task_bytes
 
 
 def deserialize_task(task_bytes, mode="json") -> typing.Optional[Task]:
@@ -58,10 +35,11 @@ def deserialize_task(task_bytes, mode="json") -> typing.Optional[Task]:
 
 class TaskQueueSenderInterface:
     def put_task(self, task: Task):
-        """
-        Put one task on the queue
-        """
+        """Put one task on the queue."""
         raise NotImplementedError()
+
+    def close(self):
+        """Perform any required cleanup."""
 
 
 class TaskQueueReceiverInterface:
