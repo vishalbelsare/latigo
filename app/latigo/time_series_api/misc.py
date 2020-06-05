@@ -60,19 +60,14 @@ def get_auth_session(auth_config: dict, force: bool = False):
     return timeseries_client_auth_session
 
 
-def _parse_request_json(res) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+def parse_request_json(res) -> typing.Dict:
     """Fetch json from response and validate the response status.
 
     Raise:
         - HTTPError if response code is not 200.
     """
-    # TODO refactor this function not to return None. For now to much of refactoring is needed.
-    # TODO move it to "latigo/time_series_api/client.py" after deleting:
-    # - latigo/time_series_api/ims_subscription.py
-    # - latigo/time_series_api/ims_metadata.py
     res.raise_for_status()
-    ret = res.json()
-    return ret, None
+    return res.json()
 
 
 MODEL_INPUT_OPERATION = "model-input"

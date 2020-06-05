@@ -189,10 +189,7 @@ class PredictionExecutor:
 
         for tag in spec.tag_list:
             if tag.name in input_time_series_ids.keys():
-                meta, error = self.prediction_storage_provider.get_meta_by_name(name=tag.name, asset_id=tag.asset)
-                if error:
-                    # Raise error if tag does not exist
-                    raise ValueError(f"Tag was not found. Name='{tag.name}' asset='{tag.asset}': error='{error}'")
+                meta = self.prediction_storage_provider.get_meta_by_name(name=tag.name, asset_id=tag.asset)
 
                 tag_id = get_time_series_id_from_response(meta)
                 input_time_series_ids[tag.name] = tag_id

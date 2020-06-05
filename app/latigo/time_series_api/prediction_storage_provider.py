@@ -64,7 +64,7 @@ class TimeSeriesAPIPredictionStorageProvider(
             output_time_series_ids[col] = ""
             description = OutputTag.make_output_tag_description(operation, tag_name)
             try:
-                meta, err = self._create_id_if_not_exists(
+                meta = self._create_id_if_not_exists(
                     name=output_tag_name,
                     description=description,
                     asset_id=common_asset_id,
@@ -74,15 +74,15 @@ class TimeSeriesAPIPredictionStorageProvider(
                     raise
 
                 # if such tag_name might already exists in the TS try to get/create once more.
-                meta, err = self.replace_cached_metadata_with_new(
+                meta = self.replace_cached_metadata_with_new(
                     tag_name=output_tag_name, asset_id=common_asset_id, description=description
                 )
 
-            if err or not meta:
-                raise ValueError(f"Could not create/find id for name {output_tag_name}, {col}, {meta}, {err}")
+            if not meta:
+                raise ValueError(f"Could not create/find id for name {output_tag_name}, {col}, {meta}")
             time_series_id = get_time_series_id_from_response(meta)
             if not time_series_id:
-                raise ValueError(f"Could not get ID for {output_tag_name}, {col}, {meta}, {err}")
+                raise ValueError(f"Could not get ID for {output_tag_name}, {col}, {meta}")
             output_tag_names[col] = output_tag_name
             output_time_series_ids[col] = time_series_id
         failed_tags = 0
@@ -109,9 +109,10 @@ class TimeSeriesAPIPredictionStorageProvider(
                 datapoints.append(
                     {"time": rfc3339_from_datetime(time), "value": value, "status": "0"}
                 )
-            res, err = self._store_data_for_id(id=time_series_id, datapoints=datapoints)
-            if not res or err:
-                logger.error(f" Could not store data: {err}")
+            try:
+                self._store_data_for_id(id=time_series_id, datapoints=datapoints)
+            except HTTPError as e:
+                logger.error("Could not store data: %s", e)
                 failed_tags += 1
             else:
                 stored_tags += 1

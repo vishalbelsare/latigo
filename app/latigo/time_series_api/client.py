@@ -6,7 +6,7 @@ from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from latigo.types import TimeRange
 
 from .cache import TagMetadataCache
-from .misc import _itemes_present, _parse_request_json, get_auth_session
+from .misc import _itemes_present, parse_request_json, get_auth_session
 
 logger = logging.getLogger(__name__)
 
@@ -88,16 +88,14 @@ class TimeSeriesAPIClient:
             res = self.session.post(*args, **kwargs)
         return res
 
-    def _fetch_data_for_id(
-        self, id: str, time_range: TimeRange
-    ) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def _fetch_data_for_id(self, tag_id: str, time_range: TimeRange) -> typing.Dict:
         """Fetch data points for tag id.
 
         Note:
             if "includeOutsidePoints" is True then -> points immediately prior to and following the time window will
                 be included in result and following data filtering before sending for the prediction should be made.
         """
-        url = f"{self.base_url}/{id}/data"
+        url = f"{self.base_url}/{tag_id}/data"
         params = {
             "startTime": time_range.rfc3339_from(),
             "endTime": time_range.rfc3339_to(),
@@ -105,9 +103,9 @@ class TimeSeriesAPIClient:
             "includeOutsidePoints": False,
         }
         res = self._get(url=url, params=params)
-        return _parse_request_json(res)
+        return parse_request_json(res)
 
-    def _get_metadata_from_api(self, name: str) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def _get_metadata_from_api(self, name: str) -> typing.Dict:
         """Fetch metadata from Time Series API.
 
         Args:
@@ -121,20 +119,18 @@ class TimeSeriesAPIClient:
 
         body = {"name": name}
         res = self._get(self.base_url, params=body)
-        return _parse_request_json(res)
+        return parse_request_json(res)
 
-    def get_meta_by_name(
-        self, name: str, asset_id: str
-    ) -> typing.Tuple[typing.Optional[typing.Dict], typing.Optional[str]]:
+    def get_meta_by_name(self, name: str, asset_id: str) -> typing.Dict:
         meta = self._tag_metadata_cache.get_metadata(name, asset_id)
         if meta:
-            return meta, None
+            return meta
 
         # get from Time Series API and store to cache
-        meta, msg = self._get_metadata_from_api(name)
+        meta = self._get_metadata_from_api(name)
         if meta:
             self._tag_metadata_cache.set_metadata(name, asset_id, meta)
-        return meta, msg
+        return meta
 
     def _create_id(
         self,
@@ -143,7 +139,7 @@ class TimeSeriesAPIClient:
         unit: str = "",
         asset_id: str = "",
         external_id: str = "",
-    ):
+    ) -> dict:
         body = {
             "name": name,
             "description": description,
@@ -153,23 +149,23 @@ class TimeSeriesAPIClient:
             "externalId": external_id,
         }
         res = self._post(self.base_url, json=body, params=None)
-        return _parse_request_json(res)
+        return parse_request_json(res)
 
     def _create_id_if_not_exists(
         self, name: str, asset_id: str, description: str = "", unit: str = "", external_id: str = "",
-    ):
-        meta, err = self.get_meta_by_name(name=name, asset_id=asset_id)
+    ) -> dict:
+        meta = self.get_meta_by_name(name=name, asset_id=asset_id)
         if meta and _itemes_present(meta):
-            return meta, err
+            return meta
         return self._create_id(name, description, unit, asset_id, external_id)
 
-    def _store_data_for_id(self, id: str, datapoints: typing.List[typing.Dict[str, str]]):
+    def _store_data_for_id(self, id: str, datapoints: typing.List[typing.Dict[str, str]]) -> dict:
         body = {"datapoints": datapoints}
         url = f"{self.base_url}/{id}/data"
         res = self._post(url, json=body, params=None)
-        return _parse_request_json(res)
+        return parse_request_json(res)
 
-    def replace_cached_metadata_with_new(self, tag_name: str, asset_id: str, description: str):
+    def replace_cached_metadata_with_new(self, tag_name: str, asset_id: str, description: str) -> dict:
         """Fetch new tag metadata from TS API and replace it in cache.
 
         Args:
@@ -178,14 +174,14 @@ class TimeSeriesAPIClient:
             - description: tag description.
         """
         # get from TS API
-        meta, err = self._get_metadata_from_api(tag_name)
+        meta = self._get_metadata_from_api(tag_name)
         if not meta:
             # if not exists create in TS
-            meta, err = self._create_id(asset_id, description, asset_id)
+            meta = self._create_id(asset_id, description, asset_id)
 
         if not meta:
             raise ValueError(f"Could not replace cached metadata for {tag_name}/{asset_id}/{description}")
 
         # set in cache with new value
         self._tag_metadata_cache.set_metadata(tag_name, asset_id, meta)
-        return meta, err
+        return meta
