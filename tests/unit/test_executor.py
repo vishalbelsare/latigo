@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from requests import HTTPError
@@ -52,7 +52,7 @@ def test_execute_prediction_for_task_success(basic_executor):
 
 @pytest.mark.parametrize("exception", GORDO_EXCEPTIONS+IOC_DATA_EXCEPTIONS+(NoCommonAssetFound([]),))
 @pytest.mark.parametrize("basic_executor", [True], indirect=["basic_executor"])
-def test_execute_prediction_for_task_exception(exception, basic_executor, caplog):
+def test_execute_prediction_for_task_exception(exception, basic_executor: PredictionExecutor, caplog):
     task = TaskFactory()
 
     if exception in GORDO_EXCEPTIONS:
@@ -74,7 +74,7 @@ def test_execute_prediction_for_task_exception(exception, basic_executor, caplog
 
 
 @pytest.mark.parametrize("basic_executor", [True], indirect=["basic_executor"])
-def test_execute_prediction_for_unknown_error(basic_executor, caplog):
+def test_execute_prediction_for_unknown_error(basic_executor: PredictionExecutor, caplog):
     with patch.object(basic_executor.prediction_executor_provider, "execute_prediction", side_effect=HTTPError(";-)")):
         basic_executor.run()
     assert ('latigo.executor', logging.ERROR, "Unknown error") in caplog.record_tuples

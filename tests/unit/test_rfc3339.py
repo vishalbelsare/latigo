@@ -4,7 +4,6 @@ import os
 import datetime
 from latigo.utils import (
     merge,
-    load_config,
     load_yaml,
     save_yaml,
     rfc3339_from_datetime,

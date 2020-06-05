@@ -94,39 +94,6 @@ def test_save_load_yaml():
     assert original_config == config
 
 
-@pytest.mark.skip
-def test_load_config():
-    config_filename = writable_working_dir + "test_config_load_config.yaml"
-    # fmt: off
-    original_config={
-        'both':'FILE',
-        'only_file':'FILE',
-        'both_none':None,
-        'only_file_none':None,
-    }
-    overlay_config={
-        'both':'OVERLAY',
-        'only_overlay':'OVERLAY',
-        'both_none':None,
-        'only_overlay_none':None,
-    }
-    expected={
-        'both': 'OVERLAY',
-        'both_none': None,
-        'only_file': 'FILE',
-        'only_file_none': None,
-        'only_overlay': 'OVERLAY',
-    }
-    # fmt: on
-    save_yaml(config_filename, original_config)
-    config = load_config(config_filename, overlay_config, True)
-    # print("loaded config:")
-    # print(pprint.pformat(config))
-    if os.path.exists(config_filename):
-        os.remove(config_filename)
-    assert config == expected
-
-
 def test_parse_event_hub_connection_string():
     input = "Endpoint=sb://some.test.domain.com/;SharedAccessKeyName=some-key-name;SharedAccessKey=SomeKindOfKey2345=;EntityPath=some-topic"
     output = parse_event_hub_connection_string(input)

@@ -400,6 +400,13 @@ export METADATA_API_BASE_URL=url
 export METADATA_API_APIM_KEY=key
 ```
 
+OR create and fill `.env` file and then apply it:
+```shell script
+set -a
+source .env
+set +a
+```
+
 OR add env variables to Pycharn or other IDE (with previously added values):
 ```text
 METADATA_API_TENANT=tenent;METADATA_API_CLIENT_ID=id;METADATA_API_CLIENT_SECRET=secret;METADATA_API_RESOURCE=resourse;METADATA_API_AUTHORITY_HOST_URL=authority;METADATA_API_BASE_URL=url;METADATA_API_APIM_KEY=key;

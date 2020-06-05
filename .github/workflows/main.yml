@@ -51,13 +51,9 @@ jobs:
         pip install -r app/requirements.txt
         pip install -r app/test_requirements.txt
 
-    - name: Run Unit Tests
+    - name: Run All Tests
       run: |
-        make tests_unit
-
-    - name: Run Integration Tests
-      run: |
-        make tests_integration
+        make tests_all
       env:
         METADATA_API_TENANT: ${{ secrets.METADATA_API_TENANT }}
         METADATA_API_CLIENT_ID: ${{ secrets.METADATA_API_CLIENT_ID }}

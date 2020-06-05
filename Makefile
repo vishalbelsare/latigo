@@ -21,7 +21,7 @@ GITHUB_TAG:=$(patsubst refs/tags/%,%,${GITHUB_REF})
 
 all: help
 
-info:
+info:  ## Show info about env and used variables
 	@echo "LATIGO_VERSION=${LATIGO_VERSION}"
 	@echo "ROOT_DIR=${ROOT_DIR}"
 	@echo "APP_DIR=${APP_DIR}"
@@ -44,25 +44,13 @@ info:
 	@echo "DOCKER_USERNAME=${DOCKER_USERNAME}"
 	@echo "DOCKER_PASSWORD=NOT SHOWN"
 
-code-quality:
+code-quality:  ## Run code quality tools
 	cd "${CODE_QUALITY_DIR}" && make all
 
-tests:
-	cd "${TESTS_DIR}" && make all
-
-tests_unit:
-	cd "${TESTS_DIR}" && make unit
-
-tests_integration:
-	cd "${TESTS_DIR}" && make integration_metadata_api
-
-show-env:
+show-env:  ## Show the variables related to Latigo in the current environment
 	env | sort
 
-pgsql-perm :
-	sudo mkdir "${ROOT_DIR}/volumes/postgres" -p && sudo chown -R lroll:lroll "${ROOT_DIR}/volumes/postgres"
-
-req:
+req:  ## Rebuild and add requirements to requirements.txt and test_requirements.txt
 	pip install --upgrade pip
 	pip uninstall gordo -y
 	pip install --upgrade pip-tools
@@ -74,34 +62,30 @@ req:
 	cd app && pip install -r requirements.txt
 	cd app && pip install -r test_requirements.txt
 
-# Rebuild latest latigo and install it to site-packages
-setup:
+setup:  ## Rebuild latest latigo and install it to site-packages
 	rm -rf app/build
 	pip uninstall -y latigo
 	pip install -e app/
 
-build-docs:
-	@echo "PLACEHOLDER: LATIGO MAKEFILE IS BUILDING DOCUMENTATION"
-	@sleep 1
 
 ############### Convenience access ######################
 
-login-azure:
+login-azure:  ## Login to azure
 	az login
 	az account set --subscription $(CLUSTER_SUBSCRIPTION)
 	az account show
 
-login-gordo:
+login-gordo:  ## Login to gordo cluster
 	az aks get-credentials --overwrite-existing --resource-group ${GORDO_CLUSTER_NAME} --name ${GORDO_CLUSTER_NAME}
 	kubectl config set-context --current --namespace=kubeflow
 	kubectl get gordos
 
-login-latigo:
+login-latigo:  ## Login to latigo cluster
 	az aks get-credentials --overwrite-existing --resource-group ${LATIGO_CLUSTER_NAME} --name ${LATIGO_CLUSTER_NAME}
 	kubectl config set-context --current --namespace=latigo
 	kubectl get all
 
-login-docker:
+login-docker:  ## Login to docker hub
 	echo "Logging in to docker registry ${DOCKER_USERNAME}@${DOCKER_REGISTRY}...";\
 	echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin "${DOCKER_REGISTRY}";\
 	if [ $$? -eq 0 ]; then\
@@ -111,10 +95,10 @@ login-docker:
 		exit 1;\
 	fi\
 
-list-gordos:
+list-gordos:  ## List available projects in gordo
 	kubectl get gordos
 
-port-forward:
+port-forward:  ##  Set up port forwarding to access gordo via localhost:8888
 	while : ; do printf "PORTFORWARDING----\n"; kubectl port-forward svc/ambassador -n ambassador 8888:80; done
 
 ############### Convenience docker compose ####################
@@ -136,14 +120,23 @@ up-dev:
 	eval $(./set_env.py) && docker-compose up --remove-orphans
 	docker ps -a
 
-down:
+down:  ## Stops containers and removes containers, networks, volumes, and images created by `up`
 	docker-compose down
 	docker ps -a
 
+############### Tests ####################
+tests_all:  ## Run all tests with coverage
+	py.test --cov=app -vv tests
+
+tests_unit:  ##  Run unit tests
+	py.test --cov=app -vv tests/unit
+
+tests_integration:  ##  Run integration tests
+	py.test --cov=app -vv tests/integration
+
+
 ############### Build docker images ####################
-
-
-build:
+build:  ## Build Latigo image
 	@if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
 		echo "Building master branch for base";\
 		docker build . -f Dockerfile.base -t "${LATIGO_BASE_IMAGE_NAME}" -t "${LATIGO_BASE_IMAGE_RELEASE_NAME}";\
@@ -157,9 +150,7 @@ build:
 
 
 ############### Scan docker images ####################
-
-
-scan:
+scan:  ## Scan images for vulnerabilities
 	@uname_S=$(shell uname -s 2>/dev/null || echo not); \
 	trivy=$(shell which trivy); \
 	if [ -z "$$trivy" ]; then \
@@ -182,73 +173,27 @@ scan:
 
 
 ############### Push docker images ####################
-
-
-push:
+push:  ## Push image
 	export DOCKER_NAME=${LATIGO_BASE_IMAGE_NAME};\
 	export DOCKER_IMAGE=${LATIGO_BASE_IMAGE_NAME};\
 	echo "Pushing imge ${DOCKER_NAME}";\
 	bash -x deploy/docker_push.sh
 
 ############### Docker cleanup ####################
-
-prune:
+prune:  ## Prune docker
 	docker system prune -a
 
 
 ############### Secrets management ####################
-
-get-secrets:
+get-secrets:  ## Get prod secrets
 	az keyvault secret show --name "latigo-executor-config-yaml" --vault-name "gordo-vault" --query value --output tsv > ./executor_secret.yaml
 	az keyvault secret show --name "latigo-scheduler-config-yaml" --vault-name "gordo-vault" --query value --output tsv > ./scheduler_secret.yaml
 
-set-secrets:
+set-secrets:  ## Set prod secrets
 	az keyvault secret set --name "latigo-executor-config-yaml" --vault-name "gordo-vault" --file ./executor_secret.yaml  --encoding utf-8
 	az keyvault secret set --name "latigo-scheduler-config-yaml" --vault-name "gordo-vault" --file ./scheduler_secret.yaml  --encoding utf-8
 
 
-
 ############### Help ####################
-
-help:
-	@echo "#############################################"
-	@echo "# This is a conveneince Makefile for Latigo #"
-	@echo "#############################################"
-	@echo ""
-	@echo " General targets:"
-	@echo ""
-	@echo " + make help             Show this help"
-	@echo " + make code-quality     Run code quality tools"
-	@echo " + make tests            Run (almost) all tests. NOTE: For more options see tests/Makefile"
-	@echo " + make show-env         Show the variables related to Latigo in the current environment"
-	@echo " + make pgsql-perm       Set up permissions of the postgres docker image's volume (necessary nuisance)"
-	@echo " + make req              Rebuild pinned versions in *requirements.txt from *requirements.in"
-	@echo " + make setup            Build latigo pip package"
-	@echo ""
-	@echo " Cluster targets:"
-	@echo ""
-	@echo " + login-gordo           Login to gordo cluster"
-	@echo " + login-latigo          Login to latigo cluster"
-	@echo " + login-azure           Login to azure"
-	@echo " + list-gordos           List available projects in gordo"
-	@echo " + port-forward          Set up port forwarding to access gordo via localhost:8888"
-	@echo ""
-	@echo " Development targets:"
-	@echo ""
-	@echo " + make help             Show this help"
-	@echo " + make up               Build incrementally, test and run all from scratch"
-	@echo " + make up-dev           Same as up but faster (for development)"
-	@echo " + make down             Shutdown docker images"
-	@echo ""
-	@echo " Deployment targets:"
-	@echo ""
-	@echo " + make build            Build all docker images"
-	@echo " + make push             Build and push all docker images"
-	@echo " + prune                 Clean up old docker resources locally"
-	@echo ""
-	@echo " Advanced targets:"
-	@echo ""
-	@echo " + make set-secrets      Push secrets to azure key vault (ADVANCED)"
-	@echo " + make get-secrets      Show secrets from azure key vault (ADVANCED)"
-	@echo ""
-
+help: ## Show this help
+	@egrep '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
