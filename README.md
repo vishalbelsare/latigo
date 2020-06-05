@@ -424,7 +424,5 @@ Please see [LICENSE](LICENSE) file for details. Latigo has G-Faps and is license
 
 ## TODOs
 - resolve `TODOs` on the [wiki page](https://wiki.equinor.com/wiki/index.php?title=OMNIA.prevent#Latigo_-_Prediction_service);
-- add Latigo ability to scale;
 - fetching tag data from Time Series API [bug](https://dev.azure.com/EquinorASA/OMNIA%20Prevent/_sprints/taskboard/OMNIA%20Prevent%20Team/OMNIA%20Prevent/Sprint%208?workitem=17345) and other bugs;
-- "clean" configs and the repo -> [story](https://dev.azure.com/EquinorASA/OMNIA%20Prevent/_workitems/edit/17074);
 - cover repository by tests and clean the code.

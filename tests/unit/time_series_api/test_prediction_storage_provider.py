@@ -5,8 +5,8 @@ from requests import Response
 
 @patch("latigo.time_series_api.prediction_storage_provider.rfc3339_from_datetime", new=Mock(side_effect=lambda x: x))
 def test_put_prediction(prediction_data, prediction_storage, tag_metadata):
-    with patch.object(prediction_storage, "_get_metadata_from_api", return_value=(tag_metadata, None)):
-        with patch.object(prediction_storage, "_store_data_for_id", return_value=(True, None)):
+    with patch.object(prediction_storage, "_get_metadata_from_api", return_value=tag_metadata):
+        with patch.object(prediction_storage, "_store_data_for_id", return_value=True):
             output_tag_names, output_time_series_ids = prediction_storage.put_prediction(prediction_data)
 
     expected_output_tag_names = {
@@ -30,8 +30,8 @@ def test_put_prediction_409_error(prediction_storage, prediction_data, tag_metad
     exception_response.reason = "Conflict url"
 
     with patch.object(prediction_storage, "_get", new=MagicMock(return_value=exception_response)), patch.object(
-        prediction_storage, "replace_cached_metadata_with_new", return_value=(tag_metadata, None)
-    ) as replace_cached_mock, patch.object(prediction_storage, "_store_data_for_id", return_value=(True, None)):
+        prediction_storage, "replace_cached_metadata_with_new", return_value=tag_metadata
+    ) as replace_cached_mock, patch.object(prediction_storage, "_store_data_for_id", return_value=True):
         res = prediction_storage.put_prediction(prediction_data)
 
     calls = [

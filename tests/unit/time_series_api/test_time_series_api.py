@@ -73,10 +73,10 @@ def test_get_meta_by_name(time_series_api_client):
 
     assert time_series_api_client._tag_metadata_cache.get_metadata(tag_name, asset_id) is None
 
-    with patch.object(time_series_api_client, "_get_metadata_from_api", return_value=(tag_metadata, None)):
+    with patch.object(time_series_api_client, "_get_metadata_from_api", return_value=tag_metadata):
         res = time_series_api_client.get_meta_by_name(tag_name, asset_id)
 
-    assert res == (tag_metadata, None)
+    assert res == tag_metadata
     assert time_series_api_client._tag_metadata_cache.get_metadata(tag_name, asset_id) == tag_metadata
 
 

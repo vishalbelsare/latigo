@@ -74,7 +74,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         return f"TimeSeriesAPISensorDataProvider({self.base_url})"
 
     def supports_tag(self, tag: LatigoSensorTag) -> bool:
-        meta, err = self.get_meta_by_name(name=tag.name, asset_id=tag.asset)
+        meta = self.get_meta_by_name(name=tag.name, asset_id=tag.asset)
         if meta and _itemes_present(meta):
             return True
         return False
@@ -111,18 +111,17 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             asset_id = tag.asset
             if not asset_id:
                 return None, f"Invalid tag asset_id={asset_id}"
-            meta, err = self.get_meta_by_name(name=name, asset_id=asset_id)
-            # logger.info(f" O '{meta}, {err}'")
+            meta = self.get_meta_by_name(name=name, asset_id=asset_id)
             if not meta:
                 missing_meta += 1
                 if fail_on_missing:
                     break
                 continue
             item = _find_tag_in_data(meta, name)
-            id = None
+            tag_id = None
             if item:
-                id = item.get("id", None)
-            if not id:
+                tag_id = item.get("id", None)
+            if not tag_id:
                 missing_id += 1
                 logger.warning(
                     f"Time series not found for requested tag '{tag}', skipping"
@@ -131,10 +130,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
                 if fail_on_missing:
                     break
                 continue
-            ts, err = self._fetch_data_for_id(id, time_range)
-            # logger.info(f" D '{ts}, {err}'")
-            if err or not ts:
-                return None, (err or "No ts")
+            ts = self._fetch_data_for_id(tag_id, time_range)
             data.extend(_get_items(ts))
             completed += 1
         if missing_meta > 0:
