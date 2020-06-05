@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 class Scheduler:
     def __init__(self, config: dict):
-        self.good_to_go = True
         if not config:
             self._fail("No config specified")
         self.config = config
@@ -35,7 +34,6 @@ class Scheduler:
         self._prepare_scheduler()
 
     def _fail(self, message: str):
-        self.good_to_go = False
         logger.error(message)
         raise sys.exit(message)
 
@@ -87,9 +85,6 @@ class Scheduler:
         if not self.scheduler_config:
             self._fail("No scheduler config specified")
         self.name = self.scheduler_config.get("name", "unnamed_scheduler")
-        self.restart_interval_sec = self.scheduler_config.get(
-            "restart_interval_sec", 60 * 60 * 24 * 7
-        )
         try:
             cpst = self.scheduler_config.get(
                 "continuous_prediction_start_time", "08:00"
@@ -118,29 +113,18 @@ class Scheduler:
             interval=self.continuous_prediction_interval,
         )
         self.run_at_once = self.scheduler_config.get("run_at_once", True)
-        self.back_fill_max_interval = pd.to_timedelta(
-            self.scheduler_config.get("back_fill_max_interval", "1d")
-        )
 
     def print_summary(self):
         next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
-        restart_interval_desc = (
-            human_delta(datetime.timedelta(seconds=self.restart_interval_sec))
-            if self.restart_interval_sec > 0
-            else "Disabled"
-        )
         logger.info(
             f"\nScheduler settings:\n"
-            f"  Good to go:       {'Yes' if self.good_to_go else 'No'}\n"
             f"  Latigo Version:   {latigo_version}\n"
             f"  Gordo Version:    {gordo_version}\n"
             f"  Auth Version:     {auth_version}\n"
-            f"  Restart interval: {restart_interval_desc}\n"
             f"  Run at once :     {self.run_at_once}\n"
             f"  Start time :      {self.continuous_prediction_start_time}\n"
             f"  Interval:         {human_delta(self.continuous_prediction_interval)}\n"
             f"  Data delay:       {human_delta(self.continuous_prediction_delay)}\n"
-            f"  Backfill max:     {human_delta(self.back_fill_max_interval)}\n"
             f"  Next start:       {next_start}\n"
         )
 
@@ -201,23 +185,11 @@ class Scheduler:
             logger.info("Keyboard abort triggered, shutting down")
             return True
         except Exception:
-            logger.exception(f"Error occurred in scheduler")
+            logger.exception("Error occurred in scheduler")
 
         return False
 
     def run(self):
-        if not self.good_to_go:
-            sleep_time = 60 * 5
-            logger.error("")
-            logger.error(" ### ### Latigo could not be started!")
-            logger.error(
-                f"         Will pause for {human_delta(datetime.timedelta(seconds=sleep_time))} before terminating."
-            )
-            logger.error("         Please see previous error messages for clues.")
-            logger.error("")
-            sleep(sleep_time)
-            return
-
         logger.info("Scheduler started processing")
         done = False
         start = datetime.datetime.now()
@@ -226,15 +198,9 @@ class Scheduler:
 
         while not done:
             logger.info(
-                f"Next prediction will occur at {self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
+                "Next prediction will occur at %s (in %s)",
+                self.continuous_prediction_timer.closest_start_time(),
+                human_delta(self.continuous_prediction_timer.time_left())
             )
             if self.continuous_prediction_timer.wait_for_trigger(now=start):
                 done = self.on_time()
-
-            scheduler_interval = datetime.datetime.now() - start
-            if 0 < self.restart_interval_sec < scheduler_interval.total_seconds():
-                logger.info("Terminating scheduler for teraputic restart")
-                done = True
-
-        interval = datetime.datetime.now() - start
-        logger.info(f"Scheduler stopped processing after {human_delta(interval)}")

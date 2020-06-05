@@ -55,9 +55,6 @@ def schedule_config(auth_config):
             "continuous_prediction_start_time": "08:00",
             "continuous_prediction_interval": f"{SCHEDULER_PREDICTION_INTERVAL}m",
             "continuous_prediction_delay": f"{SCHEDULER_PREDICTION_DELAY}d",
-            "projects": ["pr-2020"],
-            "back_fill_max_interval": "7d",
-            "restart_interval_sec": 0,
             "run_at_once": True,
         },
         "model_info": {

@@ -1,5 +1,4 @@
 executor:
-    restart_interval_sec: 0
     azure_monitor_logging_enabled: false
     azure_monitor_instrumentation_key: <key>
     log_debug_enabled: false
@@ -15,7 +14,6 @@ task_queue:
     request.timeout.ms: 10000
     session.timeout.ms: 10000
     default.topic.config: {"auto.offset.reset": "earliest"}
-    debug: "fetch"
     topic: "latigo_topic"
     enable.auto.commit: true
     auto.commit.interval.ms: 1000
@@ -24,7 +22,6 @@ task_queue:
 model_info:
     type: "gordo"
     connection_string: "CHANGE ME"
-    verification_project: "ioc-1901"
     metadata: null
     batch_size: 1000
     parallelism: 10
@@ -72,7 +69,6 @@ prediction_storage:
 predictor:
     type: "gordo"
     connection_string: "DO NOT PUT SECRETS IN THIS FILE"
-    verification_project: "ioc-1901"
     metadata: null
     batch_size: 1000
     parallelism: 10
