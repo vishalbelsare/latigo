@@ -1,6 +1,5 @@
-import json
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import Mock, patch, MagicMock, call, ANY
 
 import pytest
 
@@ -30,18 +29,31 @@ def scheduler(schedule_config) -> Scheduler:
 @patch("latigo.metadata_api.client.MetadataAPIClient.get_projects", new=MagicMock(return_value=PROJECTS_FROM_API))
 def test_perform_prediction_step_put_task(scheduler, microsecond):
     """Validates task serialisation and using UTC time."""
-    with patch("latigo.scheduler.datetime") as mock_dt, patch.object(scheduler.task_queue, "send_event") as send_event:
+    with patch("latigo.scheduler.datetime") as mock_dt, patch.object(scheduler, "task_queue") as task_queue:
         mock_dt.datetime.now.return_value = DATETIME_UTC_NOW.replace(microsecond=microsecond)
         scheduler.perform_prediction_step()
 
-    from_datetime = DATETIME_UTC_NOW + timedelta(days=-SCHEDULER_PREDICTION_DELAY)
-    from_time = from_datetime.timestamp()
-    to_time = (from_datetime + timedelta(minutes=+SCHEDULER_PREDICTION_INTERVAL)).timestamp()
-    dumped_task = json.dumps(
-        {"project_name": "project", "model_name": "model", "from_time": from_time, "to_time": to_time}
+    from_time = DATETIME_UTC_NOW + timedelta(days=-SCHEDULER_PREDICTION_DELAY)
+    to_time = from_time + timedelta(minutes=+SCHEDULER_PREDICTION_INTERVAL)
+
+    task_queue.assert_has_calls(
+        [call.put_task(Task(project_name="project", model_name="model", from_time=from_time, to_time=to_time))]
     )
 
-    send_event.assert_called_once_with(dumped_task)
+
+def test_run(scheduler):
+    with patch.object(scheduler, "task_queue") as task_queue, patch.object(
+        scheduler, "models_metadata_info_provider"
+    ) as md_client:
+        # Ensure the loop is interrupted after the first task is placed
+        task_queue.put_task.side_effect = KeyboardInterrupt
+
+        md_client.get_projects.return_value = ["project1"]
+        scheduler.run()
+
+    task_queue.assert_has_calls(
+        [call.put_task(Task(project_name="project", model_name=ANY, from_time=ANY, to_time=ANY)), call.close()]
+    )
 
 
 @pytest.mark.parametrize("models", [[ModelFactory(), ModelFactory(), ModelFactory()], [ModelFactory()]])

@@ -52,8 +52,6 @@ class Scheduler:
         if not self.task_queue_config:
             self._fail("No task queue config specified")
         self.task_queue = task_queue_sender_factory(self.task_queue_config)
-        self.idle_time = datetime.datetime.now()
-        self.idle_number = 0
         if not self.task_queue:
             self._fail("No task queue configured")
 
@@ -190,6 +188,13 @@ class Scheduler:
         return False
 
     def run(self):
+        """Start the main loop."""
+        try:
+            self._run()
+        finally:
+            self.task_queue.close()
+
+    def _run(self):
         logger.info("Scheduler started processing")
         done = False
         start = datetime.datetime.now()

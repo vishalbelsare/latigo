@@ -7,12 +7,7 @@ from time import sleep
 from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 from latigo.log import measure
-from latigo.task_queue import (
-    deserialize_task,
-    serialize_task,
-    TaskQueueSenderInterface,
-    TaskQueueReceiverInterface,
-)
+from latigo.task_queue import deserialize_task, TaskQueueSenderInterface, TaskQueueReceiverInterface
 from latigo.types import Task
 from latigo.utils import parse_event_hub_connection_string
 
@@ -76,45 +71,30 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         self.producer = Producer(self.config)
         logger.info(f"Producer will send messages to the topic - '{config['connection_string'].split('=')[-1]}'.")
 
-        # Wait until all messages have been delivered
-        logger.info(f"Waiting for {len(self.producer)} deliveries")
-        self.producer.flush()
-
     def __del__(self):
-        if self.producer:
-            self.producer.close()
+        self.close()
 
-    def send_event(self, msg: typing.Optional[bytes]):
+    def close(self):
+        """Close the underlined client."""
         try:
-            self.producer.produce(self.topic, msg, on_delivery=self.delivery_callback)
-        except BufferError as e:
-            logger.info(
-                f"Local producer queue is full ({len(self.producer)} messages awaiting delivery): try again. {e}"
-            )
-        # self.producer.poll(0)
+            self.producer.flush()
+            self.producer.close()
+        except RuntimeError:
+            pass
 
     def put_task(self, task: Task):
-        task_bytes: typing.Optional[bytes] = None
-        try:
-            task_bytes = serialize_task(task)
-        except Exception as e:
-            logger.error(f"Error while serizlising task: {e}")
-            logger.error(f" + Task: {task}")
-            raise e
-        if not task_bytes:
-            raise Exception("Could not serialize task")
-        self.send_event(task_bytes)
+        """Put one task to the queue."""
+        self.producer.produce(self.topic, task.to_json(), on_delivery=self._delivery_callback)
+
+        # Ensure local queue is not overloaded, see this issue for details:
+        # https://github.com/confluentinc/confluent-kafka-python/issues/16
+        self.producer.poll(0)
 
     @staticmethod
-    def delivery_callback(err, msg):
-        """This is called only when self.producer.poll(0) will be called.
-
-        To test it: call self.producer.poll(0) from 'send_event' func.
-        """
+    def _delivery_callback(err, msg):
+        """Log out the delivery notification."""
         if err:
-            logger.error(f"Message failed delivery: {err} ({msg.topic()} [{msg.partition()}] @ {msg.offset()})")
-        else:
-            logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] @ {msg.offset()}")
+            logger.error(f"Message failed delivery: %s (%s [%s] @ %s)", err, msg.topic(), msg.partition(), msg.offset())
 
 
 class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
