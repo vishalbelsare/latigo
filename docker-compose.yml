@@ -9,7 +9,7 @@ services:
     container_name: latigo-scheduler
     build:
       context: .
-      dockerfile: Dockerfile.base
+      dockerfile: Dockerfile
     volumes:
       - ../volumes/latigo/scheduler:/tmp/data:Z
       - ${PWD}/scheduler_local.yaml:/app/scheduler_local.yaml
@@ -24,9 +24,12 @@ services:
     container_name: latigo-executor
     build:
       context: .
-      dockerfile: Dockerfile.base
+      dockerfile: Dockerfile
     volumes:
       - ${PWD}/executor_local.yaml:/app/executor_local.yaml
     environment:
       - LATIGO_EXECUTOR_CONFIG_FILE=${LATIGO_EXECUTOR_CONFIG_FILE}
+      - CACHE_HOST=REPLACE_ME
+      - CACHE_PASSWORD=REPLACE_ME
+      - CACHE_PORT=REPLACE_ME
     command: ["/app/bin/executor.py"]
