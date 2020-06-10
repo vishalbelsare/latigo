@@ -33,7 +33,10 @@
 # PROD_MODE: If false then pushed tags will include a -dev suffix.
 #                  Defaults to false
 
-export tmp_tag="$(date +%Y-%m-%d)"
+DOCKER_NAME=$1
+DOCKER_IMAGE=$2
+IMAGE_VERSION=$3
+tmp_tag="$(date +%Y-%m-%d)"
 
 echo "Expected environment variables with values:"
 echo " + DOCKER_FILE:      ${DOCKER_FILE}"
@@ -60,6 +63,11 @@ if [[ -z "${DOCKER_REPO}" ]]; then
     exit 1
 fi
 
+if [[ -z "${IMAGE_VERSION}" ]]; then
+    echo "IMAGE_VERSION must be set, exiting"
+    exit 1
+fi
+
 if [[ -z "${DOCKER_USERNAME}" ]]; then
     echo "DOCKER_USERNAME not set: we assume that you are already logged in to the docker registry."
 else
@@ -82,17 +90,10 @@ if [[ -z "${DOCKER_IMAGE}" ]]; then
     fi
     echo "building docker image $tmp_tag" 
     docker build -t "$tmp_tag"  -f $DOCKER_FILE .
-    export DOCKER_IMAGE="$tmp_tag"
+    DOCKER_IMAGE="$tmp_tag"
 fi
 
-# Ensure we're getting the latest version, including any dirty state of the repo
-# replacing any '+' development identifier with an underscore for docker compatibility
-export version=$(docker run --rm $DOCKER_IMAGE cat ./VERSION | tr + _)
-if [[ -z "${version}" ]]; then
-    export version="0.0.1"
-fi
-
-echo "Using version '$version'"
+echo "Using version '$IMAGE_VERSION'"
 
 if [[ -z "${PROD_MODE}" ]]; then
     echo "Skipping pushing of 'latest' image"
@@ -102,8 +103,8 @@ else
     docker push $DOCKER_REGISTRY/$DOCKER_REPO/$DOCKER_NAME:latest
 fi
 
-docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DOCKER_REPO/$DOCKER_NAME:$version
-docker push $DOCKER_REGISTRY/$DOCKER_REPO/$DOCKER_NAME:$version
+docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DOCKER_REPO/$DOCKER_NAME:$IMAGE_VERSION
+docker push $DOCKER_REGISTRY/$DOCKER_REPO/$DOCKER_NAME:$IMAGE_VERSION
 
 git tag --points-at HEAD | while read -r tag ; do
     docker tag $DOCKER_IMAGE $DOCKER_REGISTRY/$DOCKER_REPO/$DOCKER_NAME:$tag

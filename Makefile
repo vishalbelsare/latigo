@@ -164,10 +164,8 @@ scan:  ## Scan images for vulnerabilities
 
 ############### Push docker images ####################
 push:  ## Push image
-	export DOCKER_NAME=${LATIGO_BASE_IMAGE_NAME};\
-	export DOCKER_IMAGE=${LATIGO_BASE_IMAGE_NAME};\
-	echo "Pushing imge ${DOCKER_NAME}";\
-	bash -x deploy/docker_push.sh
+	echo "Pushing image '${LATIGO_BASE_IMAGE_NAME}' with version '${LATIGO_VERSION}'";\
+	bash -x deploy/docker_push.sh ${LATIGO_BASE_IMAGE_NAME} ${LATIGO_BASE_IMAGE_NAME} ${LATIGO_VERSION}
 
 ############### Docker cleanup ####################
 prune:  ## Prune docker
