@@ -111,7 +111,10 @@ In short to run Latigo you have to do few points:
   export CACHE_PASSWORD=REPLACE_ME
   export CACHE_PORT=REPLACE_ME
   ```
-- install the requirements (almost never works from first time);
+- install the requirements:
+  ```shell script
+  make install_app_requirements
+  ```
 - dig into code to understand the "magic" and why Makefile commands or other commands do not see the config files;
 - as the result you should see in logs that:
   - for scheduler: that some amount of messages to the Kafka where sent and you see them in you Azure queue;
@@ -135,7 +138,7 @@ export LATIGO_SCHEDULER_CONFIG_FILE../scheduler_local.yaml
 ```
 Add credentials for cache:
 ```docker
-# put this to docker-compose.yaml to `environment` section file or export them as you wish
+# replace credentials with proper values in docker-compose.yaml
 - CACHE_HOST=REPLACE_ME
 - CACHE_PASSWORD=REPLACE_ME
 - CACHE_PORT=REPLACE_ME
@@ -202,7 +205,12 @@ We use ```requirements.in``` and ```requirements.txt``` files to keep track of d
 
 ```bash
 # Update to latest versions and rebuild requirements.txt from requirements.in
-make req
+make compose_requirements
+```
+Do not forget update already installed packages:  
+```shell script
+# Update to latest versions and rebuild requirements.txt from requirements.in
+make install_app_requirements
 ```
 
 ### How to update Latigo on the k8s cluster

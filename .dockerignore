@@ -3,3 +3,6 @@ latigo_venv/*
 .git/*
 .idea/
 .gitignore
+.pytest_cache
+.coverage
+.env

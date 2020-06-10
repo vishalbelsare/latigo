@@ -10,7 +10,6 @@ CLUSTER_SUBSCRIPTION="019958ea-fe2c-4e14-bbd9-0d2db8ed7cfc"
 COMPUTED_ENV="${ROOT_DIR}/set_env.py"
 LATIGO_BASE_IMAGE_NAME:="latigo-base"
 LATIGO_BASE_IMAGE_RELEASE_NAME:="${LATIGO_BASE_IMAGE_NAME}:${LATIGO_VERSION}"
-LATIGO_BASE_IMAGE_STAGE_NAME:="${LATIGO_BASE_IMAGE_NAME}:${LATIGO_VERSION}rc"
 
 LATIGO_PRODUCTION_BRANCH:="master"
 LATIGO_STAGE_BRANCH:="stage"
@@ -37,7 +36,6 @@ info:  ## Show info about env and used variables
 	@echo "GITHUB_TAG=${GITHUB_TAG}"
 	@echo "LATIGO_BASE_IMAGE_NAME=${LATIGO_BASE_IMAGE_NAME}"
 	@echo "LATIGO_BASE_IMAGE_RELEASE_NAME=${LATIGO_BASE_IMAGE_RELEASE_NAME}"
-	@echo "LATIGO_BASE_IMAGE_STAGE_NAME=${LATIGO_BASE_IMAGE_STAGE_NAME}"
 
 	@echo "DOCKER_REGISTRY=${DOCKER_REGISTRY}"
 	@echo "DOCKER_REPO=${DOCKER_REPO}"
@@ -50,15 +48,15 @@ code-quality:  ## Run code quality tools
 show-env:  ## Show the variables related to Latigo in the current environment
 	env | sort
 
-req:  ## Rebuild and add requirements to requirements.txt and test_requirements.txt
+compose_requirements:  ## run pip-compile for requirements.in and test_requirements.in
 	pip install --upgrade pip
-	pip uninstall gordo -y
 	pip install --upgrade pip-tools
-	cd app && cat requirements.in | sort -u > r.in
-	cd app && pip-compile --output-file=requirements.txt r.in
-	cd app && cat requirements.in, test_requirements.in | sort -u > r.in
-	cd app && pip-compile --output-file=test_requirements.txt r.in
-	[ ! -e r.in ] || rm r.in
+	pip-compile --output-file=requirements.txt requirements.in
+	pip-compile --output-file=test_requirements.txt test_requirements.inpip
+
+install_app_requirements:  ## install requirements for app and tests run
+	pip install --upgrade pip
+	pip install --upgrade pip-tools
 	cd app && pip install -r requirements.txt
 	cd app && pip install -r test_requirements.txt
 
@@ -137,16 +135,8 @@ tests_integration:  ##  Run integration tests
 
 ############### Build docker images ####################
 build:  ## Build Latigo image
-	@if [ "$(LATIGO_PRODUCTION_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
-		echo "Building master branch for base";\
-		docker build . -f Dockerfile.base -t "${LATIGO_BASE_IMAGE_NAME}" -t "${LATIGO_BASE_IMAGE_RELEASE_NAME}";\
-	elif [ "$(LATIGO_STAGE_BRANCH)" == "${GITHUB_BRANCH}" ]; then\
-		echo "Building stage branch for base";\
-		docker build . -f Dockerfile.base -t "${LATIGO_BASE_IMAGE_NAME}" -t "${LATIGO_BASE_IMAGE_STAGE_NAME}" -t "${LATIGO_BASE_IMAGE_NAME}:tag${GITHUB_TAG}";\
-	else\
-		echo "Unknown branch!";\
-		docker build . -f Dockerfile.base -t "${LATIGO_BASE_IMAGE_NAME}";\
-	fi;\
+	@echo "Building master branch image"
+	docker build --compress --force-rm . -f Dockerfile -t "${LATIGO_BASE_IMAGE_NAME}" -t "${LATIGO_BASE_IMAGE_RELEASE_NAME}"
 
 
 ############### Scan docker images ####################
