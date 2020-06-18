@@ -1,6 +1,8 @@
 import logging
 import typing
 
+from gordo.client.io import BadGordoRequest
+
 from latigo.types import ModelTrainingPeriod
 from .client_pool import ModelInfoProviderInterface, GordoClientPool, Machine, Model, SensorDataSpec
 from .data_provider import _gordo_to_latigo_tag_list
@@ -36,47 +38,64 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
             raise ValueError("'projects' can not be empty.")
         for project_name in projects:
             client = self.gordo_pool.allocate_instance(project_name)
-            if client:
-                try:
-                    machines += client._get_machines(machine_names=model_names)
-                except TypeError as e:
-                    if "byte indices must be integers or slices, not str" not in str(e):
-                        raise
-
-                    # this is case when "project_name" is invalid.
-                    # we will skip such project cause API might be not in sync with Gordo.
-                    logger.exception("Invalid project: %s", project_name)
-                    self.gordo_pool.delete_instance(project_name)  # delete invalid client from poll
-
-            else:
-                logger.error(f"No client found for project '{project_name}', skipping")
+            project_machines = self._fetch_with_known_errors(
+                func=client._get_machines,
+                project_name=project_name,
+                machine_names=model_names,
+            )
+            if project_machines:
+                machines += project_machines
 
         if not machines:
             raise ValueError(f"No models/machines were found for projects: {' ;'.join(projects)}.")
         return machines
 
-    def get_all_models(self, projects: typing.List) -> typing.List[Model]:
-        machines = self.get_model_data(projects)
-        models = []
-        for machine in machines:
-            if machine:
-                project_name = machine.project_name or "unnamed"
-                model_name = machine.name or "unnamed"
-                model = Model(
-                    project_name=project_name,
-                    model_name=model_name,
-                    tag_list=machine.dataset.tag_list,
-                    target_tag_list=machine.dataset.target_tag_list,
-                )
-                if model:
-                    models.append(model)
+    def get_all_model_names_by_project(self, projects: typing.List[str]) -> typing.Dict[str, str]:
+        """Get available models for each passed project.
 
-        if models:
-            logger.info("Found %s models", len(models))
-        else:
-            logger.warning("No models found")
+        Args:
+            projects: project names for models fetching.
 
-        return models
+        Return: { "project_name": [ "model_1", "model_2", etc. ], ... }.
+        """
+        result: typing.Dict[str, str] = {}
+
+        for project_name in projects:
+            client = self.gordo_pool.allocate_instance(project_name)
+            machines_resp = self._fetch_with_known_errors(
+                func=client.get_available_machines,
+                project_name=project_name,
+            )
+            if not machines_resp:
+                continue
+
+            result[project_name] = machines_resp["models"]
+        return result
+
+    def _fetch_with_known_errors(self, func, project_name: str, *args, **kwargs):
+        """Call function with catching common known errors.
+
+        Args:
+            func: function to be executed.
+            project_name: project related with what function is called.
+        """
+        try:
+            return func(*args, **kwargs)
+
+        except TypeError as e:
+            if "byte indices must be integers or slices, not str" not in str(e):
+                raise
+
+            # this is case when "project_name" is invalid.
+            # we will skip such project cause API might be not in sync with Gordo.
+            logger.exception("Invalid project: %s", project_name)
+            self.gordo_pool.delete_instance(project_name)  # delete invalid client from poll
+        except BadGordoRequest as e:
+            if "We failed to get response while fetching resource: Machine metadata for" not in str(e):
+                raise
+
+            # this case is when machine is in Gordo but unexpectedly failed/not ready.
+            logger.exception("Failed machine for project '%s'", project_name)
 
     def get_machine_by_key(
         self, project_name: str, model_name: str
@@ -99,9 +118,7 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
             )
         return model
 
-    def get_spec(
-        self, project_name: str, model_name: str
-    ) -> typing.Optional[SensorDataSpec]:
+    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
         model = self.get_machine_by_key(
             project_name=project_name, model_name=model_name
         )

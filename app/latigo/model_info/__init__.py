@@ -34,70 +34,26 @@ class Model:
 
 
 class ModelInfoProviderInterface:
-    def get_all_models(self, projects: typing.List):
+    def get_all_model_names_by_project(self, projects: typing.List):
         raise NotImplementedError()
 
     def get_model_by_key(self, project_name: str, model_name: str):
         raise NotImplementedError()
 
-    def get_spec(
-        self, project_name: str, model_name: str
-    ) -> typing.Optional[SensorDataSpec]:
+    def get_spec(self, project_name: str, model_name: str) -> typing.Optional[SensorDataSpec]:
         """
         Return a sensor data spec for given project name and model name
         """
         raise NotImplementedError()
 
 
-class MockModelInfoProvider(ModelInfoProviderInterface):
-    def __init__(self, config: dict):
-        self.config = config
-
-    def get_all_models(self, projects: typing.List):
-        return []
-
-    def get_model_by_key(self, project_name: str, model_name: str):
-        return None
-
-    def get_spec(
-        self, project_name: str, model_name: str
-    ) -> typing.Optional[SensorDataSpec]:
-        return None
-
-    @staticmethod
-    def get_project_latest_revisions(project_name: str) -> str:
-        return f"{project_name}-111"
-
-
-class DevNullModelInfoProvider(ModelInfoProviderInterface):
-    def __init__(self, config: dict):
-        pass
-
-    def get_all_models(self, projects: typing.List):
-        return []
-
-    def get_model_by_key(self, project_name: str, model_name: str):
-        return None
-
-    def get_spec(
-        self, project_name: str, model_name: str
-    ) -> typing.Optional[SensorDataSpec]:
-        return None
-
-
 def model_info_provider_factory(model_info_provider_config):
     model_info_provider_type = model_info_provider_config.get("type", None)
-    model_info_provider = None
 
     if "gordo" == model_info_provider_type:
         from latigo.gordo import GordoModelInfoProvider
 
         model_info_provider = GordoModelInfoProvider(config=model_info_provider_config)
-
-    elif "mock" == model_info_provider_type:
-        model_info_provider = MockModelInfoProvider(config=model_info_provider_config)
     else:
-        model_info_provider = DevNullModelInfoProvider(
-            config=model_info_provider_config
-        )
+        raise ValueError(f"'{model_info_provider_type}' in not valid model info provider type")
     return model_info_provider
