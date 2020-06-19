@@ -16,7 +16,7 @@ LATIGO_STAGE_BRANCH:="stage"
 GITHUB_BRANCH:=$(patsubst refs/heads/%,%,${GITHUB_REF})
 GITHUB_TAG:=$(patsubst refs/tags/%,%,${GITHUB_REF})
 
-.PHONY: all code-quality tests set-env setup up rebuild-req
+.PHONY: all code-quality tests_all tests_unit tests_integration set-env setup up rebuild-req
 
 all: help
 

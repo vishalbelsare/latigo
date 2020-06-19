@@ -142,30 +142,21 @@ class Scheduler:
         if not projects:
             raise ValueError("No projects were fetch for scheduling the predictions.")
 
-        models = self.model_info_provider.get_all_models(projects=projects)
+        model_names_by_project = self.model_info_provider.get_all_model_names_by_project(projects=projects)
 
-        for model in models:
-            project_name = model.project_name
-            if not project_name:
-                logger.error("No project name found for model, skipping model")
-                continue
+        for project_name, models in model_names_by_project.items():
+            for model_name in models:
+                task = Task(
+                    project_name=project_name,
+                    model_name=model_name,
+                    from_time=prediction_start_time_utc,
+                    to_time=prediction_end_time_utc,
+                )
+                with pylogctx.context(task=task):
+                    self.task_queue.put_task(task)
 
-            model_name = model.model_name
-            if not model_name:
-                logger.error("No model name found for model in project: %s", project_name)
-                continue
-
-            task = Task(
-                project_name=project_name,
-                model_name=model_name,
-                from_time=prediction_start_time_utc,
-                to_time=prediction_end_time_utc,
-            )
-            with pylogctx.context(task=task):
-                self.task_queue.put_task(task)
-
-                stats_projects_ok.add(project_name)
-                stats_models_ok.add(model_name)
+                    stats_projects_ok.add(project_name)
+                    stats_models_ok.add(model_name)
 
         logger.info(
             f"Scheduled {len(stats_models_ok)} models over {len(stats_projects_ok)} projects."

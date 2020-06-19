@@ -4,13 +4,11 @@ from unittest.mock import Mock, patch, MagicMock, call, ANY
 import pytest
 
 from latigo.gordo import GordoModelInfoProvider, Task
-from latigo.model_info import Model
 from latigo.scheduler import Scheduler
 from tests.conftest import SCHEDULER_PREDICTION_DELAY, SCHEDULER_PREDICTION_INTERVAL
-from tests.factories.models import ModelFactory
 
 DATETIME_UTC_NOW = datetime.fromisoformat("2020-04-10T10:00:00.000000+00:00")
-MODELS = [Model(model_name="model", project_name="project", tag_list=[], target_tag_list=[])]
+MODELS_BY_PROJECT = {"project": ["model"]}
 PROJECTS_FROM_API = ["ioc-1000", "ioc-1099"]
 
 
@@ -21,7 +19,7 @@ PROJECTS_FROM_API = ["ioc-1000", "ioc-1099"]
 def scheduler(schedule_config) -> Scheduler:
     scheduler = Scheduler(schedule_config)
     scheduler.model_info_provider = Mock(spec=GordoModelInfoProvider)
-    scheduler.model_info_provider.get_all_models.return_value = MODELS
+    scheduler.model_info_provider.get_all_model_names_by_project.return_value = MODELS_BY_PROJECT
     return scheduler
 
 
@@ -56,11 +54,14 @@ def test_run(scheduler):
     )
 
 
-@pytest.mark.parametrize("models", [[ModelFactory(), ModelFactory(), ModelFactory()], [ModelFactory()]])
+@pytest.mark.parametrize("models_by_project", [
+    {"project_1": ["model_1", "model_2"]},
+    {"project_1": ["model_1"], "project_2": ["model_2"]}
+])
 @patch("latigo.metadata_api.client.MetadataAPIClient.get_projects", new=MagicMock(return_value=PROJECTS_FROM_API))
-def test_perform_prediction_step_multiple_projects(models, scheduler):
+def test_perform_prediction_step_multiple_projects(models_by_project, scheduler):
     with patch.object(scheduler.task_queue, "put_task") as mock_put_task, patch.object(
-        scheduler.model_info_provider, "get_all_models", new=Mock(return_value=models)
+        scheduler.model_info_provider, "get_all_model_names_by_project", new=Mock(return_value=models_by_project)
     ), patch("latigo.scheduler.datetime") as mock_dt:
         mock_dt.datetime.now.return_value = DATETIME_UTC_NOW
         scheduler.perform_prediction_step()
@@ -69,16 +70,17 @@ def test_perform_prediction_step_multiple_projects(models, scheduler):
     to_time = from_datetime + timedelta(minutes=+SCHEDULER_PREDICTION_INTERVAL)
 
     expected_calls = []
-    for model in models:
-        expected_calls.append(
-            call(
-                Task(
-                    project_name=model.project_name,
-                    model_name=model.model_name,
-                    from_time=from_datetime,
-                    to_time=to_time,
+    for project_name, models in models_by_project.items():
+        for model_name in models:
+            expected_calls.append(
+                call(
+                    Task(
+                        project_name=project_name,
+                        model_name=model_name,
+                        from_time=from_datetime,
+                        to_time=to_time,
+                    )
                 )
             )
-        )
 
     mock_put_task.assert_has_calls(expected_calls)

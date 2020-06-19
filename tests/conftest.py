@@ -58,6 +58,10 @@ def schedule_config(auth_config):
             "run_at_once": True,
         },
         "model_info": {
+            "type": "gordo",
+            "connection_string": "https://api/gordo/v0/",
+            "data_provider": {"debug": True, "n_retries": 5},
+            "prediction_forwarder": {"debug": False, "n_retries": 5},
             "auth": auth_config,
         },
         "task_queue": {
