@@ -78,7 +78,6 @@ class KafkaTaskQueueSender(TaskQueueSenderInterface):
         """Close the underlined client."""
         try:
             self.producer.flush()
-            self.producer.close()
         except RuntimeError:
             pass
 

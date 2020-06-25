@@ -2,7 +2,7 @@
 import logging
 import os
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, Mock
 
 import fakeredis
 import inject
@@ -16,11 +16,12 @@ sys.path.insert(0, latigo_path)
 from .mock_classes import MockSensorDataProvider
 from latigo.executor import PredictionExecutor
 from latigo.gordo import GordoModelInfoProvider
+from latigo.scheduler import Scheduler
 from latigo.time_series_api import TimeSeriesAPIClient
 
 
 SCHEDULER_PREDICTION_DELAY = 1  # days
-SCHEDULER_PREDICTION_INTERVAL = 90  # minutes
+SCHEDULER_PREDICTION_INTERVAL = 5  # minutes
 
 
 def setup_single_log_level(level: int = logging.INFO):
@@ -55,7 +56,7 @@ def schedule_config(auth_config):
             "continuous_prediction_start_time": "08:00",
             "continuous_prediction_interval": f"{SCHEDULER_PREDICTION_INTERVAL}m",
             "continuous_prediction_delay": f"{SCHEDULER_PREDICTION_DELAY}d",
-            "run_at_once": True,
+            "run_at_once": False,
         },
         "model_info": {
             "type": "gordo",
@@ -192,3 +193,33 @@ def configure_dependencies():
 @patch("latigo.time_series_api.client.get_auth_session", new=MagicMock())
 def time_series_api_client(config) -> TimeSeriesAPIClient:
     return TimeSeriesAPIClient(config["sensor_data"])
+
+
+@pytest.fixture
+@patch("latigo.metadata_api.client.MetadataAPIClient._create_session", new=MagicMock())
+@patch("latigo.task_queue.kafka.Producer", new=MagicMock())
+@patch("latigo.scheduler.Scheduler._perform_auth_checks", new=MagicMock())
+def scheduler(schedule_config, request) -> Scheduler:
+    # Create a new class to avoid shared state
+    cls = type("TestScheduler", (Scheduler,), {})
+    if hasattr(request, "param") and request.param:
+        # patch "_is_ready" to be able to stop the loop execution
+        setattr(cls, '_is_ready', property(fget=is_scheduler_ready(request.param), fset=lambda x, y: x))
+
+    scheduler = cls(schedule_config)
+    scheduler.model_info_provider = Mock(spec=GordoModelInfoProvider)
+    scheduler.model_info_provider.get_all_model_names_by_project.return_value = {"project": ["model"]}
+    return scheduler
+
+
+def is_scheduler_ready(statuses):
+    """Need to quit from the loop.
+
+    statuses: pass [True, True] for loop to be run twice.
+        Default is one time run.
+    """
+    executor_statuses = iter(statuses or [True])
+
+    def inner(self) -> bool:
+        return next(executor_statuses, False)
+    return inner

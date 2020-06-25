@@ -4,7 +4,6 @@ import pandas as pd
 import datetime
 
 import pylogctx
-from time import sleep
 
 from pytz import utc
 
@@ -26,6 +25,7 @@ class Scheduler:
     def __init__(self, config: dict):
         if not config:
             self._fail("No config specified")
+        self._is_ready = True  # might be needed to exit scheduling-loop
         self.config = config
         self._prepare_task_queue()
         self._prepare_model_info()
@@ -110,10 +110,12 @@ class Scheduler:
             start_time=self.continuous_prediction_start_time,
             interval=self.continuous_prediction_interval,
         )
-        self.run_at_once = self.scheduler_config.get("run_at_once", True)
+        self.run_at_once = self.scheduler_config.get("run_at_once", False)
 
     def print_summary(self):
-        next_start = f"{self.continuous_prediction_timer.closest_start_time()} (in {human_delta(self.continuous_prediction_timer.time_left())})"
+        now = datetime.datetime.now(utc)
+        next_start = f"{self.continuous_prediction_timer.closest_start_time(now=now)} " \
+                     f"(in {human_delta(self.continuous_prediction_timer.time_left(now=now))})"
         logger.info(
             f"\nScheduler settings:\n"
             f"  Latigo Version:   {latigo_version}\n"
@@ -162,41 +164,26 @@ class Scheduler:
             f"Scheduled {len(stats_models_ok)} models over {len(stats_projects_ok)} projects."
         )
 
-    def on_time(self):
-        try:
-            start = datetime.datetime.now()
-            self.perform_prediction_step()
-            interval = datetime.datetime.now() - start
-            logger.info(f"Scheduling took {human_delta(interval)}")
-            if interval < datetime.timedelta(seconds=1):
-                sleep(interval.total_seconds())
-        except KeyboardInterrupt:
-            logger.info("Keyboard abort triggered, shutting down")
-            return True
-        except Exception:
-            logger.exception("Error occurred in scheduler")
-
-        return False
-
     def run(self):
         """Start the main loop."""
+        logger.info("Scheduler started processing")
         try:
-            self._run()
+            if self.run_at_once:
+                self._run()
+
+            while self._is_ready:
+                try:
+                    self.continuous_prediction_timer.wait_for_trigger()
+                    self._run()
+                except KeyboardInterrupt:
+                    self._is_ready = False
+                except Exception:
+                    logger.exception("Error occurred in scheduler")
         finally:
             self.task_queue.close()
 
     def _run(self):
-        logger.info("Scheduler started processing")
-        done = False
-        start = datetime.datetime.now()
-        if self.run_at_once:
-            done = self.on_time()
-
-        while not done:
-            logger.info(
-                "Next prediction will occur at %s (in %s)",
-                self.continuous_prediction_timer.closest_start_time(),
-                human_delta(self.continuous_prediction_timer.time_left())
-            )
-            if self.continuous_prediction_timer.wait_for_trigger(now=start):
-                done = self.on_time()
+        start = datetime.datetime.now(utc)
+        self.perform_prediction_step()
+        interval = datetime.datetime.now(utc) - start
+        logger.info(f"Scheduling took {human_delta(interval)}")

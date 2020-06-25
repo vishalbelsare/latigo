@@ -1,26 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as datetime_date
 from unittest.mock import Mock, patch, MagicMock, call, ANY
 
 import pytest
 
-from latigo.gordo import GordoModelInfoProvider, Task
+from latigo.gordo import Task
 from latigo.scheduler import Scheduler
 from tests.conftest import SCHEDULER_PREDICTION_DELAY, SCHEDULER_PREDICTION_INTERVAL
 
 DATETIME_UTC_NOW = datetime.fromisoformat("2020-04-10T10:00:00.000000+00:00")
-MODELS_BY_PROJECT = {"project": ["model"]}
 PROJECTS_FROM_API = ["ioc-1000", "ioc-1099"]
-
-
-@pytest.fixture
-@patch("latigo.metadata_api.client.MetadataAPIClient._create_session", new=MagicMock())
-@patch("latigo.task_queue.kafka.Producer", new=MagicMock())
-@patch("latigo.scheduler.Scheduler._perform_auth_checks", new=MagicMock())
-def scheduler(schedule_config) -> Scheduler:
-    scheduler = Scheduler(schedule_config)
-    scheduler.model_info_provider = Mock(spec=GordoModelInfoProvider)
-    scheduler.model_info_provider.get_all_model_names_by_project.return_value = MODELS_BY_PROJECT
-    return scheduler
 
 
 @pytest.mark.parametrize("microsecond", [0, 987654, 1])
@@ -39,18 +27,17 @@ def test_perform_prediction_step_put_task(scheduler, microsecond):
     )
 
 
-def test_run(scheduler):
+@pytest.mark.parametrize("scheduler", ([True], ), indirect=["scheduler"])
+@patch("latigo.scheduler.OnTheClockTimer.wait_for_trigger", new=MagicMock())
+def test_run(scheduler: Scheduler):
     with patch.object(scheduler, "task_queue") as task_queue, patch.object(
         scheduler, "models_metadata_info_provider"
     ) as md_client:
-        # Ensure the loop is interrupted after the first task is placed
-        task_queue.put_task.side_effect = KeyboardInterrupt
-
         md_client.get_projects.return_value = ["project1"]
         scheduler.run()
 
     task_queue.assert_has_calls(
-        [call.put_task(Task(project_name="project", model_name=ANY, from_time=ANY, to_time=ANY)), call.close()]
+        [call.put_task(Task(project_name="project", model_name=ANY, from_time=ANY, to_time=ANY))]
     )
 
 
@@ -84,3 +71,26 @@ def test_perform_prediction_step_multiple_projects(models_by_project, scheduler)
             )
 
     mock_put_task.assert_has_calls(expected_calls)
+
+
+@pytest.mark.parametrize("scheduler", [(True, True, True, True)], indirect=["scheduler"])
+@patch("latigo.clock.sleep")
+def test_run_intervals_sleep(clock_sleep_mock, scheduler: Scheduler):
+    """Test scheduling behavior of the Clock.
+
+    If interval is 5 minutes between scheduling predictions, logic is:
+        10:01:00 - scheduler was run -> "sleep" for 4 mins;
+        10:05:00 - first prediction scheduling made;
+        10:10:00 - each next scheduling should be made in 5 mins;
+        ...
+    """
+    times_now = ["10:01:00", "10:05:20", "10:10:25", "10:16:13"]
+    expected_sleeps = [240.0, 280.0, 275.0, 227.0]
+
+    datetime_now = [datetime.fromisoformat(f"2020-04-10T{t}.000000+00:00") for t in times_now]
+    with patch("latigo.clock.datetime") as mock_clock_dt, patch.object(scheduler, "_run", new=Mock()):
+        mock_clock_dt.datetime.now.side_effect = datetime_now
+        mock_clock_dt.date.side_effect = datetime_date
+        mock_clock_dt.datetime.combine.side_effect = datetime.combine
+        scheduler.run()
+    clock_sleep_mock.assert_has_calls([call(secs) for secs in expected_sleeps])

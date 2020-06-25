@@ -86,9 +86,9 @@ class GordoModelInfoProvider(ModelInfoProviderInterface):
             if "byte indices must be integers or slices, not str" not in str(e):
                 raise
 
-            # this is case when "project_name" is invalid.
+            # this is case when "project_name" is invalid (no traceback is needed here).
             # we will skip such project cause API might be not in sync with Gordo.
-            logger.exception("Invalid project: %s", project_name)
+            logger.error("Invalid project: %s. %s", project_name, e)
             self.gordo_pool.delete_instance(project_name)  # delete invalid client from poll
         except BadGordoRequest as e:
             if "We failed to get response while fetching resource: Machine metadata for" not in str(e):

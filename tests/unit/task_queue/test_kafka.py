@@ -27,7 +27,6 @@ def test_put_task(sender):
 def test_close(sender):
     sender.close()
     sender.producer.flush.assert_called_once_with()
-    sender.producer.close.assert_called_once_with()
 
 
 def test_close_already_closed(sender):
@@ -35,4 +34,3 @@ def test_close_already_closed(sender):
 
     sender.close()
     sender.producer.flush.assert_called_once_with()
-    sender.producer.close.assert_called_once_with()
