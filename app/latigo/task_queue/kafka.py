@@ -117,6 +117,7 @@ class KafkaTaskQueueReceiver(TaskQueueReceiverInterface):
         """Close the underlined client."""
         try:
             self.consumer.close()
+            logger.info("Kafka consumer was closed.")
         except RuntimeError:
             pass
 

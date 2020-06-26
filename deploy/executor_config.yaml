@@ -39,7 +39,6 @@ model_info:
         authority_host_url: "CHANGE ME"
         client_id: "CHANGE ME"
         client_secret: "CHANGE ME"
-        verification_url: "CHANGE ME"
 
 sensor_data:
     type: "time_series_api"
@@ -64,7 +63,6 @@ prediction_storage:
         client_id: "CHANGE ME"
         client_secret: "CHANGE ME"
         scope: ['read', 'write']
-        verification_url: "CHANGE ME"
 
 predictor:
     type: "gordo"
@@ -87,7 +85,6 @@ predictor:
         authority_host_url: "CHANGE ME"
         client_id: "CHANGE ME"
         client_secret: "CHANGE ME"
-        verification_url: "CHANGE ME"
 
 prediction_metadata_storage:
     type: "metadata_api"
@@ -98,6 +95,5 @@ prediction_metadata_storage:
         authority_host_url: "CHANGE ME"
         client_id: "CHANGE ME"
         client_secret: "CHANGE ME"
-        verification_url: "CHANGE ME"
         auto_adding_headers:
             Ocp-Apim-Subscription-Key: "CHANGE ME"
