@@ -54,6 +54,5 @@ models_metadata_info:
         authority_host_url: "REPLACE"
         client_id: "REPLACE"
         client_secret: "REPLACE"
-        verification_url: "REPLACE"
         auto_adding_headers:
             Ocp-Apim-Subscription-Key: "REPLACE"
