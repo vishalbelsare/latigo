@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 from latigo.gordo.gordo_exceptions import NoTagDataInDataLake
 from latigo.log import measure
@@ -50,6 +51,9 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
 
         if not result:
             raise Exception("No result in gordo.execute_prediction()")
+        prediction_errors: List[str] = result[0][2]
+        if prediction_errors:
+            raise Exception("Prediction failed in Gordo with: %s", '; '.join(prediction_errors))
         return PredictionDataSet(
             meta_data=meta_data, time_range=TimeRange(from_time=from_time, to_time=to_time), data=result
         )

@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 
 import pytest
 from requests import HTTPError
@@ -40,6 +40,7 @@ def test_execute_prediction_for_task_success(basic_executor):
     revision = "000"
 
     client_mock = MagicMock(name="client_mock")
+    client_mock.predict.return_value = [[ANY, ANY, []]]
     with patch.object(
         basic_executor.prediction_executor_provider.gordo_pool, "allocate_instance", return_value=client_mock
     ):

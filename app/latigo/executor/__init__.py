@@ -135,7 +135,6 @@ class PredictionExecutor:
             f"  Auth Version:     {auth_version}\n"
         )
 
-    @measure("execute_prediction")
     def execute_prediction_for_task(self, task: Task, revision: str) -> typing.Optional[PredictionDataSet]:
         """Execute prediction for the given model and time range.
 

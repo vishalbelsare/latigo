@@ -1,4 +1,3 @@
-import pprint
 import logging
 import os
 from datetime import datetime
@@ -12,7 +11,11 @@ from latigo.utils import (
     load_yaml,
     save_yaml,
     parse_event_hub_connection_string,
-    datetime_to_utc_as_str, local_datetime_to_utc_as_str)
+    datetime_to_utc_as_str,
+    local_datetime_to_utc_as_str,
+    get_thread_pool_executor,
+    run_async_in_threads_executor,
+)
 
 logger = logging.getLogger("latigo.utils")
 
@@ -154,3 +157,21 @@ def test_datetime_to_utc_as_str(target: str, is_pytz: bool):
 
     res = datetime_to_utc_as_str(target)
     assert res == EXPECTED_DATETIME
+
+
+@mock.patch("latigo.utils.ThreadPoolExecutor")
+def test_get_thread_pool_executor(mocked_thread_pool_executor):
+    executor = get_thread_pool_executor(2)
+    cached_executor = get_thread_pool_executor(2)
+
+    assert executor is cached_executor
+    mocked_thread_pool_executor.assert_called_once()
+
+
+def test_run_async_in_threads_executor():
+    def foo(*args):
+        return args
+
+    tasks = [(foo, ()), (foo, (2, 3))]
+    res = run_async_in_threads_executor(tasks)
+    assert {(), (2, 3)} == set(res)

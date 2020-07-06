@@ -1,24 +1,23 @@
-import re
-import pprint
-import logging
 import datetime
+import logging
+import os.path
+import pprint
+import re
+import traceback
+import typing
+from concurrent.futures import wait
+from concurrent.futures.thread import ThreadPoolExecutor
+from functools import lru_cache, reduce
+from typing import Dict
 
-import dateutil
 import pytz
 import yaml
-import typing
-import sys
-import time
-import os.path
-import typing
-import traceback
 
 import latigo.rfc3339
-from typing import Dict
-from functools import reduce
-
+from latigo.log import measure
 
 logger = logging.getLogger(__name__)
+THREAD_POOL_EXECUTOR_WORKERS = 10
 
 
 def rfc3339_from_datetime(date_object: datetime.datetime) -> str:
@@ -304,3 +303,35 @@ def datetime_to_utc_as_str(target: datetime) -> str:
 
 def get_nested_config_value(dictionary: Dict, *keys):
     return reduce(lambda d, key: d.get(key) if d else None, keys, dictionary)
+
+
+@lru_cache(maxsize=1, typed=True)
+def get_thread_pool_executor(max_workers: int = THREAD_POOL_EXECUTOR_WORKERS):
+    """Return Singleton instance of the Executor to run tasks on.
+
+    Args:
+        max_workers: amount of workers to run tasks with.
+            Do not set "max_workers" to the big number.
+    """
+    return ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="latigo-thread-pool-")
+
+
+@measure("run_async_in_threads_executor")
+def run_async_in_threads_executor(
+    functions: typing.List[typing.Tuple[typing.Callable, tuple]]
+) -> typing.List[typing.Any]:
+    """Run functions with it args in the thread poll.
+
+    Use it only for I/O-bound tasks like API calls.
+
+    Args:
+        functions: (func to call, args to be passed to the func)
+
+    Return:
+        Results of the functions execution in RANDOM order.
+    """
+    executor = get_thread_pool_executor()
+    tasks = [executor.submit(func, *args) for func, args in functions]
+
+    done, _ = wait(tasks)
+    return [func.result() for func in done]
