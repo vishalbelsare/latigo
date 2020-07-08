@@ -1,4 +1,5 @@
 # This setup is necessary as "tests/" folder is not inside "app/"
+import json
 import logging
 import os
 import sys
@@ -9,6 +10,7 @@ import inject
 import pandas as pd
 import pytest
 from redis import StrictRedis
+from requests import Response
 
 latigo_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../app/"))
 sys.path.insert(0, latigo_path)
@@ -223,3 +225,17 @@ def is_scheduler_ready(statuses):
     def inner(self) -> bool:
         return next(executor_statuses, False)
     return inner
+
+
+def make_response(
+    content: dict = None, dumped_data: str = None, status_code: int = 200, reason: str = "OK"
+) -> Response:
+    response_obj = Response()
+    response_obj.status_code = status_code
+    response_obj._content = dumped_data if dumped_data else dump_any_dict(content).encode()
+    response_obj.reason = reason
+    return response_obj
+
+
+def dump_any_dict(target: dict) -> str:
+    return json.dumps(target, sort_keys=True, default=str)

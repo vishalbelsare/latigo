@@ -7,6 +7,7 @@ from latigo.types import TimeRange
 
 from .cache import TagMetadataCache
 from .misc import _itemes_present, parse_request_json, get_auth_session
+from ..utils import get_batches
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,42 @@ class TimeSeriesAPIClient:
         }
         res = self._get(url=url, params=params)
         return parse_request_json(res)
+
+    def _fetch_data_for_multiple_ids(
+        self, tag_ids: typing.List[str], time_range: TimeRange
+    ) -> typing.List[typing.Dict]:
+        """Fetch data points for multiple tag ids (max 100).
+
+        Docs: https://api.equinor.com/docs/services/Timeseries-api-v1-6
+            /operations/getMultiDatapoints
+
+        Note:
+            - if "includeOutsidePoints" is True then -> points
+                immediately prior to and following the time window will
+                be included in result and following data filtering before
+                sending for the prediction should be made.
+            - if more then 100 "tag ids" will be sent to API - error
+                code is returned: {"statusCode":400}.
+        """
+        url = f"{self.base_url}/query/data"
+        max_ids_in_one_request = 100
+        tags_data = []
+
+        for batch in get_batches(tag_ids, batch_size=max_ids_in_one_request):
+            request_data = [
+                {
+                    "id": tag_id,
+                    "startTime": time_range.rfc3339_from(),
+                    "endTime": time_range.rfc3339_to(),
+                    "limit": 100000,
+                    "includeOutsidePoints": False,
+                }
+                for tag_id in batch
+            ]
+            rep_data = parse_request_json(self._post(url=url, json=request_data))
+            tags_data.extend(rep_data["data"]["items"])
+
+        return tags_data
 
     def _get_metadata_from_api(self, name: str) -> typing.Dict:
         """Fetch metadata from Time Series API.

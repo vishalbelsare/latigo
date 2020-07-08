@@ -335,3 +335,14 @@ def run_async_in_threads_executor(
 
     done, _ = wait(tasks)
     return [func.result() for func in done]
+
+
+def get_batches(iterable, batch_size: int = 10) -> typing.Generator:
+    """Split iterable to the batches.
+
+    Example:
+        [1, 2, 3, 4, 5] with batch_size == 2 -> (1, 2), (3, 4), (5, ).
+    """
+    items_amount = len(iterable)
+    for i in range(0, items_amount, batch_size):
+        yield iterable[i:min(i + batch_size, items_amount)]

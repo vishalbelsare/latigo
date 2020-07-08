@@ -1,10 +1,9 @@
-import time
 import typing
 import logging
 import pandas as pd
 from datetime import datetime
 
-from latigo.types import TimeRange, LatigoSensorTag, SensorDataSet
+from latigo.types import TimeRange, LatigoSensorTag
 from latigo.sensor_data import SensorDataProviderInterface
 from latigo.types import SensorDataSpec
 
@@ -13,7 +12,6 @@ from gordo.machine.dataset.sensor_tag import SensorTag
 from gordo.util.utils import capture_args
 
 logger = logging.getLogger(__name__)
-# logging.getLogger().setLevel(logging.WARNING)
 
 
 def _gordo_to_latigo_tag(gordo_tag: SensorTag) -> LatigoSensorTag:
@@ -51,7 +49,6 @@ class LatigoDataProvider(GordoBaseDataProvider):
         if not self.latigo_config:
             raise Exception("No data_provider_config specified")
         self.sensor_data_provider = sensor_data_provider
-        # logger.warning("DEBUGGING:")         logger.warning(config)        logger.error("".join(traceback.format_stack()))
 
     def load_series(
         self,
@@ -80,9 +77,7 @@ class LatigoDataProvider(GordoBaseDataProvider):
             tag_list=_gordo_to_latigo_tag_list(tag_list)
         )
         time_range = TimeRange(from_time=train_start_date, to_time=train_end_date)
-        sensor_data, err = self.sensor_data_provider.get_data_for_range(
-            spec, time_range
-        )
+        sensor_data, err = self.sensor_data_provider.get_data_for_range(spec, time_range)
         if err:
             logger.error(f"Could not load sensor data: {err}")
             return

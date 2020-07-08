@@ -21,7 +21,7 @@ def inject_config(binder):
 
 if __name__ == "__main__":
     # Configure all dependencies only when the service is ready
-    inject.configure(inject_config, bind_in_runtime=False)
+    inject.configure_once(inject_config, bind_in_runtime=False)
 
     config = basic_config("executor")
 

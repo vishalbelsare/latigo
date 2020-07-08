@@ -14,7 +14,7 @@ from latigo.utils import (
     datetime_to_utc_as_str,
     local_datetime_to_utc_as_str,
     get_thread_pool_executor,
-    run_async_in_threads_executor,
+    run_async_in_threads_executor, get_batches,
 )
 
 logger = logging.getLogger("latigo.utils")
@@ -175,3 +175,14 @@ def test_run_async_in_threads_executor():
     tasks = [(foo, ()), (foo, (2, 3))]
     res = run_async_in_threads_executor(tasks)
     assert {(), (2, 3)} == set(res)
+
+
+@pytest.mark.parametrize("items, expected, batch_size", [
+    [(1, 2, 3, 4, 5), [(1, 2), (3, 4), (5, )], 2],
+    [(1, 2, 3, 4, 5), [(1, 2, 3, 4, 5)], 5],
+    [(1, 2, 3), [(1, 2, 3)], 5],
+    [(), [], 5],
+])
+def test_get_batches(items, expected, batch_size: int):
+    res = get_batches(items, batch_size=batch_size)
+    assert list(res) == expected

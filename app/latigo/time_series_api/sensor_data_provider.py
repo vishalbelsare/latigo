@@ -26,6 +26,7 @@ import requests_ms_auth
 
 from .misc import _itemes_present
 from .client import TimeSeriesAPIClient
+from ..log import measure
 
 logger = logging.getLogger(__name__)
 
@@ -53,17 +54,6 @@ def _find_tag_in_data(res, tag):
     return None
 
 
-def _get_items(datas: dict) -> typing.List:
-    if not datas:
-        logger.info("NO DATAS")
-        return []
-    data = datas.get("data", {})
-    if not data:
-        logger.info("NO DATA")
-        return []
-    return data.get("items", [])
-
-
 class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInterface):
     def __init__(self, config: dict):
         super().__init__(config)
@@ -79,74 +69,37 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             return True
         return False
 
+    @measure("get_data_for_range")
     def get_data_for_range(
         self, spec: SensorDataSpec, time_range: TimeRange
     ) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
+        """Fetch sensor data from TS API per the range.
+
+        This func uses less calls to fetch the data: 1 call per 100 tags.
         """
-        return the actual data as per the range specified
-        """
-        fail_on_missing = True
-        missing_meta = 0
-        missing_id = 0
-        completed = 0
-        data: typing.List[typing.Dict] = []
-        # This is here to make typing explicit to help mypy to not fail
-        # See https://github.com/equinor/latigo/pull/45
         tag_list: typing.List[LatigoSensorTag] = spec.tag_list
-        if len(tag_list) <= 0:
-            logger.warning("Tag list empty")
+
+        tag_ids = []
         for raw_tag in tag_list:
-            if not raw_tag:
-                return None, f"Invalid tag"
-            tag_type = type(raw_tag)
-            if not isinstance(raw_tag, LatigoSensorTag):
-                return None, f"Invalid tag type '{tag_type}'"
-            # This is here to make typing explicit to help mypy to not fail
-            # See https://github.com/equinor/latigo/pull/45
             tag: LatigoSensorTag = raw_tag
             name = tag.name
-            if not name:
-                return None, f"Invalid tag name={name}"
-            # asset_id = tag_dict.get("asset")
             asset_id = tag.asset
-            if not asset_id:
-                return None, f"Invalid tag asset_id={asset_id}"
             meta = self.get_meta_by_name(name=name, asset_id=asset_id)
             if not meta:
-                missing_meta += 1
-                if fail_on_missing:
-                    break
-                continue
+                raise ValueError("'meta' was not found for name '%s' and asset_id '%s'", name, asset_id)
+
             item = _find_tag_in_data(meta, name)
-            tag_id = None
-            if item:
-                tag_id = item.get("id", None)
-            if not tag_id:
-                missing_id += 1
-                logger.warning(
-                    f"Time series not found for requested tag '{tag}', skipping"
-                )
-                # logger.warning(pprint.pformat(meta))
-                if fail_on_missing:
-                    break
-                continue
-            ts = self._fetch_data_for_id(tag_id, time_range)
-            data.extend(_get_items(ts))
-            completed += 1
-        if missing_meta > 0:
-            logger.warning(f"Meta missing for {missing_meta} tags")
-            if fail_on_missing:
-                return None, f"Meta missing for {missing_meta} tags"
-        if missing_id > 0:
-            logger.warning(f"ID missing for {missing_id} tags")
-            if fail_on_missing:
-                return None, f"ID missing for {missing_id} tags"
-        if not data:
-            logger.warning("No gordo data")
+            tag_ids.append(item["id"])
 
-        if completed == len(spec.tag_list):
-            dataframes = SensorDataSet.to_gordo_dataframe(data, time_range.from_time, time_range.to_time)
-        else:
-            return None, f"Not all tags fetched ({completed}/{len(spec.tag_list)})"
+        tags_data = self._fetch_data_for_multiple_ids(tag_ids=tag_ids, time_range=time_range)
+        empty_tags_ids = [tag_data["id"] for tag_data in tags_data if not tag_data.get("datapoints", None)]
 
+        if empty_tags_ids:
+            tags_data = [tag for tag in tags_data if tag["id"] not in empty_tags_ids]
+            logger.warning("'datapoints' are empty for the following tags: %s", "; ".join(empty_tags_ids))
+
+        if not tags_data:
+            raise ValueError("No datapoints for tags where found.")
+
+        dataframes = SensorDataSet.to_gordo_dataframe(tags_data, time_range.from_time, time_range.to_time)
         return SensorDataSet(time_range=time_range, data=dataframes), None

@@ -47,7 +47,9 @@ class GordoPredictionExecutionProvider(PredictionExecutionProviderInterface):
         try:
             result = client.predict(start=from_time, end=to_time, targets=[model_name], revision=revision)
         except KeyError as e:
-            raise NoTagDataInDataLake(project_name, model_name, from_time, to_time, e)
+            if "not in index" in str(e):  # data error (not some code error): "['GRA-TE -23-0701.PV'] not in index"
+                raise NoTagDataInDataLake(project_name, model_name, from_time, to_time, e)
+            raise
 
         if not result:
             raise Exception("No result in gordo.execute_prediction()")

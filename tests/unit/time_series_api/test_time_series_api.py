@@ -1,8 +1,11 @@
 import logging
+from datetime import datetime
 from time import sleep
-from unittest.mock import patch
+from unittest.mock import ANY, call, patch
 
 from latigo.time_series_api.misc import _itemes_present
+from latigo.types import TimeRange
+from tests.conftest import make_response
 
 logger = logging.getLogger(__name__)
 
@@ -93,3 +96,30 @@ def test_value_in_cache_is_expired(time_series_api_client):
 
     sleep(seconds_to_expire)
     assert cache.get_metadata(tag_name, asset_id) is None
+
+
+def test_fetch_data_for_multiple_ids(time_series_api_client):
+    datetime_from = datetime.fromisoformat("2020-04-10T10:00:00.000000+00:00")
+    datetime_to = datetime.fromisoformat("2020-04-10T10:30:00.000000+00:00")
+    time_range = TimeRange(from_time=datetime_from, to_time=datetime_to)
+    tag_ids = [str(i) for i in range(1, 110)]
+
+    response_data = [make_response({"data": {"items": []}}) for _ in tag_ids]
+    expected_calls = [
+        call(url=ANY, json=[_make_multiple_ids_req_data(tag_id, time_range) for tag_id in tag_ids[:100]]),
+        call(url=ANY, json=[_make_multiple_ids_req_data(tag_id, time_range) for tag_id in tag_ids[100:]]),
+    ]
+    with patch.object(time_series_api_client, "_post", side_effect=response_data) as mocked_post:
+        time_series_api_client._fetch_data_for_multiple_ids(tag_ids=tag_ids, time_range=time_range)
+
+    mocked_post.assert_has_calls(expected_calls)
+
+
+def _make_multiple_ids_req_data(tag_id: str, time_range: TimeRange):
+    return {
+        "id": tag_id,
+        "startTime": time_range.rfc3339_from(),
+        "endTime": time_range.rfc3339_to(),
+        "limit": 100000,
+        "includeOutsidePoints": False,
+    }
