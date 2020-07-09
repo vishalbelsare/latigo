@@ -56,6 +56,17 @@ class SensorDataSet:
     data: typing.List[pd.Series]
     meta_data: typing.Dict = field(default_factory=dict)
 
+    def __eq__(self, other):
+        if self.time_range != other.time_range:
+            return False
+        if self.meta_data != other.meta_data:
+            return False
+        if len(self.data) != len(other.data):
+            return False
+        if not all(s1.equals(s2) for s1, s2 in zip(self.data, other.data)):
+            return False
+        return True
+
     def ok(self):
         if not self.data:
             return False

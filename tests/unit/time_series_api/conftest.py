@@ -1,12 +1,13 @@
 from datetime import datetime
 from io import StringIO
+from typing import List
 from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
 
-from latigo.time_series_api import TimeSeriesAPIPredictionStorageProvider
-from latigo.types import ModelTrainingPeriod, PredictionDataSet, PredictionDataSetMetadata, TimeRange
+from latigo.time_series_api import TimeSeriesAPIPredictionStorageProvider, TimeSeriesAPISensorDataProvider
+from latigo.types import ModelTrainingPeriod, PredictionDataSet, PredictionDataSetMetadata, TimeRange, SensorDataSet
 
 
 @pytest.fixture
@@ -69,3 +70,56 @@ def tag_metadata() -> dict:
             ]
         }
     }
+
+
+@pytest.fixture
+@patch("latigo.time_series_api.client.get_auth_session", new=Mock())
+def ts_api(config) -> TimeSeriesAPISensorDataProvider:
+    return TimeSeriesAPISensorDataProvider(config["sensor_data"])
+
+
+def get_meta_by_name_resp(tag_id: str, name: str):
+    return {
+        "data": {
+            "items": [
+                {
+                    "id": tag_id,
+                    "name": name,
+                    "description": "Oljeeksp kjøling",
+                    "step": False,
+                    "unit": "°C",
+                    "assetId": "GRA",
+                    "facility": "1755",
+                    "externalId": "GRA-49543",
+                    "changedTime": "2020-09-25T10:00:00.000Z",
+                    "createdTime": "2020-09-10T10:00:00.000Z",
+                }
+            ]
+        }
+    }
+
+
+def fetch_data_for_multiple_ids_resp(tag_ids: List[str]):
+    return [
+        {"id": tag_id, "datapoints": [{"time": "2020-04-10T10:00:00.000Z", "value": 11.11, "status": 192}]}
+        for tag_id in tag_ids
+    ]
+
+
+def make_sensor_data_set(from_time: datetime, to_time: datetime, tags_data: List[dict]) -> SensorDataSet:
+    dataframes = []
+    tag_names = ["0", "1", "2"]
+
+    for tag_data in tags_data:
+        tag_name = tag_names.pop(0)
+        values = []
+        indexes = []
+        for point in tag_data["datapoints"]:
+            values.append(point["value"])
+            indexes.append(point["time"])
+
+        datatime_index = pd.to_datetime(indexes, infer_datetime_format=True, utc=True)
+        s = pd.Series(data=values, index=datatime_index, name=tag_name)
+        dataframes.append(s)
+
+    return SensorDataSet(time_range=TimeRange(from_time=from_time, to_time=to_time), data=dataframes)

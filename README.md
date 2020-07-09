@@ -373,7 +373,7 @@ A service to produce predictions.
 | Parameter | Default | Description |
 |      ---: | :-----: | :---------- |
 | type | "time_series_api" | The source to use for sensor data. Currently only "time_series_api" is supported. There has been "influx" in the past. |
-| base_url | "https://api.gateway.equinor.com/plant-beta/timeseries/v1.5" | The base URL to use for connecting to time_series_api. See documentation [here](https://api.equinor.com/docs/services/Timeseries-api-v1-5).|
+| base_url | "https://api.gateway.equinor.com/plant-beta/timeseries/v1.6" | The base URL to use for connecting to time_series_api. See documentation [here](https://api.equinor.com/docs/services/Timeseries-api-v1-5).|
 | async | False | Wether or not to use async calls to time_series_api. Currently only False is tested. |
 | auth | [see the auth section](#auth) | The authentication for accessing time_series_api. |
 
@@ -382,7 +382,7 @@ A service to produce predictions.
 | Parameter | Default | Description |
 |      ---: | :-----: | :---------- |
 | type | "time_series_api" | The sink to use for storing predction data. Currently only "time_series_api" is supported. There has been "influx" in the past. |
-| base_url | "https://api.gateway.equinor.com/plant-beta/timeseries/v1.5" | The base URL to use for connecting to time_series_api. See documentation [here](https://api.equinor.com/docs/services/Timeseries-api-v1-5).|
+| base_url | "https://api.gateway.equinor.com/plant-beta/timeseries/v1.6" | The base URL to use for connecting to time_series_api. See documentation [here](https://api.equinor.com/docs/services/Timeseries-api-v1-5).|
 | async | False | Wether or not to use async calls to time_series_api. Currently only False is tested. |
 | auth | [see the auth section](#auth) | The authentication for accessing time_series_api. |
 

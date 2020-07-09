@@ -109,7 +109,7 @@ def config(auth_config):
         },
         "prediction_storage": {
             "type": "time_series_api",
-            "base_url": "https://api/timeseries/v1.5",
+            "base_url": "https://api/timeseries/v1.6",
             "async": False,
             "auth": auth_config,
         },

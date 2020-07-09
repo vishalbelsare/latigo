@@ -107,7 +107,7 @@ class TimeSeriesAPIClient:
         return parse_request_json(res)
 
     def _fetch_data_for_multiple_ids(
-        self, tag_ids: typing.List[str], time_range: TimeRange
+        self, tag_ids: typing.Iterable[str], time_range: TimeRange
     ) -> typing.List[typing.Dict]:
         """Fetch data points for multiple tag ids (max 100).
 

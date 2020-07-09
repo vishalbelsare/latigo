@@ -79,7 +79,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         """
         tag_list: typing.List[LatigoSensorTag] = spec.tag_list
 
-        tag_ids = []
+        tag_ids_names: typing.Dict[str, str] = {}
         for raw_tag in tag_list:
             tag: LatigoSensorTag = raw_tag
             name = tag.name
@@ -89,9 +89,9 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
                 raise ValueError("'meta' was not found for name '%s' and asset_id '%s'", name, asset_id)
 
             item = _find_tag_in_data(meta, name)
-            tag_ids.append(item["id"])
+            tag_ids_names[item["id"]] = name
 
-        tags_data = self._fetch_data_for_multiple_ids(tag_ids=tag_ids, time_range=time_range)
+        tags_data = self._fetch_data_for_multiple_ids(tag_ids=tag_ids_names.keys(), time_range=time_range)
         empty_tags_ids = [tag_data["id"] for tag_data in tags_data if not tag_data.get("datapoints", None)]
 
         if empty_tags_ids:
@@ -100,6 +100,10 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
 
         if not tags_data:
             raise ValueError("No datapoints for tags where found.")
+
+        for tag_data in tags_data:  # add "tag_name" to data cause TS API does not return it anymore
+            tag_id = tag_data["id"]
+            tag_data["name"] = tag_ids_names[tag_id]
 
         dataframes = SensorDataSet.to_gordo_dataframe(tags_data, time_range.from_time, time_range.to_time)
         return SensorDataSet(time_range=time_range, data=dataframes), None
