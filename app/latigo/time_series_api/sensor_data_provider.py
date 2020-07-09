@@ -91,7 +91,7 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
             item = _find_tag_in_data(meta, name)
             tag_ids_names[item["id"]] = name
 
-        tags_data = self._fetch_data_for_multiple_ids(tag_ids=tag_ids_names.keys(), time_range=time_range)
+        tags_data = self._fetch_data_for_multiple_ids(tag_ids=list(tag_ids_names), time_range=time_range)
         empty_tags_ids = [tag_data["id"] for tag_data in tags_data if not tag_data.get("datapoints", None)]
 
         if empty_tags_ids:
