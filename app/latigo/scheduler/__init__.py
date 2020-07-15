@@ -6,6 +6,7 @@ import datetime
 import pylogctx
 
 from pytz import utc
+from requests import HTTPError
 
 from latigo import __version__ as latigo_version
 from gordo import __version__ as gordo_version
@@ -177,6 +178,8 @@ class Scheduler:
                     self._run()
                 except KeyboardInterrupt:
                     self._is_ready = False
+                except HTTPError as err:
+                    logger.exception("Error occurred in scheduler: HTTPError: %s", err.response.text)
                 except Exception:
                     logger.exception("Error occurred in scheduler")
         finally:

@@ -2,7 +2,7 @@ import logging
 from unittest.mock import MagicMock, patch, ANY
 
 import pytest
-from requests import HTTPError
+from requests import HTTPError, Timeout, Response
 
 from latigo.executor import GORDO_EXCEPTIONS, IOC_DATA_EXCEPTIONS, PredictionExecutor
 from latigo.gordo import NoTagDataInDataLake
@@ -75,7 +75,18 @@ def test_execute_prediction_for_task_exception(exception, basic_executor: Predic
 
 
 @pytest.mark.parametrize("basic_executor", [True], indirect=["basic_executor"])
-def test_execute_prediction_for_unknown_error(basic_executor: PredictionExecutor, caplog):
-    with patch.object(basic_executor.prediction_executor_provider, "execute_prediction", side_effect=HTTPError(";-)")):
+@pytest.mark.parametrize("exception", (HTTPError, Timeout))
+def test_execute_prediction_for_unknown_errors(exception, basic_executor: PredictionExecutor, caplog):
+    if exception == HTTPError:
+        error_message = "Unknown error: HTTPError: response_text"
+    else:
+        error_message = "Unknown error"
+
+    exception = exception(error_message)
+    if type(exception) == HTTPError:
+        exception.response = Response()
+        exception.response._content = "response_text".encode()
+
+    with patch.object(basic_executor.prediction_executor_provider, "execute_prediction", side_effect=exception):
         basic_executor.run()
-    assert ('latigo.executor', logging.ERROR, "Unknown error") in caplog.record_tuples
+    assert ('latigo.executor', logging.ERROR, error_message) in caplog.record_tuples

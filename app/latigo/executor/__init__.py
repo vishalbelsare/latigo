@@ -7,6 +7,7 @@ from gordo import __version__ as gordo_version
 from gordo.client.io import BadGordoRequest, HttpUnprocessableEntity, NotFound, ResourceGone
 from gordo.machine.dataset.base import InsufficientDataError
 from gordo.machine.dataset.datasets import InsufficientDataAfterRowFilteringError
+from requests import HTTPError
 from requests_ms_auth import __version__ as auth_version
 
 from latigo import __version__ as latigo_version
@@ -217,6 +218,8 @@ class PredictionExecutor:
                 logger.warning("Gordo error: %r", err)
             except NoCommonAssetFound as err:
                 logger.warning("Prediction was not stored: %r", err)
+            except HTTPError as err:
+                logger.exception("Unknown error: HTTPError: %s",  err.response.text)
             except Exception:
                 logger.exception("Unknown error")
             except KeyboardInterrupt:
