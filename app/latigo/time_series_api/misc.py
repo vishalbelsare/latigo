@@ -80,14 +80,14 @@ def prediction_data_naming_convention(
     operation: str,
     model_name: str,
     tag_name: str,
-    common_asset_id: str,
+    facility: str,
     separator: str = "|",
     missing_tag_name: str = MISSING_TAG_NAME,
 ):
     if operation in INVALID_OPERATIONS:
         return None
     if not tag_name:
-        tag_name = f"{common_asset_id}.{missing_tag_name}"
+        tag_name = f"{facility}.{missing_tag_name}"
     if not model_name:
         raise Exception(f"'model_name' can not be empty")
     # Escape separator
@@ -96,18 +96,6 @@ def prediction_data_naming_convention(
     model_name = model_name.replace(separator, replacement)
     operation = operation.replace(separator, replacement)
     return f"{tag_name}{separator}{model_name}{separator}{operation}"
-
-
-def get_common_asset_id(columns: MultiIndex) -> str:
-    """Fetch common asset from tag name the dataframe columns where operation and tag name are.
-
-    Return:
-        '1903.R-29PST3037.MA_Y' -> '1903'. Split first non empty tag name with '.' and take first part as asset.
-    """
-    for operation, tag_name in columns:
-        if tag_name:
-            return tag_name.split(".")[0]
-    raise NoCommonAssetFound(columns.values)
 
 
 def find_in_time_series_resp(res, x):

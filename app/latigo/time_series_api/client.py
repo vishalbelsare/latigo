@@ -89,6 +89,9 @@ class TimeSeriesAPIClient:
             res = self.session.post(*args, **kwargs)
         return res
 
+    def _patch(self, *args, **kwargs):
+        return self.session.patch(*args, **kwargs)
+
     def _fetch_data_for_id(self, tag_id: str, time_range: TimeRange) -> typing.Dict:
         """Fetch data points for tag id.
 
@@ -142,59 +145,73 @@ class TimeSeriesAPIClient:
 
         return tags_data
 
-    def _get_metadata_from_api(self, name: str) -> typing.Dict:
+    def _get_metadata_from_api(self, name: str, facility: typing.Optional[str] = None) -> typing.Dict:
         """Fetch metadata from Time Series API.
 
         Args:
             - name: name of the tag. Example: "1901.A-21T.MA_Y".
+            - facility: name of the facility where tag belongs to.
+                It should has value or should not be passed to the API.
 
         Note: !never use 'asset_id' in query, gordo provides asset_ids
-            that might be incompatible with time series api.
+            that are not incompatible with TimeSeries api.
         """
         if not name:
             raise ValueError("No tag name is specified for fetching from Time Series API.")
 
-        body = {"name": name}
+        body = {"name": name, "facility": facility} if facility else {"name": name}
         res = self._get(self.base_url, params=body)
         return parse_request_json(res)
 
-    def get_meta_by_name(self, name: str, asset_id: str) -> typing.Dict:
-        meta = self._tag_metadata_cache.get_metadata(name, asset_id)
+    def get_meta_by_name(self, name: str, facility: typing.Optional[str] = None) -> typing.Dict:
+        meta = self._tag_metadata_cache.get_metadata(name, facility)
         if meta:
             return meta
 
         # get from Time Series API and store to cache
-        meta = self._get_metadata_from_api(name)
+        meta = self._get_metadata_from_api(name, facility)
         if meta:
-            self._tag_metadata_cache.set_metadata(name, asset_id, meta)
+            self._tag_metadata_cache.set_metadata(name, facility, meta)
         return meta
 
     def _create_id(
         self,
         name: str,
+        facility: str,
         description: str = "",
         unit: str = "",
-        asset_id: str = "",
         external_id: str = "",
     ) -> dict:
+        """Create timeseries tag object.
+
+        Args:
+            name: timeseries object name to be created (tag name).
+            facility: for now we assume that "facility" is
+                the same for us as "asset".
+            description: is not used for now.
+            unit: is not used for now.
+            external_id: is not used for now.
+        """
         body = {
             "name": name,
             "description": description,
             "step": True,
             "unit": unit,
-            "assetId": asset_id,
+            "facility": facility,
             "externalId": external_id,
         }
         res = self._post(self.base_url, json=body, params=None)
         return parse_request_json(res)
 
     def _create_id_if_not_exists(
-        self, name: str, asset_id: str, description: str = "", unit: str = "", external_id: str = "",
+        self, name: str, facility: str, description: str = "", unit: str = "", external_id: str = "",
     ) -> dict:
-        meta = self.get_meta_by_name(name=name, asset_id=asset_id)
+        meta = self.get_meta_by_name(name=name, facility=facility)
         if meta and _itemes_present(meta):
             return meta
-        return self._create_id(name, description, unit, asset_id, external_id)
+        return self._create_id(
+            name=name, facility=facility, description=description, unit=unit, external_id=external_id
+        )
 
     def _store_data_for_id(self, id: str, datapoints: typing.List[typing.Dict[str, str]]) -> dict:
         body = {"datapoints": datapoints}
@@ -202,23 +219,92 @@ class TimeSeriesAPIClient:
         res = self._post(url, json=body, params=None)
         return parse_request_json(res)
 
-    def replace_cached_metadata_with_new(self, tag_name: str, asset_id: str, description: str) -> dict:
+    def replace_cached_metadata_with_new(self, tag_name: str, facility: str, description: str) -> dict:
         """Fetch new tag metadata from TS API and replace it in cache.
 
         Args:
             - tag_name: name of the tag. Example: "1901.A-21TE28.MA_Y";
-            - asset_id: asset/project identifier. Example: "1000";
+            - facility: internal TS project identifier. Example: "1000";
             - description: tag description.
         """
         # get from TS API
         meta = self._get_metadata_from_api(tag_name)
-        if not meta:
-            # if not exists create in TS
-            meta = self._create_id(asset_id, description, asset_id)
 
-        if not meta:
-            raise ValueError(f"Could not replace cached metadata for {tag_name}/{asset_id}/{description}")
+        if not meta["data"]["items"]:
+            # if not exists create in TS
+            meta = self._create_id(name=tag_name, facility=facility, description=description)
+
+        if not meta["data"]["items"]:
+            raise ValueError(f"Could not replace cached metadata for {tag_name}/{facility}/{description}")
 
         # set in cache with new value
-        self._tag_metadata_cache.set_metadata(tag_name, asset_id, meta)
+        self._tag_metadata_cache.set_metadata(tag_name, facility, meta)
         return meta
+
+    def fetch_tag_by_id(self, ts_id: str):
+        """Get Tag by its ID."""
+        url = f"{self.base_url}/{ts_id}"
+
+        res = self._get(url=url)
+        return parse_request_json(res)
+
+    def patch_tag_facility_by_id(self, ts_id: str, facility: str):
+        """Change Tag facility on new one."""
+        url = f"{self.base_url}/{ts_id}"
+        body = {"facility": facility}
+
+        res = self._patch(url=url, json=body)
+        return parse_request_json(res)
+
+    def get_facility_by_tag_name(self, tag_name: str) -> str:
+        """Fetch "facility" of the tag timeseries object.
+
+        Raise:
+            - ValueError if no items were found.
+            - ValueError if more then one tag with such name were found.
+            - ValueError if 'facility' is missing.
+        """
+        res = self.get_meta_by_name(name=tag_name)
+        ts_tag = self.get_only_item_from_metadata(metadata=res, tag_name=tag_name)
+        facility = ts_tag["facility"]
+        if not facility:
+            raise ValueError(f"tag 'facility' is empty for tag name '{tag_name}' with data: {ts_tag}")
+        return facility
+
+    @staticmethod
+    def get_only_item_from_metadata(metadata: dict, tag_name: str) -> dict:
+        """Validate and return only one (only) item from metadata.
+
+        Args:
+            - metadata: response of the TS API with tag objects.
+                {
+                    "data": {
+                        "items": [
+                            {
+                                "id": "7f4c7d71-0000-4aa6-0000",
+                                "name": "R-29F.CA",
+                                "assetId": "JSVC",
+                                "facility": "1000",
+                                ...
+                            },
+                            {
+                                ...
+                            }
+                        ]
+                    }
+                }
+            - tag_name: name of the tag that is looked for.
+
+        Raise:
+            - ValueError if no items were found.
+            - ValueError if more then one tag with such name was found.
+
+        Return:
+            tag object.
+        """
+        items = metadata["data"]["items"]
+        if not items:
+            raise ValueError(f"No tag object were found in TS API for tag name '{tag_name}'")
+        if len(items) > 1:
+            raise ValueError(f"More then 1 tag object were found in TS API for tag name '{tag_name}'. Data: {items}")
+        return items[0]

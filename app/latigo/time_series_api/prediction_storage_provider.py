@@ -11,15 +11,12 @@ from latigo.types import PredictionDataSet
 from latigo.utils import rfc3339_from_datetime, run_async_in_threads_executor
 
 from .client import TimeSeriesAPIClient
-from .misc import (INVALID_OPERATIONS, get_common_asset_id,
-                   get_time_series_id_from_response, prediction_data_naming_convention)
+from .misc import INVALID_OPERATIONS, get_time_series_id_from_response, prediction_data_naming_convention
 
 logger = logging.getLogger(__name__)
 
 
-class TimeSeriesAPIPredictionStorageProvider(
-    TimeSeriesAPIClient, PredictionStorageProviderInterface
-):
+class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStorageProviderInterface):
     def __init__(self, config: dict):
         super().__init__(config)
 
@@ -33,8 +30,18 @@ class TimeSeriesAPIPredictionStorageProvider(
         Args:
             prediction_data: dataframe as a result of prediction execution and prediction metadata.
 
+        Take into account:
+            - do not rely on the Gordo asset;
+            - fetch facility from first "input tag" (they all are from
+                the same facility) in TS API.
+            - use such facility for caching/adding new prediction-tags.
+
         Raises:
-            Exception: if more then one prediction in "prediction_data.data" were passed.
+            - Exception: if more then one prediction in "prediction_data.data" were passed.
+            - ValueError: if no tag items were found.
+            - ValueError: if more then one tag with such name were found.
+            - ValueError: if 'facility' is missing.
+            - ValueError: no tag was found in the dataframe columns.
         """
         data = prediction_data.data
         if not data:
@@ -50,14 +57,18 @@ class TimeSeriesAPIPredictionStorageProvider(
         model_name = prediction_data.meta_data.model_name
         row = data[0]
         df = row[1]
-        common_asset_id = get_common_asset_id(df.columns)
+
+        first_not_empty_tag = next((tag_name for _, tag_name in df.columns if tag_name), None)
+        if first_not_empty_tag is None:
+            raise ValueError(f"No tag was found in the dataframe columns {df.columns}")
+        common_facility = self.get_facility_by_tag_name(tag_name=first_not_empty_tag)
 
         for col in df.columns:
             operation = col[0]
             tag_name = col[1]
 
             output_tag_name = prediction_data_naming_convention(
-                operation=operation, model_name=model_name, tag_name=tag_name, common_asset_id=common_asset_id
+                operation=operation, model_name=model_name, tag_name=tag_name, facility=common_facility
             )
             if not output_tag_name:
                 continue
@@ -65,9 +76,7 @@ class TimeSeriesAPIPredictionStorageProvider(
             description = OutputTag.make_output_tag_description(operation, tag_name)
             try:
                 meta = self._create_id_if_not_exists(
-                    name=output_tag_name,
-                    description=description,
-                    asset_id=common_asset_id,
+                    name=output_tag_name, description=description, facility=common_facility,
                 )
             except HTTPError as error:
                 if error.response.status_code != 409:
@@ -75,7 +84,7 @@ class TimeSeriesAPIPredictionStorageProvider(
 
                 # if such tag_name might already exists in the TS try to get/create once more.
                 meta = self.replace_cached_metadata_with_new(
-                    tag_name=output_tag_name, asset_id=common_asset_id, description=description
+                    tag_name=output_tag_name, facility=common_facility, description=description
                 )
 
             if not meta:

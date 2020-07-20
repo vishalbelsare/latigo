@@ -22,7 +22,9 @@ def test_get_data_for_range(ts_api):
         ts_api,
         "get_meta_by_name",
         side_effect=[get_meta_by_name_resp(tag_id=str(i), name=tag.name) for i, tag in enumerate(spec.tag_list)],
-    ), patch.object(ts_api, "_fetch_data_for_multiple_ids", return_value=tags_data_from_api):
+    ), patch.object(ts_api, "_fetch_data_for_multiple_ids", return_value=tags_data_from_api), patch.object(
+        ts_api, "get_facility_by_tag_name", return_value="1755"
+    ):
         res = ts_api.get_data_for_range(spec=spec, time_range=time_range)
 
     expected = make_sensor_data_set(from_time=datetime_from, to_time=datetime_to, tags_data=tags_data_from_api), None
