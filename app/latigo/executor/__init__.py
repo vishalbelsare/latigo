@@ -21,7 +21,6 @@ from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.sensor_data import sensor_data_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.time_series_api import get_time_series_id_from_response
-from latigo.time_series_api.misc import MODEL_INPUT_OPERATION
 from latigo.time_series_api.time_series_exceptions import NoCommonAssetFound
 from latigo.types import PredictionDataSet, Task
 
@@ -165,38 +164,25 @@ class PredictionExecutor:
         )
 
     def _get_tags_time_series_ids_for_model(self, prediction_data: PredictionDataSet) -> typing.Dict[str, str]:
-        """Fetch 'Time Series IDs' to the relevant 'input_tags'.
+        """Fetch 'Time Series IDs' of the model`s 'input_tags'.
 
         Args:
             prediction_data: dataframe as a result of prediction execution and prediction metadata.
         """
-        input_time_series_ids: typing.Dict[str, str] = {}  # {(operation, tag_name): time_series_id}.
-        df_columns = prediction_data.data[0][1].columns
-
-        # save tag names for further fetching its Time Series IDs
-        for col in df_columns:
-            operation = col[0]  # example: "start", "end", "model-input"
-            tag_name = col[1]  # example: "1903.R-29TT3018.MA_Y"
-
-            if operation == MODEL_INPUT_OPERATION:
-                # save tag names for further fetching its Time Series IDs
-                input_time_series_ids[tag_name] = ""
+        input_time_series_ids: typing.Dict[str, str] = {}  # {tag_name: time_series_id}
 
         spec = self.model_info_provider.get_spec(
             project_name=prediction_data.meta_data.project_name,
             model_name=prediction_data.meta_data.model_name,
         )
+        common_facility = self.prediction_storage_provider.get_facility_by_tag_name(spec.tag_list[0])
 
         for tag in spec.tag_list:
-            if tag.name in input_time_series_ids.keys():
-                meta = self.prediction_storage_provider.get_meta_by_name(name=tag.name, asset_id=tag.asset)
+            meta = self.prediction_storage_provider.get_meta_by_name(name=tag.name, facility=common_facility)
 
-                tag_id = get_time_series_id_from_response(meta)
-                input_time_series_ids[tag.name] = tag_id
+            tag_id = get_time_series_id_from_response(meta)
+            input_time_series_ids[tag.name] = tag_id
 
-        missing_tags = {key: val for key, val in input_time_series_ids.items() if not val}
-        if missing_tags:
-            raise ValueError("[TAG_NOT_FOUND]: " + ";".join(missing_tags.keys()))
         return input_time_series_ids
 
     def run(self):

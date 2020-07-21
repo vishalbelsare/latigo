@@ -63,12 +63,6 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
     def __str__(self):
         return f"TimeSeriesAPISensorDataProvider({self.base_url})"
 
-    def supports_tag(self, tag: LatigoSensorTag) -> bool:
-        meta = self.get_meta_by_name(name=tag.name, asset_id=tag.asset)
-        if meta and _itemes_present(meta):
-            return True
-        return False
-
     @measure("get_data_for_range")
     def get_data_for_range(
         self, spec: SensorDataSpec, time_range: TimeRange
@@ -76,17 +70,20 @@ class TimeSeriesAPISensorDataProvider(TimeSeriesAPIClient, SensorDataProviderInt
         """Fetch sensor data from TS API per the range.
 
         This func uses less calls to fetch the data: 1 call per 100 tags.
+
+        Note: do not use "tag.asset" in calls to the TS API.
+            It's provided by user OR Gordo and not compatible with TS.
         """
         tag_list: typing.List[LatigoSensorTag] = spec.tag_list
 
         tag_ids_names: typing.Dict[str, str] = {}
+        common_facility = self.get_facility_by_tag_name(tag_name=tag_list[0].name)
         for raw_tag in tag_list:
             tag: LatigoSensorTag = raw_tag
             name = tag.name
-            asset_id = tag.asset
-            meta = self.get_meta_by_name(name=name, asset_id=asset_id)
+            meta = self.get_meta_by_name(name=name, facility=common_facility)
             if not meta:
-                raise ValueError("'meta' was not found for name '%s' and asset_id '%s'", name, asset_id)
+                raise ValueError("'meta' was not found for name '%s' and facility '%s'", name, common_facility)
 
             item = _find_tag_in_data(meta, name)
             tag_ids_names[item["id"]] = name
