@@ -1,16 +1,14 @@
 #!/usr/bin/env python
-import pandas as pd
-import typing
 import logging
-from datetime import datetime, timedelta
+import typing
 from collections import namedtuple
 from dataclasses import dataclass, field
-from dataclasses_json import dataclass_json, DataClassJsonMixin
-from gordo.machine.dataset.sensor_tag import SensorTag
+from datetime import datetime
 
-from latigo.utils import rfc3339_from_datetime, datetime_to_utc_as_str
-from latigo.intermediate import IntermediateFormat
+import pandas as pd
+from dataclasses_json import DataClassJsonMixin
 
+from latigo.utils import datetime_to_utc_as_str, rfc3339_from_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +21,9 @@ class Task(DataClassJsonMixin):
     to_time: datetime
 
     def __str__(self):
-        return f"'model: {self.project_name}.{self.model_name}', prediction: from '{self.from_time}' to '{self.to_time}'"
+        return (
+            f"'model: {self.project_name}.{self.model_name}', prediction: from '{self.from_time}' to '{self.to_time}'"
+        )
 
 
 @dataclass
@@ -180,12 +180,7 @@ class PredictionDataSeries:
         return f"PredictionData({self.time_range}, name={self.name}, unit={self.unit}, asset_id={self.asset_id}, data={len(self.data)})"
 
     def ok(self):
-        return (
-            bool(self.time_range)
-            and bool(self.data)
-            and bool(self.name)
-            and bool(self.asset_id)
-        )
+        return bool(self.time_range) and bool(self.data) and bool(self.name) and bool(self.asset_id)
 
 
 @dataclass

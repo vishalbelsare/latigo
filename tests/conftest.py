@@ -15,7 +15,6 @@ from requests import Response
 latigo_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../app/"))
 sys.path.insert(0, latigo_path)
 
-from .mock_classes import MockSensorDataProvider
 from latigo.executor import PredictionExecutor
 from latigo.gordo import GordoModelInfoProvider
 from latigo.scheduler import Scheduler
@@ -140,11 +139,6 @@ def config(auth_config):
             "auth": auth_config,
         },
     }
-
-
-@pytest.fixture
-def sensor_data_provider(config):
-    return MockSensorDataProvider(config.get("sensor_data"))
 
 
 @pytest.fixture
