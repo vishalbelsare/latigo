@@ -21,7 +21,6 @@ from latigo.prediction_storage import prediction_storage_provider_factory
 from latigo.sensor_data import sensor_data_provider_factory
 from latigo.task_queue import task_queue_receiver_factory
 from latigo.time_series_api import get_time_series_id_from_response
-from latigo.time_series_api.misc import MODEL_INPUT_OPERATION
 from latigo.time_series_api.time_series_exceptions import NoCommonAssetFound
 from latigo.types import PredictionDataSet, Task
 
