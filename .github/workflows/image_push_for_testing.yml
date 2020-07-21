@@ -1,0 +1,27 @@
+name: Build test image
+
+on:
+  push:
+    branches:
+      - PUSH_TEST_IMAGE/**
+
+env:
+  DOCKER_REGISTRY: ${{secrets.DOCKER_REGISTRY}}
+  DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+  DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+  DOCKER_REPO: ${{secrets.DOCKER_REPO}}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: List environment info
+      run: |
+        make show-env
+        make info
+
+    - name: Build and push docker images for scheduler and executor
+      run: |
+        make build
+        make push
