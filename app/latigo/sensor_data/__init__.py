@@ -1,15 +1,7 @@
-import typing
-import pprint
 import logging
-import pandas as pd
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-import latigo.utils
+import typing
 
-
-from latigo.types import SensorDataSet, TimeRange, SensorDataSpec, LatigoSensorTag
-from latigo.intermediate import IntermediateFormat
-
+from latigo.types import LatigoSensorTag, SensorDataSet, SensorDataSpec, TimeRange
 
 logger = logging.getLogger(__name__)
 
@@ -27,29 +19,13 @@ class SensorDataProviderInterface:
         raise NotImplementedError()
 
 
-class DevNullSensorDataProvider(SensorDataProviderInterface):
-    def __init__(self, config: dict):
-        self.config = config
-
-    def get_data_for_range(
-        self, spec: SensorDataSpec, time_range: TimeRange
-    ) -> typing.Tuple[typing.Optional[SensorDataSet], typing.Optional[str]]:
-        """
-        return the actual data as per the range specified
-        """
-        return None, "No data"
-
-
 def sensor_data_provider_factory(sensor_data_provider_config):
     sensor_data_provider_type = sensor_data_provider_config.get("type", None)
-    sensor_data_provider = None
 
     if "time_series_api" == sensor_data_provider_type:
         from latigo.time_series_api import TimeSeriesAPISensorDataProvider
 
-        sensor_data_provider = TimeSeriesAPISensorDataProvider(
-            sensor_data_provider_config
-        )
+        sensor_data_provider = TimeSeriesAPISensorDataProvider(sensor_data_provider_config)
     else:
-        sensor_data_provider = DevNullSensorDataProvider(sensor_data_provider_config)
+        raise ValueError(f"'{sensor_data_provider_type}' in not valid sensor data provider type")
     return sensor_data_provider
