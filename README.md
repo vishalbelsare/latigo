@@ -10,6 +10,7 @@
   * [Proxy setup](#Proxy-setup)
   * [How to run locally (pain part..)](#How-to-run-locally-(pain-part..))
   * [How to run image locally](#How-to-run-image-locally)
+  * [How test you build on DEV with no PR](#How-test-you-build-on-DEV-with-no-PR)
   * [How to login to different resources](#How-to-login-to-different-resources)
     * [Login to azure](#Login-to-azure)
     * [Login to docker](#Login-to-docker)
@@ -149,6 +150,16 @@ Add credentials for cache:
 docker-compose build --no-cache .
 docker-compose up -d --remove-orphans
 ```
+
+### How test you build on DEV with no PR
+- make changes in code;
+- change version in `VERSION` file to smth like 0.1.4dev;
+- name yor branch that it will start with `PUSH_TEST_IMAGE/`;
+- push the image;
+- CI will pick such branch on push event - build and push the image to the Docker registry;
+- make and push new test branch with the new `tag` to [latigo-k8s](https://github.com/equinor/latigo-k8s);
+- change the `TARGET REVISION` to new test `latigo-k8s` branch name in [Argo](https://dashboard.internal.aurora.equinor.com/applications/latigo-dev?node=argoproj.io%2FApplication%2Fargocd%2Flatigo-dev%2F0);
+- click `SYNC` on the Argo dashboard (*do not forget to revert changes*). 
 
 ### How to login to different resources
 
