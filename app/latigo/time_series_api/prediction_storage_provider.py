@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import Dict, Tuple, Callable, List
+from typing import Dict, Tuple
 
 from requests.exceptions import HTTPError
 
@@ -8,7 +8,7 @@ from latigo.metadata_api.data_structures import OutputTag
 from latigo.prediction_storage import PredictionStorageProviderInterface
 from latigo.log import measure
 from latigo.types import PredictionDataSet
-from latigo.utils import rfc3339_from_datetime, run_async_in_threads_executor
+from latigo.utils import rfc3339_from_datetime
 
 from .client import TimeSeriesAPIClient
 from .misc import INVALID_OPERATIONS, get_time_series_id_from_response, prediction_data_naming_convention
@@ -94,14 +94,12 @@ class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStor
                 raise ValueError(f"Could not get ID for {output_tag_name}, {col}, {meta}")
             output_tag_names[col] = output_tag_name
             output_time_series_ids[col] = time_series_id
-        failed_tags = 0
-        stored_tags = 0
         skipped_values = 0
         stored_values = 0
         skipped_tags = 0
         logger.info(f"Storing predictions for %s columns (before filtering)", len(df.columns))
 
-        data_store_tasks: List[Tuple[Callable, tuple]] = []  # (function to call, args to pass)
+        datapoints_to_store = []
         for key, item in df.items():
             operation, tag_name, *_ = key
             if operation in INVALID_OPERATIONS:
@@ -121,20 +119,13 @@ class TimeSeriesAPIPredictionStorageProvider(TimeSeriesAPIClient, PredictionStor
             if not datapoints:  # skip empty datapoints, no need make call to TS API with no data to store
                 skipped_tags += 1
                 continue
-            data_store_tasks.append((self._store_data_for_id, (time_series_id, datapoints)))
+            datapoints_to_store.append({"id": time_series_id, "datapoints": datapoints})
 
-        results = run_async_in_threads_executor(data_store_tasks)
-        for result in results:
-            if result["statusCode"] != 200:
-                failed_tags += 1
-                logger.error("Datapoints storing to TS API failed: ", result["message"])
-            else:
-                stored_tags += 1
-
-        if skipped_values or failed_tags:
+        res = self.store_multiple_datapoints(datapoints_to_store)
+        if skipped_values:
             logger.warning(
                 f"[Not all data stored to TS API] {stored_values} values stored, {skipped_values} NaNs skipped. "
-                f"{skipped_tags} tags skipped, {stored_tags} tags stored, {failed_tags} tags failed"
+                f"{skipped_tags} tags skipped. Storing results: {res['message']}"
             )
 
         return output_tag_names, output_time_series_ids

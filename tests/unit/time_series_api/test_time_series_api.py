@@ -174,3 +174,15 @@ def test_replace_cached_metadata_with_new(time_series_api_client):
     assert res == tag_metadata
     create_id_mocked.assert_called_once_with(name=tag_name, facility=facility, description="description")
     assert time_series_api_client._tag_metadata_cache.get_metadata(tag_name, facility) == tag_metadata
+
+
+def test_store_multiple_datapoints(time_series_api_client):
+    ts_ids_amount = 3
+    items = [make_tag_object() for _ in range(ts_ids_amount)]
+    expected_resp = {"statusCode": 200, "message": f"Successfully wrote datapoints to {ts_ids_amount} timeseries"}
+
+    with patch.object(time_series_api_client, "_post", return_value=make_response(expected_resp)) as mocked_post:
+        res = time_series_api_client.store_multiple_datapoints(items)
+
+    mocked_post.assert_called_once_with(url=f"{time_series_api_client.base_url}/data", json={"items": items})
+    assert res == expected_resp

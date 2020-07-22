@@ -1,13 +1,11 @@
 import logging
 import typing
 
-from oauthlib.oauth2.rfc6749.errors import MissingTokenError
-
 from latigo.types import TimeRange
 
-from .cache import TagMetadataCache
-from .misc import _itemes_present, parse_request_json, get_auth_session
 from ..utils import get_batches
+from .cache import TagMetadataCache
+from .misc import _itemes_present, get_auth_session, parse_request_json
 
 logger = logging.getLogger(__name__)
 
@@ -65,29 +63,13 @@ class TimeSeriesAPIClient:
         self._parse_base_url()
         self.do_async = self.config.get("async", False)
         if not self.good_to_go:
-            raise Exception(
-                "TimeSeriesAPIClient failed. Please see previous errors for clues as to why"
-            )
+            raise Exception("TimeSeriesAPIClient failed. Please see previous errors for clues as to why")
 
     def _get(self, *args, **kwargs):
-        res = None
-        try:
-            res = self.session.get(*args, **kwargs)
-        except MissingTokenError:
-            logger.info("Token expired, retrying GET after recreating session")
-            self._create_session(force=True)
-            res = self.session.get(*args, **kwargs)
-        return res
+        return self.session.get(*args, **kwargs)
 
     def _post(self, *args, **kwargs):
-        res = None
-        try:
-            res = self.session.post(*args, **kwargs)
-        except MissingTokenError:
-            logger.info("Token expired, retrying POST after recreating session")
-            self._create_session(force=True)
-            res = self.session.post(*args, **kwargs)
-        return res
+        return self.session.post(*args, **kwargs)
 
     def _patch(self, *args, **kwargs):
         return self.session.patch(*args, **kwargs)
@@ -175,12 +157,7 @@ class TimeSeriesAPIClient:
         return meta
 
     def _create_id(
-        self,
-        name: str,
-        facility: str,
-        description: str = "",
-        unit: str = "",
-        external_id: str = "",
+        self, name: str, facility: str, description: str = "", unit: str = "", external_id: str = "",
     ) -> dict:
         """Create timeseries tag object.
 
@@ -217,6 +194,33 @@ class TimeSeriesAPIClient:
         body = {"datapoints": datapoints}
         url = f"{self.base_url}/{id}/data"
         res = self._post(url, json=body, params=None)
+        return parse_request_json(res)
+
+    def store_multiple_datapoints(self, datapoints_to_store: typing.List[typing.Dict[str, typing.Any]]) -> dict:
+        """Save prediction results for multiple tag_ids.
+
+        Docs:
+            API_URL/operations/writeMultipleData?&groupBy=tag
+
+        Args:
+            - datapoints_to_store: ts_ids with datapoints to store.
+                [
+                    {
+                        "id": "dd7d8481-81a3-407f-95f0-a2f1cb382a4b",
+                        "datapoints": [
+                            {
+                                "time": "string",
+                                "value": 0.0,
+                                "status": 192
+                            }
+                        ]
+                    }
+                ]
+        """
+        url = f"{self.base_url}/data"
+        body = {"items": datapoints_to_store}
+
+        res = self._post(url=url, json=body)
         return parse_request_json(res)
 
     def replace_cached_metadata_with_new(self, tag_name: str, facility: str, description: str) -> dict:
